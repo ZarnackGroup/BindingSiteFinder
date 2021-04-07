@@ -1,0 +1,36 @@
+Package: BindingSiteFinder
+Type: Package
+Title: Binding site defintion based on iCLIP data
+Version: 0.99.0
+Authors@R: c(
+    person("Mirko", "Brüggemann",
+        email="mirko.brueggemann@mail.de",
+        role = c("aut", "cre"),
+        comment = c(ORCID = "0000-0002-1778-0248")),
+    person("Mario", "Keller",
+        email='mario.keller@bmls.de',
+        role = c("aut")),
+    person("Kathi", "Zarnack",
+        email="kathi.zarnack@bmls.de",
+        role = c("aut")))
+Maintainer: Mirko Brüggemann <mirko.brueggemann@mail.de>
+Description: Define equally sized binding sites from peak calling results and 
+    iCLIP crosslink events. 
+License: LGPL (>=3)
+Encoding: UTF-8
+VignetteBuilder: knitr
+Imports: tidyr, matrixStats, stats, ggplot2, methods, rtracklayer, S4Vectors
+Depends: GenomicRanges, R (>= 4.0.0)
+Suggests: testthat, BiocStyle, knitr, rmarkdown, dplyr, GenomicAlignments, ComplexHeatmap, GenomeInfoDb, forcats, scales
+RoxygenNote: 7.1.1
+Collate: 
+    'AllClasses.R'
+    'AllGenerics.R'
+    'Functions.R'
+    'methods.R'
+    'bindingsites.R'
+    'helper.R'
+    'PlotFunction.R'
+biocViews: Sequencing, GeneExpression, GeneRegulation, FunctionalGenomics, Coverage, DataImport
+
+

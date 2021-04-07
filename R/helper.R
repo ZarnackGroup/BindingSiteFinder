@@ -1,0 +1,93 @@
+# not exported functions that are for internal use only
+.collapesReplicates <- function(signal) {
+    p = signal$signalPlus
+    m = signal$signalMinus
+
+    pSum = 0
+    for (i in seq_along(p)) {
+        pSum = pSum + p[[i]]
+    }
+    names(pSum) = names(p[[1]])
+    mSum = 0
+    for (i in seq_along(m)) {
+        mSum = mSum + m[[i]]
+    }
+    names(mSum) = names(m[[1]])
+
+    mergedSignal = list(signalPlus = (pSum), signalMinus = (mSum))
+    return(mergedSignal)
+}
+
+#' @importFrom stats quantile
+.selectQuantilesMultipleConditions <-
+    function(covDf, userCond, userNreps, userCutoff) {
+        # bind locally used variables
+        per <- applyTo <- NULL
+
+        # construct general cutoff matrix in 1% steps
+        q = as.data.frame(apply(covDf, 2, function(x) {
+            quantile(x, probs = seq(0, 1, by = 0.01))
+        }))
+        q$cut = seq(0, 1, by = 0.01)
+        q$per = rownames(q)
+
+        # select that part of q that was chosen by user
+        qSel = q[q$cut %in% userCutoff, ]
+        applyDf = data.frame(levels(userCond), userCutoff)
+
+        idx = match(qSel$cut, applyDf$userCutoff)
+        qSel$applyTo = applyDf$levels.userCond.[idx]
+        qSel = qSel %>% pivot_longer(-c(cut, per, applyTo))
+        qSel$sel = sapply(strsplit(qSel$name, "_"), `[`, 2)
+        qSel = qSel[qSel$applyTo == qSel$sel, ]
+
+        # add n.reps support to df
+        nRepsDf = data.frame(n.reps = userNreps, applyTo = levels(userCond))
+        idx = match(qSel$applyTo, nRepsDf$applyTo)
+        qSel$n.reps = nRepsDf$n.reps[idx]
+        return(qSel)
+    }
+
+#' @importFrom stats quantile
+.selectQuantilesSingleCondtion <-
+    function(covDf, userCond, userNreps, userCutoff) {
+        # bind locally used variables
+        per <- NULL
+
+        # construct general cutoff matrix in 1% steps
+        q = as.data.frame(apply(covDf, 2, function(x) {
+            quantile(x, probs = seq(0, 1, by = 0.01))
+        }))
+        q$cut = seq(0, 1, by = 0.01)
+        q$per = rownames(q)
+
+        # select that part of q that was chosen by user
+        qSel = q[q$cut %in% userCutoff, ]
+        qSel = qSel %>% pivot_longer(-c(cut, per))
+        qSel$sel = sapply(strsplit(qSel$name, "_"), `[`, 2)
+
+        # add n.reps support to df
+        nRepsDf = data.frame(n.reps = userNreps, applyTo = levels(userCond))
+        idx = match(qSel$sel, nRepsDf$applyTo)
+        qSel$n.reps = nRepsDf$n.reps[idx]
+        return(qSel)
+    }
+
+
+.subsetByChr <- function(object, chr) {
+    # subset ranges
+    rng = getRanges(object)
+    rngSub = rng[seqnames(rng) == chr,]
+
+    # subset the signal
+    sgn = getSignal(object)
+    sgnSub = lapply(sgn, function(selStrand) {
+        lapply(selStrand, function(chrList) {
+            chrList[names(chrList) == chr]
+        })
+    })
+
+    objectNew = setRanges(object, rngSub)
+    objectNew = setSignal(objectNew, sgnSub)
+    return(objectNew)
+}

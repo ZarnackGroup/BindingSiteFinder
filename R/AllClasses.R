@@ -1,0 +1,133 @@
+#' @rdname BSFDataSet
+#' @export
+BSFDataSet <- setClass(
+    "BSFDataSet",
+    representation = list(
+        ranges = "GRanges",
+        meta = "data.frame",
+        signal = "list",
+        summary = "data.frame"
+    )
+)
+setValidity("BSFDataSet", function(object) {
+    msg <- NULL
+
+    # check input ranges
+    if (any(strand(object@ranges) == "*")) {
+        msg = c(msg, "Strand can not be of type'*'.")
+    }
+    # check input meta data
+    if (ncol(object@meta) < 3) {
+        msg = c(msg, "Metadata must contain at least 3 columns.")
+    }
+    if (!c("clPlus") %in% colnames(object@meta) ||
+        !c("clMinus") %in% colnames(object@meta)) {
+        msg = c(msg,
+                "Metadata must contain columns named 'clPlus' and 'clMinus' ")
+    }
+    if (!c("condition") %in% colnames(object@meta)) {
+        msg = c(msg, "Metadata must contain a column named 'condtion'.")
+    }
+    if (is.null(msg)) {
+        TRUE
+    } else {
+        msg
+    }
+})
+
+#' BSFDataSet object and constructors
+#'
+#' \code{BSFDataSet} contains the class \code{GenomicRanges}, which is used to
+#' store input ranges. It enforces for all ranges to have a "+" or "-" strand annotation,
+#' "*" is not allowed. Alongside these ranges meta data is stored as \code{data.frame}.
+#' This dataframe needs to contain three columns which must be named "condition",
+#' "clPlus" and "clMinus". It is used to provide the location to the iCLIP
+#' coverage files to the import function. On object initialization these files
+#' are loaded and internally represented as RLE-Lists.
+#' See the vignette for different construction examples.
+#'
+#' @param ranges a \code{GenomicRanges} with the desired ranges to process. The
+#' strand slot must be either + or -.
+#' @param meta a \code{data.frame} with a minimum of three columns. The first
+#' column holds sample type information, such as the condition. The second and
+#' third column must be named 'clPlus' and 'clMinus' and must contain the path
+#' to the files with the individual crosslink events. This can be in .bw (bigwig)
+#' format for example.
+#' See the vignette for how such files can be obtained from sequenced reads.
+#'
+#' @return A BSFDataSet object.
+#'
+#' @docType class
+#'
+#' @importFrom rtracklayer import
+#' @import GenomicRanges
+#'
+#' @examples
+#'
+#' # load data
+#' csFile <- system.file("extdata", "PureCLIP_crosslink_sites_example.bed",
+#'  package="BindingSiteFinder")
+#' cs = rtracklayer::import(con = csFile, format = "BED")
+#' clipFiles <- system.file("extdata", package="BindingSiteFinder")
+#'
+#' # two experimental conditions
+#' meta = data.frame(condition = factor(c("WT", "WT", "KD", "KD"), levels = c("KD", "WT")),
+#' clPlus = list.files(clipFiles, pattern = "plus.bw$", full.names = TRUE),
+#' clMinus = list.files(clipFiles, pattern = "minus.bw$", full.names = TRUE))
+#' bds = BSFDataSet(ranges = cs, meta = meta)
+#'
+#' # one experimental condition
+#' meta = data.frame(condition = c("WT", "WT", "WT", "WT"),
+#' clPlus = list.files(clipFiles, pattern = "plus.bw$", full.names = TRUE),
+#' clMinus = list.files(clipFiles, pattern = "minus.bw$", full.names = TRUE))
+#' bds = BSFDataSet(ranges = cs, meta = meta)
+#'
+#' @rdname BSFDataSet
+#' @export
+BSFDataSet <- function(ranges, meta) {
+    # check input ranges
+    if (!all(c(any(strand(ranges) == "-"), any(strand(ranges) == "+")))) {
+        warning("Input ranges are only on one strand.")
+    }
+    if (length(unique(width(ranges))) > 1) {
+        warning("Ranges are of differnt width.")
+    }
+    if (unique(width(ranges)) > 1) {
+        message("Input ranges are larger than 1 nt.")
+    }
+    # check input metadata
+    if(!all(c(any(colnames(meta) == "condition"),
+            any(colnames(meta) == "clPlus"),
+            any(colnames(meta) == "clMinus")))){
+        stop("Meta data columns must contain 'condition', 'clPlus', 'clMinus'")
+    }
+
+    if (!is.factor(meta$condition)) {
+        message("Condition column is not factor, converting to factor")
+        meta$condition = factor(meta$condition)
+    }
+
+    # build colSignal by importing files as RLE
+    signalPlus = sapply(meta$clPlus, function(x) {
+        import(x, as = "Rle")
+    })
+    signalMinus = sapply(meta$clMinus, function(x) {
+        abs(import(x, as = "Rle"))
+    })
+    names(signalPlus) = paste0(seq_len(nrow(meta)), "_", meta$condition)
+    names(signalMinus) = paste0(seq_len(nrow(meta)), "_", meta$condition)
+    signal = list(signalPlus = signalPlus, signalMinus = signalMinus)
+
+    # set placeholder for summary slot
+    summary = data.frame()
+
+    # construct final object
+    obj = new(
+        "BSFDataSet",
+        ranges = ranges,
+        meta = meta,
+        signal = signal,
+        summary = summary
+    )
+    return(obj)
+}

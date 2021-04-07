@@ -1,0 +1,16 @@
+citEntry(entry="article",
+         title = "iCLIP data analysis: A complete pipeline from sequencing reads to RBP binding sites",
+         author = personList( as.person("Anke Busch"),
+                              as.person("Mirko Brüggemann"),
+                              as.person("Stefanie Ebersberger"),
+                              as.person("Kathi Zarnack")),
+         year = 2020,
+         journal = "Methods",
+         doi = "https://doi.org/10.1016/j.ymeth.2019.11.008",
+         volume = 178,
+         pages = 49-62,
+         textVersion =
+             paste("Busch, A., Brüggemann, M., Ebersberger, S., & Zarnack, K. (2020)",
+                   "iCLIP data analysis: A complete pipeline from sequencing reads to RBP binding sites.",
+                   "Methods, 178, 49-62" )
+         )
