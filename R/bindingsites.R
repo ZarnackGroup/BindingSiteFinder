@@ -211,13 +211,14 @@ makeBindingSites <- function(object,
     sgnMergePlus = sgn$signalPlus
     sgnMergeMinus = sgn$signalMinus
 
-    rngS1 = GenomeInfoDb::keepStandardChromosomes(rng, pruning.mode = "coarse")
+    # rngS1 = GenomeInfoDb::keepStandardChromosomes(rng, pruning.mode = "coarse")
+    rngS1 = rng
 
     ### Merge peaks for given bs size
     rngS2 = reduce(rngS1, min.gapwidth = bsSize - 1)
 
     ### Remove peaks smaller than min width
-    rngS3 = rngS2[width(rngS2) >= minWidth]
+    rngS3 = rngS2[width(rngS2) > minWidth]
     names(rngS3) = seq_along(rngS3)
 
     ### Center detection and extension
