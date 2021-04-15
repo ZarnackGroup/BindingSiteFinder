@@ -54,6 +54,9 @@ setValidity("BSFDataSet", function(object) {
 #' to the files with the individual crosslink events. This can be in .bw (bigwig)
 #' format for example.
 #' See the vignette for how such files can be obtained from sequenced reads.
+#' @param forceEqualNames to maintain the integrity of chromosome names (TRUE/ FALSE).
+#' The function ensures that chromosome names present in the GRanges are also all
+#' present in the signal list. Chromosome present in the signal list only are removed.
 #'
 #' @return A BSFDataSet object.
 #'
@@ -84,7 +87,7 @@ setValidity("BSFDataSet", function(object) {
 #'
 #' @rdname BSFDataSet
 #' @export
-BSFDataSet <- function(ranges, meta) {
+BSFDataSet <- function(ranges, meta, forceEqualNames = TRUE) {
     # check input ranges
     if (!all(c(any(strand(ranges) == "-"), any(strand(ranges) == "+")))) {
         warning("Input ranges are only on one strand.")
@@ -117,6 +120,26 @@ BSFDataSet <- function(ranges, meta) {
     names(signalPlus) = paste0(seq_len(nrow(meta)), "_", meta$condition)
     names(signalMinus) = paste0(seq_len(nrow(meta)), "_", meta$condition)
     signal = list(signalPlus = signalPlus, signalMinus = signalMinus)
+
+    # check input signal
+    if (isTRUE(forceEqualNames)) {
+        rngChrs = unique(seqnames(ranges))
+        # fix input signal
+        signal = lapply(signal, function(selStrand) {
+            lapply(selStrand, function(chrList) {
+                chrList[names(chrList) %in% rngChrs]
+            })
+        })
+    }
+    if (!isTRUE(forceEqualNames)) {
+        rngChrs = unique(seqnames(ranges))
+        sgnChrs = names(signal[[1]][[1]])
+        # check signal
+        if (!all(rngChrs %in% sgnChrs) & all(sgnChrs %in% rngChrs)) {
+            warning("forceEqualNames is FALSE and chromosome names in the
+                    ranges and signal objects do not match.")
+        }
+    }
 
     # set placeholder for summary slot
     summary = data.frame()
