@@ -5,9 +5,9 @@
 \alias{BSFDataSet}
 \title{BSFDataSet object and constructors}
 \usage{
-BSFDataSet(ranges, meta)
+BSFDataSet(ranges, meta, forceEqualNames = TRUE)
 
-BSFDataSet(ranges, meta)
+BSFDataSet(ranges, meta, forceEqualNames = TRUE)
 }
 \arguments{
 \item{ranges}{a \code{GenomicRanges} with the desired ranges to process. The
@@ -19,6 +19,10 @@ third column must be named 'clPlus' and 'clMinus' and must contain the path
 to the files with the individual crosslink events. This can be in .bw (bigwig)
 format for example.
 See the vignette for how such files can be obtained from sequenced reads.}
+
+\item{forceEqualNames}{to maintain the integrity of chromosome names (TRUE/ FALSE).
+The function ensures that chromosome names present in the GRanges are also all
+present in the signal list. Chromosome present in the signal list only are removed.}
 }
 \value{
 A BSFDataSet object.
