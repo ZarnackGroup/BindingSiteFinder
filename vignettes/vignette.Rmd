@@ -294,8 +294,8 @@ In the present case most overlaps seemed to be cause by lncRNA annotations proba
 library(forcats)
 splitSites = split(bindingSites, bindingSites$geneOl)
 df = as(lapply(splitSites, function(x){subsetByOverlaps(gns,x)}), "GRangesList")
-df = df[2:4]
-df = lapply(1:3, function(x){data.frame(olClass = names(df[x]),
+df = df[2:length(df)]
+df = lapply(1:length(df), function(x){data.frame(olClass = names(df[x]),
                                         geneType = factor(df[[x]]$gene_type))})
 df = do.call(rbind,df)
 df = df %>% mutate(geneType = fct_lump_n(geneType, 4)) 
