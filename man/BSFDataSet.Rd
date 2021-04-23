@@ -5,9 +5,9 @@
 \alias{BSFDataSet}
 \title{BSFDataSet object and constructors}
 \usage{
-BSFDataSet(ranges, meta, forceEqualNames = TRUE)
+BSFDataSet(ranges, meta, forceEqualNames = TRUE, silent = FALSE)
 
-BSFDataSet(ranges, meta, forceEqualNames = TRUE)
+BSFDataSet(ranges, meta, forceEqualNames = TRUE, silent = FALSE)
 }
 \arguments{
 \item{ranges}{a \code{GenomicRanges} with the desired ranges to process. The
@@ -23,6 +23,8 @@ See the vignette for how such files can be obtained from sequenced reads.}
 \item{forceEqualNames}{to maintain the integrity of chromosome names (TRUE/ FALSE).
 The function ensures that chromosome names present in the GRanges are also all
 present in the signal list. Chromosome present in the signal list only are removed.}
+
+\item{silent}{suppress loading message (TRUE/ FALSE)}
 }
 \value{
 A BSFDataSet object.

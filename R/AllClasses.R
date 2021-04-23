@@ -57,6 +57,7 @@ setValidity("BSFDataSet", function(object) {
 #' @param forceEqualNames to maintain the integrity of chromosome names (TRUE/ FALSE).
 #' The function ensures that chromosome names present in the GRanges are also all
 #' present in the signal list. Chromosome present in the signal list only are removed.
+#' @param silent suppress loading message (TRUE/ FALSE)
 #'
 #' @return A BSFDataSet object.
 #'
@@ -87,7 +88,7 @@ setValidity("BSFDataSet", function(object) {
 #'
 #' @rdname BSFDataSet
 #' @export
-BSFDataSet <- function(ranges, meta, forceEqualNames = TRUE) {
+BSFDataSet <- function(ranges, meta, forceEqualNames = TRUE, silent = FALSE) {
     # check input ranges
     if (!all(c(any(strand(ranges) == "-"), any(strand(ranges) == "+")))) {
         warning("Input ranges are only on one strand.")
@@ -110,6 +111,10 @@ BSFDataSet <- function(ranges, meta, forceEqualNames = TRUE) {
         meta$condition = factor(meta$condition)
     }
 
+    # Loading message
+    if (!isTRUE(silent)){
+        message("Importing ranges.")
+    }
     # build colSignal by importing files as RLE
     signalPlus = sapply(meta$clPlus, function(x) {
         import(x, as = "Rle")

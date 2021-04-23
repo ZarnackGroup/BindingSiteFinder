@@ -26,7 +26,7 @@ test_that("BSFDataSet() can be build correctly", {
 
     # testing input meta data frame
     testMeta = meta
-    expect_silent(BSFDataSet(ranges = testCs, meta = testMeta))
+    expect_silent(BSFDataSet(ranges = testCs, meta = testMeta, silent = TRUE))
     colnames(testMeta)[1] = "a"
     expect_error(BSFDataSet(ranges = testCs, meta = testMeta))
     colnames(testMeta) = c("a", "b", "c")
