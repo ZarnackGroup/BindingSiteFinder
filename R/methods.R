@@ -34,22 +34,6 @@ setMethod("show",
               cat("Contained conditions: ",
                   levels(object@meta$condition),
                   "\n")
-              cat("Contained crosslinks on plus strand: ")
-              cat(format(
-                  sum(sapply(
-                      lapply(object@signal$signalPlus, sum), sum
-                  )),
-                  big.mark = ".",
-                  decimal.mark = ","
-              ) , "\n")
-              cat("Contained crosslinks on minus strand: ")
-              cat(format(
-                  sum(sapply(
-                      lapply(object@signal$signalMinus, sum), sum
-                  )),
-                  big.mark = ".",
-                  decimal.mark = ","
-              ) , "\n")
           })
 
 #' Accessor method for the ranges of the BSFDataSet object
