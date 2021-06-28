@@ -79,7 +79,7 @@ setValidity("BSFDataSet", function(object) {
 #' meta = data.frame(condition = factor(c("WT", "WT", "KD", "KD"), levels = c("KD", "WT")),
 #' clPlus = list.files(clipFiles, pattern = "plus.bw$", full.names = TRUE),
 #' clMinus = list.files(clipFiles, pattern = "minus.bw$", full.names = TRUE))
-#' bds = BSFDataSet(ranges = cs, meta = meta)
+#' bds = BSFDataSet(ranges = cs, meta = meta, forceEqualNames = T)
 #'
 #' # one experimental condition
 #' meta = data.frame(condition = c("WT", "WT", "WT", "WT"),
@@ -129,7 +129,7 @@ BSFDataSet <- function(ranges, meta, forceEqualNames = TRUE, silent = FALSE) {
 
     # check input signal
     if (isTRUE(forceEqualNames)) {
-        rngChrs = unique(seqnames(ranges))
+        rngChrs = as.character(unique(seqnames(ranges)))
         # fix input signal
         signal = lapply(signal, function(selStrand) {
             lapply(selStrand, function(chrList) {
@@ -137,9 +137,9 @@ BSFDataSet <- function(ranges, meta, forceEqualNames = TRUE, silent = FALSE) {
             })
         })
         # fix input ranges
-        signalNames = names(signal[[1]][[1]])
-        rngChrs = rngChrs[rngChrs %in% signalNames]
-        ranges = ranges[seqnames(ranges) %in% rngChrs]
+        sgnChrs = names(signal[[1]][[1]])
+        rngChrs = rngChrs[rngChrs %in% sgnChrs]
+        ranges = ranges[as.character(seqnames(ranges)) %in% rngChrs]
     }
     if (!isTRUE(forceEqualNames)) {
         rngChrs = unique(seqnames(ranges))
