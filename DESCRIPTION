@@ -11,13 +11,14 @@ Authors@R: c(
         email="kathi.zarnack@bmls.de",
         role = c("aut")))
 Maintainer: Mirko Brüggemann <mirko.brueggemann@mail.de>
-Description: Define equally sized binding sites from peak calling results and 
-    iCLIP crosslink events. 
-License: LGPL (>=3)
+Description: Precise knowledge on the binding sites of an RNA-binding protein (RBP)
+    is key to understand (post-) transcriptional regulatory processes. 
+    Here we present a workflow that describes how exact binding sites can be defined from iCLIP data.
+License: Artistic-2.0
 Encoding: UTF-8
 VignetteBuilder: knitr
 Imports: tidyr, matrixStats, stats, ggplot2, methods, rtracklayer, S4Vectors
-Depends: GenomicRanges, R (>= 4.0.0)
+Depends: GenomicRanges, R (>= 4.1)
 Suggests: testthat, BiocStyle, knitr, rmarkdown, dplyr, GenomicAlignments, ComplexHeatmap, GenomeInfoDb, forcats, scales
 RoxygenNote: 7.1.1
 Collate: 
