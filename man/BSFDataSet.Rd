@@ -21,8 +21,9 @@ format for example.
 See the vignette for how such files can be obtained from sequenced reads.}
 
 \item{forceEqualNames}{to maintain the integrity of chromosome names (TRUE/ FALSE).
-The function ensures that chromosome names present in the GRanges are also all
-present in the signal list. Chromosome present in the signal list only are removed.}
+The option ensures that chromosome names present in the GRanges are also all
+present in the signal list and vice versa. Chromosomes names present in only
+the signal list or the ranges are removed.}
 
 \item{silent}{suppress loading message (TRUE/ FALSE)}
 }

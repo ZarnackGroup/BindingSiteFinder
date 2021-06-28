@@ -55,8 +55,9 @@ setValidity("BSFDataSet", function(object) {
 #' format for example.
 #' See the vignette for how such files can be obtained from sequenced reads.
 #' @param forceEqualNames to maintain the integrity of chromosome names (TRUE/ FALSE).
-#' The function ensures that chromosome names present in the GRanges are also all
-#' present in the signal list. Chromosome present in the signal list only are removed.
+#' The option ensures that chromosome names present in the GRanges are also all
+#' present in the signal list and vice versa. Chromosomes names present in only
+#' the signal list or the ranges are removed.
 #' @param silent suppress loading message (TRUE/ FALSE)
 #'
 #' @return A BSFDataSet object.
@@ -91,13 +92,13 @@ setValidity("BSFDataSet", function(object) {
 BSFDataSet <- function(ranges, meta, forceEqualNames = TRUE, silent = FALSE) {
     # check input ranges
     if (!all(c(any(strand(ranges) == "-"), any(strand(ranges) == "+")))) {
-        warning("Input ranges are only on one strand.")
+        warning("Input ranges are only on one strand. ")
     }
     if (length(unique(width(ranges))) > 1) {
-        warning("Ranges are of differnt width.")
+        warning("Ranges are of differnt width. ")
     }
-    if (unique(width(ranges)) > 1) {
-        message("Input ranges are larger than 1 nt.")
+    if (any(width(ranges) > 1)) {
+        message("Input ranges are larger than 1 nt. ")
     }
     # check input metadata
     if(!all(c(any(colnames(meta) == "condition"),
@@ -107,13 +108,13 @@ BSFDataSet <- function(ranges, meta, forceEqualNames = TRUE, silent = FALSE) {
     }
 
     if (!is.factor(meta$condition)) {
-        message("Condition column is not factor, converting to factor")
+        message("Condition column is not factor, converting to factor. ")
         meta$condition = factor(meta$condition)
     }
 
     # Loading message
     if (!isTRUE(silent)){
-        message("Importing ranges.")
+        message("Importing ranges. ")
     }
     # build colSignal by importing files as RLE
     signalPlus = sapply(meta$clPlus, function(x) {
@@ -135,6 +136,10 @@ BSFDataSet <- function(ranges, meta, forceEqualNames = TRUE, silent = FALSE) {
                 chrList[names(chrList) %in% rngChrs]
             })
         })
+        # fix input ranges
+        signalNames = names(signal[[1]][[1]])
+        rngChrs = rngChrs[rngChrs %in% signalNames]
+        ranges = ranges[seqnames(ranges) %in% rngChrs]
     }
     if (!isTRUE(forceEqualNames)) {
         rngChrs = unique(seqnames(ranges))
@@ -142,7 +147,7 @@ BSFDataSet <- function(ranges, meta, forceEqualNames = TRUE, silent = FALSE) {
         # check signal
         if (!all(rngChrs %in% sgnChrs) & all(sgnChrs %in% rngChrs)) {
             warning("forceEqualNames is FALSE and chromosome names in the
-                    ranges and signal objects do not match.")
+                    ranges and signal objects do not match. ")
         }
     }
 
