@@ -24,6 +24,10 @@ test_that("Binding site merging works", {
                                   minCrosslinks = "2", minClSites = 1))
     expect_error(makeBindingSites(object = bds, bsSize = 3, minWidth = 2,
                                   minCrosslinks = 2, minClSites = "1"))
+    expect_error(makeBindingSites(object = bds, bsSize = 3, minWidth = 2,
+                                  minCrosslinks = 2, minClSites = 4))
+    expect_error(makeBindingSites(object = bds, bsSize = 3, minWidth = 2,
+                                  minCrosslinks = 20, minClSites = 1))
 
     # testing output
     bds1 <- makeBindingSites(object = bds, bsSize = 3, minWidth = 2,

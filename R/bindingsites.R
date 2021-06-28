@@ -111,6 +111,9 @@ makeBindingSites <- function(object,
     if (!is.numeric(minCrosslinks)) {
         stop("minCrosslinks must be of type numeric")
     }
+    if (minClSites > bsSize) {
+        stop("Number of forced crosslink sites is larger than desired binding site size. ")
+    }
 
     #---------------------------------------------------------------------------
     # subsetting options
@@ -143,31 +146,41 @@ makeBindingSites <- function(object,
         bsSize = bsSize,
         minWidth = minWidth
     )
-    stopifnot(length(rngS1) > 0)
+    if (length(rngS1) <= 0) {
+        stop("No ranges left after initial crosslink merging. ")
+    }
 
     rngS2 = .filterMinCrosslinks(rng = rngS1,
                                  sgn = sgnMerge,
                                  minCrosslinks = minCrosslinks)
-    stopifnot(length(rngS2) > 0)
+    if (length(rngS2) <= 0) {
+        stop("No ranges left after appying minimum crosslink events filter. ")
+    }
 
     rngS3 = .filterMinClSites(rng = rngS2,
                               rng0 = rngS0,
                               minClSites = minClSites)
-    stopifnot(length(rngS3) > 0)
+    if (length(rngS3) <= 0) {
+        stop("No ranges left after appying minimum crosslink sites filter. ")
+    }
 
     if (isTRUE(centerIsClSite)) {
         rngS4 = .filterCenterClSite(rng = rngS3, rng0 = rngS0)
     } else {
         rngS4 = rngS3
     }
-    stopifnot(length(rngS4) > 0)
+    if (length(rngS4) <= 0) {
+        stop("No ranges left after appying crosslink site has to be center of binding site filter. ")
+    }
 
     if (isTRUE(centerIsSummit)) {
         rngS5 = .filterCenterSummit(rng = rngS4, sgn = sgnMerge)
     } else {
         rngS5 = rngS4
     }
-    stopifnot(length(rngS5) > 0)
+    if (length(rngS5) <= 0) {
+        stop("No ranges left after appying binding site center has to be summit filter. ")
+    }
 
     # summarize number of ranges after each step
     reportDf = data.frame(
