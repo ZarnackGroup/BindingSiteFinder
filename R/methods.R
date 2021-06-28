@@ -31,11 +31,10 @@ setMethod("show",
               cat("----> Number of chromosomes: ",
                   length(levels(seqnames(object@ranges))), "\n")
               if(length(unique(width(object@ranges))) > 6) {
-                  cat("----> Ranges width: ", head(unique(width(object@ranges))), "...\n")
+                  cat("----> Ranges width: ", unique(width(object@ranges))[seq(1,6)], "...\n")
               } else {
                   cat("----> Ranges width: ", unique(width(object@ranges)), "\n")
               }
-
               cat("Contained conditions: ",
                   levels(object@meta$condition),
                   "\n")
