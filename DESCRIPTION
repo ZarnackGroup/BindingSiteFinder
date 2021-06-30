@@ -9,8 +9,8 @@ Authors@R: c(
         comment = c(ORCID = "0000-0002-1778-0248")),
     person("Kathi", "Zarnack",
         email="kathi.zarnack@bmls.de",
-        role = c("aut")))
-Maintainer: Mirko Brüggemann <mirko.brueggemann@mail.de>
+        role = c("aut"),
+        comment = c(ORCID = "0000-0003-3527-3378")))
 Description: Precise knowledge on the binding sites of an RNA-binding protein (RBP)
     is key to understand (post-) transcriptional regulatory processes. 
     Here we present a workflow that describes how exact binding sites can be defined from iCLIP data.
@@ -30,5 +30,3 @@ Collate:
     'helper.R'
     'PlotFunction.R'
 biocViews: Sequencing, GeneExpression, GeneRegulation, FunctionalGenomics, Coverage, DataImport
-
-
