@@ -79,13 +79,13 @@ setValidity("BSFDataSet", function(object) {
 #' meta = data.frame(condition = factor(c("WT", "WT", "KD", "KD"), levels = c("KD", "WT")),
 #' clPlus = list.files(clipFiles, pattern = "plus.bw$", full.names = TRUE),
 #' clMinus = list.files(clipFiles, pattern = "minus.bw$", full.names = TRUE))
-#' bds = BSFDataSet(ranges = cs, meta = meta, forceEqualNames = TRUE)
+#' bds = BSFDataSet(ranges = cs, meta = meta)
 #'
 #' # one experimental condition
 #' meta = data.frame(condition = c("WT", "WT", "WT", "WT"),
 #' clPlus = list.files(clipFiles, pattern = "plus.bw$", full.names = TRUE),
 #' clMinus = list.files(clipFiles, pattern = "minus.bw$", full.names = TRUE))
-#' bds = BSFDataSet(ranges = cs, meta = meta)
+#' bds = BSFDataSet(ranges = cs, meta = meta, forceEqualNames = TRUE)
 #'
 #' @rdname BSFDataSet
 #' @export
@@ -118,10 +118,10 @@ BSFDataSet <- function(ranges, meta, forceEqualNames = TRUE, silent = FALSE) {
     }
     # build colSignal by importing files as RLE
     signalPlus = sapply(meta$clPlus, function(x) {
-        import(x, as = "Rle")
+        rtracklayer::import(x, as = "Rle")
     })
     signalMinus = sapply(meta$clMinus, function(x) {
-        abs(import(x, as = "Rle"))
+        abs(rtracklayer::import(x, as = "Rle"))
     })
     names(signalPlus) = paste0(seq_len(nrow(meta)), "_", meta$condition)
     names(signalMinus) = paste0(seq_len(nrow(meta)), "_", meta$condition)
