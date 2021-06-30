@@ -525,3 +525,56 @@ reproducibiliyCutoffPlot <-
         }
         return(p)
     }
+
+
+
+#' Plot that shows the binding site support ratio
+#'
+#' Function that shows a ratio to determine how well a given binding site with
+#' is supported by the crosslink coverage of the data. Ratios are computed using
+#' the \code{\link{supportRatio}} function.
+#'
+#' The higher the ratio, the more does the given binding site width caputres
+#' the enrichment of crosslinks compared the the local surrounding. A ratio equal
+#' to 1 would mean no enrichemnt at all.
+#'
+#' @param object a BSFDataSet object
+#' @param bsWidths a numeric vector indicating the different binding site
+#' width to compute the ratio for
+#' @param bsFlank optional; a numeric vector of the same length as \code{bsWidth}
+#' used to specify the width of the flanking regions
+#' @param ... further arguments passed to \code{makeBindingSites}
+#'
+#' @return an object of class \code{ggplot2}
+#'
+#' @examples
+#' # load data
+#' csFile <- system.file("extdata", "PureCLIP_crosslink_sites_example.bed",
+#'  package="BindingSiteFinder")
+#' cs = rtracklayer::import(con = csFile, format = "BED")
+#' clipFiles <- system.file("extdata", package="BindingSiteFinder")
+#'
+#' # one experimental condition
+#' meta = data.frame(condition = c("WT", "WT", "WT", "WT"),
+#' clPlus = list.files(clipFiles, pattern = "plus.bw$", full.names = TRUE),
+#' clMinus = list.files(clipFiles, pattern = "minus.bw$", full.names = TRUE))
+#' bds = BSFDataSet(ranges = cs, meta = meta)
+#'
+#' supportRatioPlot(bds, bsWidths = c(3,7,9))
+#' supportRatioPlot(bds, bsWidths = c(3,7,9),
+#' minWidth = 1, minClSites = 1, minCrosslinks = 2)
+#'
+#' @export
+supportRatioPlot <- function(object, bsWidths, bsFlank = NA, ...){
+    df = supportRatio(object, bsWidths, bsFlank, ...)
+
+    p = ggplot(df, aes(x = bsWidths, y = supportRatio, group = 1)) +
+        geom_point() +
+        geom_line() +
+        labs(
+            title = "Binding site widths signal ratios",
+            x = "Binding site widths",
+            y = "Signal to flank ratio"
+        )
+    p
+}

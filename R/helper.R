@@ -73,7 +73,6 @@
         return(qSel)
     }
 
-
 .subsetByChr <- function(object, chr) {
     # subset ranges
     rng = getRanges(object)
@@ -90,4 +89,30 @@
     objectNew = setRanges(object, rngSub)
     objectNew = setSignal(objectNew, sgnSub)
     return(objectNew)
+}
+
+#' @importFrom stats median
+.computeSupportRatio <- function(object, flankSize){
+    stopifnot(is(object, "BSFDataSet"))
+    if(! length(flankSize) == 1) {
+        stop("flankSize must be a single integer value. ")
+    }
+    if (! is.numeric(flankSize)) {
+        stop("flankSize needs to be numeric. ")
+    }
+    if (round(flankSize) != flankSize) {
+        stop("flankSize is not an integer. ")
+    }
+
+    c0 = rowSums(coverageOverRanges(object, merge = TRUE,
+                                    returnType = "data.frame"))
+    objMod = object
+    objMod = setRanges(objMod, getRanges(object) + flankSize)
+    c1 = rowSums(coverageOverRanges(objMod, merge = TRUE,
+                                    returnType = "data.frame"))
+    # use 0.1 as pseudocount for the score
+    score = c0 / (((c1 - c0) + 0.1) / 2)
+    # report median over all binding sites
+    score = median(score)
+    return(score)
 }

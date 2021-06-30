@@ -342,3 +342,87 @@ annotateWithScore <- function(object,
     newObject = setRanges(object, rng)
     return(newObject)
 }
+
+
+
+
+#' Support ratio function for BSFDataSet objects
+#'
+#' Functions that computes a ratio to determine how well a given binding site with
+#' is supported by the crosslink coverage of the data. For a given \code{BSFDataSet}
+#' object binding sites are computed for each width indicated in the \code{bsWidths}
+#' vector (using the \code{\link{coverageOverRanges}} function). These coverages
+#' are compared to the coverage of regions flanking the binding sites. If not
+#' indicated in \code{bsFlank} these regions are of the same width as the binding
+#' sites.
+#'
+#' Testing the width of 3nt for example, would result in a coverage within all
+#' 3nt wide binding sites (c1) and a coverage computed on the adjacent 3nt
+#' flanking the binding sites up- and downstream (f1, f2). Based on these numbers
+#' the ratio is computed by: c1/(1/2(f1+f2)).
+#'
+#' The median over all ratios is reported as representative value.
+#'
+#' @param object a BSFDataSet object
+#' @param bsWidths a numeric vector indicating the different binding site
+#' width to compute the ratio for
+#' @param bsFlank optional; a numeric vector of the same length as \code{bsWidth}
+#' used to specify the width of the flanking regions
+#' @param ... further arguments passed to \code{makeBindingSites}
+#'
+#' @return an object of class \code{data.frame}
+#'
+#' @examples
+#' # load data
+#' csFile <- system.file("extdata", "PureCLIP_crosslink_sites_example.bed",
+#'  package="BindingSiteFinder")
+#' cs = rtracklayer::import(con = csFile, format = "BED")
+#' clipFiles <- system.file("extdata", package="BindingSiteFinder")
+#'
+#' # one experimental condition
+#' meta = data.frame(condition = c("WT", "WT", "WT", "WT"),
+#' clPlus = list.files(clipFiles, pattern = "plus.bw$", full.names = TRUE),
+#' clMinus = list.files(clipFiles, pattern = "minus.bw$", full.names = TRUE))
+#' bds = BSFDataSet(ranges = cs, meta = meta)
+#'
+#' supportRatio(bds, bsWidths = c(3,7))
+#'
+#' @export
+supportRatio <- function(object, bsWidths, bsFlank = NA, ...) {
+    stopifnot(is(object, "BSFDataSet"))
+    if (!any(is.numeric(bsWidths))) {
+        stop("bsWidth needs to be numeric. ")
+    }
+    if (any(round(bsWidths) != bsWidths)) {
+        stop("bsWidth is not an integer. ")
+    }
+    # check bsFank vector if set
+    if (!any(is.na(bsFlank))) {
+        if (!any(is.numeric(bsFlank))) {
+            stop("bsFlank needs to be numeric. ")
+        }
+        if (any(round(bsFlank) != bsFlank)) {
+            stop("bsFlank is not an integer. ")
+        }
+        if (length(bsWidths) != length(bsFlank)) {
+            stop("bsWidths and bsFlank needs to be vectors of the same length. ")
+        }
+    }
+    # use same width for flanking regions as the binding sites are
+    if (any(is.na(bsFlank))) {
+        bsFlank = bsWidths
+    }
+    # calculate ratio
+    objList = lapply(bsWidths, function(x){
+        makeBindingSites(object = object, bsSize = x, ...)
+    })
+    objScore = lapply(seq_along(bsWidths), function(x){
+        .computeSupportRatio(object = objList[[x]], flankSize = bsFlank[x])
+    })
+    # return results
+    resDf = data.frame(bsWidths = factor(bsWidths),
+                       supportRatio = unlist(objScore))
+    return(resDf)
+}
+
+
