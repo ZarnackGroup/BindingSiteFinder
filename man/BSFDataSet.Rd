@@ -52,7 +52,7 @@ clipFiles <- system.file("extdata", package="BindingSiteFinder")
 meta = data.frame(condition = factor(c("WT", "WT", "KD", "KD"), levels = c("KD", "WT")),
 clPlus = list.files(clipFiles, pattern = "plus.bw$", full.names = TRUE),
 clMinus = list.files(clipFiles, pattern = "minus.bw$", full.names = TRUE))
-bds = BSFDataSet(ranges = cs, meta = meta)
+bds = BSFDataSet(ranges = cs, meta = meta, forceEqualNames = TRUE)
 
 # one experimental condition
 meta = data.frame(condition = c("WT", "WT", "WT", "WT"),
