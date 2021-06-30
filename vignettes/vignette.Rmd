@@ -12,9 +12,9 @@ package: BindingSiteFinder
 abstract: |
     Precise knowledge on the binding sites of an RNA-binding protein (RBP) is key to understand (post-) transcriptional regulatory processes. Here we present a workflow that describes how exact binding sites can be defined from iCLIP data.
 vignette: |
-  %\VignetteIndexEntry{Definition of binding sites from iCLIP signal}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
+    %\VignetteIndexEntry{Definition of binding sites from iCLIP signal}
+    %\VignetteEngine{knitr::rmarkdown}
+    %\VignetteEncoding{UTF-8}
 bibliography: references.bib
 ---
 
@@ -123,16 +123,16 @@ Choosing how wide the final binding sites should be is not an easy choice and de
 
 ```{r}
 bds1 <- makeBindingSites(object = bds, bsSize = 3, minWidth = 2,
-                              minCrosslinks = 2, minClSites = 1)
+                         minCrosslinks = 2, minClSites = 1)
 
 bds2 <- makeBindingSites(object = bds, bsSize = 9, minWidth = 2,
-                              minCrosslinks = 2, minClSites = 1)
+                         minCrosslinks = 2, minClSites = 1)
 
 bds3 <- makeBindingSites(object = bds, bsSize = 19, minWidth = 2,
-                              minCrosslinks = 2, minClSites = 1)
+                         minCrosslinks = 2, minClSites = 1)
 
 bds4 <- makeBindingSites(object = bds, bsSize = 29, minWidth = 2,
-                              minCrosslinks = 2, minClSites = 1)
+                         minCrosslinks = 2, minClSites = 1)
 l = list(`1. bsSize = 3` = bds1, `2. bsSize = 9` = bds2, 
          `3. bsSize = 19` = bds3, `4. bsSize = 29` = bds4)
 ```
@@ -273,16 +273,16 @@ mcols(bindingSites)$geneOl = factor(countOverlaps(bindingSites, gns))
 df = as.data.frame(mcols(bindingSites))
 # 
 ggplot(df, aes(x = geneOl)) +
-  geom_bar() +
-  scale_y_log10() +
-  geom_text(stat='count', aes(label=..count..), vjust=-0.3) +
-  labs(
-    title = "Overlapping gene annotation problem",
-    caption = "Bar plot that show how many times a binding site
+    geom_bar() +
+    scale_y_log10() +
+    geom_text(stat='count', aes(label=..count..), vjust=-0.3) +
+    labs(
+        title = "Overlapping gene annotation problem",
+        caption = "Bar plot that show how many times a binding site
     overlaps with an annotation of a different gene.",
     x = "Number of overlaps", 
     y = "Count (log10)"
-  ) + theme_bw()
+    ) + theme_bw()
 ```
 
 In the present case most overlaps seemed to be cause by lncRNA annotations probably residing within introns of protein coding genes. Since we are interested in the binding of our RBP on protein coding genes, we simply remove all binding sites on spurious annotations[^6].
@@ -298,22 +298,22 @@ splitSites = split(bindingSites, bindingSites$geneOl)
 df = as(lapply(splitSites, function(x){subsetByOverlaps(gns,x)}), "GRangesList")
 df = df[2:length(df)]
 df = lapply(1:length(df), function(x){data.frame(olClass = names(df[x]),
-                                        geneType = factor(df[[x]]$gene_type))})
+                                                 geneType = factor(df[[x]]$gene_type))})
 df = do.call(rbind,df)
 df = df %>% mutate(geneType = fct_lump_n(geneType, 4)) 
 # 
 ggplot(df, aes(x = olClass, fill = geneType)) +
-  geom_bar(position = "fill") + 
-  scale_fill_brewer(palette = "Set2") +
-  scale_y_continuous(labels = scales::percent) +
-  labs(
-    title = "Overlapping gene annotation causes",
-    caption = "Percentage bar plot that show the fraction
+    geom_bar(position = "fill") + 
+    scale_fill_brewer(palette = "Set2") +
+    scale_y_continuous(labels = scales::percent) +
+    labs(
+        title = "Overlapping gene annotation causes",
+        caption = "Percentage bar plot that show the fraction
     for each gene type and overlap number.",
     fill = "Gene type",
     x = "Number of overlaps", 
     y = "Percent"
-  ) + theme_bw()
+    ) + theme_bw()
 ```
 
 ```{r}
@@ -359,16 +359,16 @@ countDf = data.frame(CDS = cdseq, Intron = intrns, UTR3 = utrs3, UTR5 = utrs5)
 df = data.frame(olClass = apply(countDf,1,function(x) length(x[x == 0]))) 
 df = data.frame(type = rev(names(table(df))), count = as.vector(table(df))) 
 ggplot(df, aes(x = type, y = count)) +
-  geom_col() +
-  scale_y_log10() +
-  geom_text(aes(label = count), vjust=-0.3) +
-  labs(
-    title = "Overlapping transcript annotation crashes",
-    caption = "Bar plot that show how many times a binding site overlaps with
+    geom_col() +
+    scale_y_log10() +
+    geom_text(aes(label = count), vjust=-0.3) +
+    labs(
+        title = "Overlapping transcript annotation crashes",
+        caption = "Bar plot that show how many times a binding site overlaps with
     an annotation of a different transcript part",
     x = "Number of overlaps", 
     y = "Count (log10)"
-  ) + theme_bw()
+    ) + theme_bw()
 ```
 
 Before assigning binding sites to distinct transcript regions, it is worth to look at the unresolved profile[^8]. Here we observe a predominance for binding sites within intronic regions. 
@@ -381,25 +381,25 @@ Before assigning binding sites to distinct transcript regions, it is worth to lo
 plotCountDf = countDf
 plotCountDf[plotCountDf > 1] = 1
 df = plotCountDf %>% 
-  pivot_longer(everything()) %>% 
-  group_by(name) %>% 
-  summarize(count = sum(value), .groups = "drop") %>%
-  mutate(name = as.factor(name)) %>%
-  mutate(name = fct_relevel(name, "Intron", "UTR3", "CDS", "UTR5"))
+    pivot_longer(everything()) %>% 
+    group_by(name) %>% 
+    summarize(count = sum(value), .groups = "drop") %>%
+    mutate(name = as.factor(name)) %>%
+    mutate(name = fct_relevel(name, "Intron", "UTR3", "CDS", "UTR5"))
 
 ggplot(df, aes(x = name, y = count)) + 
-  geom_col() +
-  scale_y_log10() +
-  xlab("Number of overlaps") +
-  ylab("Count") +
-  geom_text(aes(label = count), vjust=-0.3) +
-  labs(
-    title = "Binding sites per genomic region",
-    caption = "Bar plot that shows the number of
+    geom_col() +
+    scale_y_log10() +
+    xlab("Number of overlaps") +
+    ylab("Count") +
+    geom_text(aes(label = count), vjust=-0.3) +
+    labs(
+        title = "Binding sites per genomic region",
+        caption = "Bar plot that shows the number of
     binding sites per genomic region.",
     x = "Genomic region", 
     y = "Count (log10)"
-  ) + theme_bw()
+    ) + theme_bw()
 ```
 
 The complexity of the problem can also be showcased using an UpSet plot representation. From this plot it becomes very clear that most binding sites reside within introns and that the most annotation conflicts are between introns and 3'UTRs. 
@@ -420,8 +420,8 @@ Resolving these types of conflicts is not straight forward and always involves s
 rule = c("Intron", "UTR3", "CDS", "UTR5")
 # Prepare dataframe for counting (reorder by rule, add intergenic counts)
 countDf = countDf[, rule] %>% 
-  as.matrix() %>%
-  cbind.data.frame(., Intergenic = ifelse(rowSums(countDf) == 0, 1, 0) ) 
+    as.matrix() %>%
+    cbind.data.frame(., Intergenic = ifelse(rowSums(countDf) == 0, 1, 0) ) 
 # Apply majority vote scheme
 regionName = colnames(countDf)
 region = apply(countDf, 1, function(x){regionName[which.max(x)]})
@@ -429,16 +429,16 @@ mcols(bindingSites)$region = region
 df = data.frame(Region = region)
 # 
 ggplot(df, aes(x = fct_infreq(Region))) +
-  geom_bar() +
-  scale_y_log10() +
-  geom_text(stat='count', aes(label=..count..), vjust=-0.3) +
-  labs(
-    title = "Binding sites per genomic region",
-    caption = "Bar plot that shows the number of binding sites per
+    geom_bar() +
+    scale_y_log10() +
+    geom_text(stat='count', aes(label=..count..), vjust=-0.3) +
+    labs(
+        title = "Binding sites per genomic region",
+        caption = "Bar plot that shows the number of binding sites per
     genomic region.",
     x = "Genomic region", 
     y = "Count (log10)"
-  ) + theme_bw()
+    ) + theme_bw()
 ```
 
 For a splicing regulator protein such as U2AF65 binding to introns is expected. However, due to the sheer size difference in introns one might also expect to observe more binding in introns just by chance. For that reason one could divide the number of binding sites by the summed up region length to compute a relative enrichment score[^10].
@@ -448,21 +448,21 @@ For a splicing regulator protein such as U2AF65 binding to introns is expected. 
 ```{r}
 # Sum up the length of each transcript region with overlapping binding sites.
 cdsLen = regions$CDS %>% 
-  subsetByOverlaps(., bindingSites) %>% 
-  width() %>% 
-  sum()
+    subsetByOverlaps(., bindingSites) %>% 
+    width() %>% 
+    sum()
 intrnsLen = regions$Intron %>% 
-  subsetByOverlaps(., bindingSites) %>%
-  width() %>% 
-  sum()
+    subsetByOverlaps(., bindingSites) %>%
+    width() %>% 
+    sum()
 utrs3Len = regions$UTR3 %>% 
-  subsetByOverlaps(., bindingSites) %>% 
-  width() %>% 
-  sum()
+    subsetByOverlaps(., bindingSites) %>% 
+    width() %>% 
+    sum()
 utrs5Len = regions$UTR5 %>% 
-  subsetByOverlaps(., bindingSites) %>% 
-  width() %>%
-  sum()
+    subsetByOverlaps(., bindingSites) %>% 
+    width() %>%
+    sum()
 lenSum = c(cdsLen, intrnsLen, utrs3Len, utrs5Len)
 ```
 
@@ -475,14 +475,14 @@ df$regionLength = lenSum
 df$normalizedCount = df$count / df$regionLength
 # 
 ggplot(df, aes(x = region, y = normalizedCount)) +
-  geom_col(width = 0.5) +
-  labs(
-    title = "Relative enrichment per genomic region ",
-    caption = "Bar plot of region count, divided by the summed length.",
-    x = "Genomic region", 
-    y = "Relative enrichment",
-    fill = "Genomic region"
-  ) + theme_bw()
+    geom_col(width = 0.5) +
+    labs(
+        title = "Relative enrichment per genomic region ",
+        caption = "Bar plot of region count, divided by the summed length.",
+        x = "Genomic region", 
+        y = "Relative enrichment",
+        fill = "Genomic region"
+    ) + theme_bw()
 ```
 
 # Session info
