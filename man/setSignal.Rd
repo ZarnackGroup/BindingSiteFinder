@@ -33,7 +33,7 @@ load(list.files(files, pattern = ".rda$", full.names = TRUE))
 sgn = getSignal(bds)
 sgn = lapply(sgn, function(selStrand){
    lapply(selStrand, function(chrList){
-       chrList[names(chrList) == "chr1"]
+       chrList[names(chrList) == "chr22"]
    })
 })
 bdsNew = setSignal(bds, sgn)

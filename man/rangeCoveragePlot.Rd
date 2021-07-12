@@ -41,9 +41,9 @@ rangeCoveragePlot(bds, width = 20)
 
 # plotting multiple objects
 bds1 <- makeBindingSites(object = bds, bsSize = 3, minWidth = 2,
-minCrosslinks = 2, minClSites = 1, sub.chr = "chr1")
+minCrosslinks = 2, minClSites = 1, sub.chr = "chr22")
 bds2 <- makeBindingSites(object = bds, bsSize = 9, minWidth = 2,
-minCrosslinks = 2, minClSites = 1, sub.chr = "chr1")
+minCrosslinks = 2, minClSites = 1, sub.chr = "chr22")
 l = list(`1. bsSize = 3` = bds1, `2. bsSize = 9` = bds2)
 rangeCoveragePlot(l, width = 20)
 
