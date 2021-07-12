@@ -261,17 +261,25 @@ coverageOverRanges <- function(object,
 #' @importFrom S4Vectors queryHits subjectHits
 #'
 #' @examples
-#' # load data
-#' files <- system.file("extdata", package="BindingSiteFinder")
-#' load(list.files(files, pattern = ".rda$", full.names = TRUE))
+#' if (.Platform$OS.type != "windows") {
+#'     # load data
+#'     csFile <- system.file("extdata", "PureCLIP_crosslink_sites_example.bed",
+#'                         package="BindingSiteFinder")
+#'     cs = rtracklayer::import(con = csFile, format = "BED")
+#'     clipFiles <- system.file("extdata", package="BindingSiteFinder")
+#'     # two experimental conditions
+#'     meta = data.frame(condition = factor(c("WT", "WT", "KD", "KD"), levels = c("KD", "WT")),
+#'     clPlus = list.files(clipFiles, pattern = "plus.bw$", full.names = TRUE),
+#'     clMinus = list.files(clipFiles, pattern = "minus.bw$", full.names = TRUE))
+#'     bds = BSFDataSet(ranges = cs, meta = meta)
 #'
-#' # merge binding sites
-#' bds <- makeBindingSites(object = bds, bsSize = 9, minWidth = 2,
-#' minCrosslinks = 2, minClSites = 1)
+#'     # merge binding sites
+#'     bds <- makeBindingSites(object = bds, bsSize = 9, minWidth = 2,
+#'     minCrosslinks = 2, minClSites = 1)
 #'
-#' # annotate with original pureCLIP score
-#' bdsRe = annotateWithScore(bds, cs)
-#'
+#'     # annotate with original pureCLIP score
+#'     bdsRe = annotateWithScore(bds, cs)
+#' }
 #' @export
 annotateWithScore <- function(object,
                               scoreRanges) {
