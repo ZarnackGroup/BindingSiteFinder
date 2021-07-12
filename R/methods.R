@@ -60,16 +60,8 @@ setMethod("show",
 #' @examples
 #'
 #' # load data
-#' csFile <- system.file("extdata", "PureCLIP_crosslink_sites_example.bed",
-#'  package="BindingSiteFinder")
-#' cs = rtracklayer::import(con = csFile, format = "BED")
-#' clipFiles <- system.file("extdata", package="BindingSiteFinder")
-#'
-#' # two experimental conditions
-#' meta = data.frame(condition = factor(c("WT", "WT", "KD", "KD"), levels = c("KD", "WT")),
-#' clPlus = list.files(clipFiles, pattern = "plus.bw$", full.names = TRUE),
-#' clMinus = list.files(clipFiles, pattern = "minus.bw$", full.names = TRUE))
-#' bds = BSFDataSet(ranges = cs, meta = meta)
+#' files <- system.file("extdata", package="BindingSiteFinder")
+#' load(list.files(files, pattern = ".rda$", full.names = TRUE))
 #'
 #' getRanges(bds)
 #'
@@ -102,16 +94,8 @@ setMethod(
 #' @examples
 #'
 #' # load data
-#' csFile <- system.file("extdata", "PureCLIP_crosslink_sites_example.bed",
-#'  package="BindingSiteFinder")
-#' cs = rtracklayer::import(con = csFile, format = "BED")
-#' clipFiles <- system.file("extdata", package="BindingSiteFinder")
-#'
-#' # two experimental conditions
-#' meta = data.frame(condition = factor(c("WT", "WT", "KD", "KD"), levels = c("KD", "WT")),
-#' clPlus = list.files(clipFiles, pattern = "plus.bw$", full.names = TRUE),
-#' clMinus = list.files(clipFiles, pattern = "minus.bw$", full.names = TRUE))
-#' bds = BSFDataSet(ranges = cs, meta = meta)
+#' files <- system.file("extdata", package="BindingSiteFinder")
+#' load(list.files(files, pattern = ".rda$", full.names = TRUE))
 #'
 #' rng = getRanges(bds)
 #' rng = rng + 10
@@ -149,16 +133,8 @@ setMethod(
 #' @examples
 #'
 #' # load data
-#' csFile <- system.file("extdata", "PureCLIP_crosslink_sites_example.bed",
-#'  package="BindingSiteFinder")
-#' cs = rtracklayer::import(con = csFile, format = "BED")
-#' clipFiles <- system.file("extdata", package="BindingSiteFinder")
-#'
-#' # two experimental conditions
-#' meta = data.frame(condition = factor(c("WT", "WT", "KD", "KD"), levels = c("KD", "WT")),
-#' clPlus = list.files(clipFiles, pattern = "plus.bw$", full.names = TRUE),
-#' clMinus = list.files(clipFiles, pattern = "minus.bw$", full.names = TRUE))
-#' bds = BSFDataSet(ranges = cs, meta = meta)
+#' files <- system.file("extdata", package="BindingSiteFinder")
+#' load(list.files(files, pattern = ".rda$", full.names = TRUE))
 #'
 #' getMeta(bds)
 #'
@@ -193,16 +169,8 @@ setMethod(
 #' @examples
 #'
 #' # load data
-#' csFile <- system.file("extdata", "PureCLIP_crosslink_sites_example.bed",
-#'  package="BindingSiteFinder")
-#' cs = rtracklayer::import(con = csFile, format = "BED")
-#' clipFiles <- system.file("extdata", package="BindingSiteFinder")
-#'
-#' # two experimental conditions
-#' meta = data.frame(condition = factor(c("WT", "WT", "KD", "KD"), levels = c("KD", "WT")),
-#' clPlus = list.files(clipFiles, pattern = "plus.bw$", full.names = TRUE),
-#' clMinus = list.files(clipFiles, pattern = "minus.bw$", full.names = TRUE))
-#' bds = BSFDataSet(ranges = cs, meta = meta)
+#' files <- system.file("extdata", package="BindingSiteFinder")
+#' load(list.files(files, pattern = ".rda$", full.names = TRUE))
 #'
 #' getSignal(bds)
 #'
@@ -237,16 +205,8 @@ setMethod(
 #' @examples
 #'
 #' # load data
-#' csFile <- system.file("extdata", "PureCLIP_crosslink_sites_example.bed",
-#'  package="BindingSiteFinder")
-#' cs = rtracklayer::import(con = csFile, format = "BED")
-#' clipFiles <- system.file("extdata", package="BindingSiteFinder")
-#'
-#' # two experimental conditions
-#' meta = data.frame(condition = factor(c("WT", "WT", "KD", "KD"), levels = c("KD", "WT")),
-#' clPlus = list.files(clipFiles, pattern = "plus.bw$", full.names = TRUE),
-#' clMinus = list.files(clipFiles, pattern = "minus.bw$", full.names = TRUE))
-#' bds = BSFDataSet(ranges = cs, meta = meta)
+#' files <- system.file("extdata", package="BindingSiteFinder")
+#' load(list.files(files, pattern = ".rda$", full.names = TRUE))
 #'
 #' sgn = getSignal(bds)
 #' sgn = lapply(sgn, function(selStrand){
@@ -288,16 +248,8 @@ setMethod(
 #' @examples
 #'
 #' # load data
-#' csFile <- system.file("extdata", "PureCLIP_crosslink_sites_example.bed",
-#'  package="BindingSiteFinder")
-#' cs = rtracklayer::import(con = csFile, format = "BED")
-#' clipFiles <- system.file("extdata", package="BindingSiteFinder")
-#'
-#' # two experimental conditions
-#' meta = data.frame(condition = factor(c("WT", "WT", "KD", "KD"), levels = c("KD", "WT")),
-#' clPlus = list.files(clipFiles, pattern = "plus.bw$", full.names = TRUE),
-#' clMinus = list.files(clipFiles, pattern = "minus.bw$", full.names = TRUE))
-#' bds = BSFDataSet(ranges = cs, meta = meta)
+#' files <- system.file("extdata", package="BindingSiteFinder")
+#' load(list.files(files, pattern = ".rda$", full.names = TRUE))
 #'
 #' bds <- makeBindingSites(object = bds, bsSize = 9, minWidth = 2,
 #' minCrosslinks = 2, minClSites = 1)
@@ -343,16 +295,8 @@ setMethod(
 #' @examples
 #'
 #' # load data
-#' csFile <- system.file("extdata", "PureCLIP_crosslink_sites_example.bed",
-#'  package="BindingSiteFinder")
-#' cs = rtracklayer::import(con = csFile, format = "BED")
-#' clipFiles <- system.file("extdata", package="BindingSiteFinder")
-#'
-#' # two experimental conditions
-#' meta = data.frame(condition = factor(c("WT", "WT", "KD", "KD"), levels = c("KD", "WT")),
-#' clPlus = list.files(clipFiles, pattern = "plus.bw$", full.names = TRUE),
-#' clMinus = list.files(clipFiles, pattern = "minus.bw$", full.names = TRUE))
-#' bds = BSFDataSet(ranges = cs, meta = meta)
+#' files <- system.file("extdata", package="BindingSiteFinder")
+#' load(list.files(files, pattern = ".rda$", full.names = TRUE))
 #'
 #' df = data.frame(processingStep = c(1,2),
 #' parameter = c(3,4))

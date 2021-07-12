@@ -70,6 +70,7 @@ setValidity("BSFDataSet", function(object) {
 #' @examples
 #'
 #' # load data
+#' if (.Platform$OS.type != "windows") {
 #' csFile <- system.file("extdata", "PureCLIP_crosslink_sites_example.bed",
 #'  package="BindingSiteFinder")
 #' cs = rtracklayer::import(con = csFile, format = "BED")
@@ -86,6 +87,7 @@ setValidity("BSFDataSet", function(object) {
 #' clPlus = list.files(clipFiles, pattern = "plus.bw$", full.names = TRUE),
 #' clMinus = list.files(clipFiles, pattern = "minus.bw$", full.names = TRUE))
 #' bds = BSFDataSet(ranges = cs, meta = meta, forceEqualNames = TRUE)
+#' }
 #'
 #' @rdname BSFDataSet
 #' @export

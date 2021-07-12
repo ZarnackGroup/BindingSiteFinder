@@ -1,17 +1,7 @@
 test_that("Coverage function works", {
-    # load data from which the BSFDataSet is constructed
-    csFile <-
-        system.file("extdata",
-                    "PureCLIP_crosslink_sites_example.bed",
-                    package = "BindingSiteFinder")
-    cs = rtracklayer::import(con = csFile, format = "BED")
-    clipFiles <- system.file("extdata", package = "BindingSiteFinder")
-    meta = data.frame(
-        condition = factor(c("WT", "WT", "KD", "KD"), levels = c("KD", "WT")),
-        clPlus = list.files(clipFiles, pattern = "plus.bw$", full.names = TRUE),
-        clMinus = list.files(clipFiles, pattern = "minus.bw$", full.names = TRUE)
-    )
-    bds = expect_warning(BSFDataSet(ranges = cs, meta = meta))
+    # load data
+    files <- system.file("extdata", package="BindingSiteFinder")
+    load(list.files(files, pattern = ".rda$", full.names = TRUE))
 
     testRange = getRanges(bds)
     testMeta = getMeta(bds)

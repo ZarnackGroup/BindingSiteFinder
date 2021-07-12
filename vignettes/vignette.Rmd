@@ -147,7 +147,9 @@ l = list(`1. bsSize = 3` = bds1, `2. bsSize = 9` = bds2,
          `3. bsSize = 19` = bds3, `4. bsSize = 29` = bds4)
 ```
 
-The effect of the binding site size choice can be visualized by looking at the total iCLIP coverage. Here each plot is centered around the binding site`s midpoint and the computed width is indicated by the gray frame. In our example size = 3 appears too small, since not all of the relevant peak signal seems to be captured. On the contrary size = 29 appears extremely large. Here we decided for size = 9 because it seems to capture the central coverage peak best.
+The effect of the binding site size choice can be visualized by looking at the total iCLIP coverage. Here each plot is centered around the binding site`s midpoint and the computed width is indicated by the gray frame. In our example size = 3 appears too small, since not all of the relevant peak signal seems to be captured. On the contrary size = 29 appears extremely large. Here we decided for size = 9 because it seems to capture the central coverage peak best[^3].
+
+[^3]: Note that given the little difference between 7nt and 9nt both options seem to be reasonable 
 
 ```{r}
 rangeCoveragePlot(l, width = 20) 
@@ -190,18 +192,18 @@ rangeCoveragePlot(l, width = 20)
 
 ## Choosing a replicate specific cutoff
 
-Since the initial PureCLIP run was based on the merged summary of all four replicates, an additional reproducibility filter must be employed. Based on the merged binding sites from the previous step we can now ask which of these sites are reproducible/ supported by the individual replicates. To do this we first have do decide on a replicates specific threshold. In the present case we decided for the 5% quantile for both conditions[^3].
+Since the initial PureCLIP run was based on the merged summary of all four replicates, an additional reproducibility filter must be employed. Based on the merged binding sites from the previous step we can now ask which of these sites are reproducible/ supported by the individual replicates. To do this we first have do decide on a replicates specific threshold. In the present case we decided for the 5% quantile for both conditions[^4].
 
-[^3]: A lower boundary of 1 nucleotide is set as default minimum support.
+[^4]: A lower boundary of 1 nucleotide is set as default minimum support.
 
 ```{r}
 reproducibiliyCutoffPlot(bds1, max.range = 20, cutoff = c(0.05))
 reproducibiliyCutoffPlot(bds1, max.range = 20, cutoff = c(0.2))
 ```
 
-If replicates from multiple different conditions are used in the binding site definition, also condition specific thresholds can be applied. For instance the KD condition might be more error prone than the WT, therefore we define a slightly more stringent threshold[^4] to account for that fact.
+If replicates from multiple different conditions are used in the binding site definition, also condition specific thresholds can be applied. For instance the KD condition might be more error prone than the WT, therefore we define a slightly more stringent threshold[^5] to account for that fact.
 
-[^4]: Note that the order of how multiple thresholds are applied is defined based on the order of the factor levels of *condition*.
+[^5]: Note that the order of how multiple thresholds are applied is defined based on the order of the factor levels of *condition*.
 
 ```{r}
 reproducibiliyCutoffPlot(bds1, max.range = 20, cutoff = c(0.05, 0.1))
@@ -251,9 +253,9 @@ After the definition of binding sites one is usually interested in the binding p
 
 ## Target gene profile
 
-As gene annotation any desired source can be used, as long as it can be converted into a TxDb object. In the present example we use gencode gene annotations (hg38) from chromosome 22 imported from GFF3 format. We extract the ranges from the TxDb object and match them with additional information from the GFF3 file[^5].
+As gene annotation any desired source can be used, as long as it can be converted into a TxDb object. In the present example we use gencode gene annotations (hg38) from chromosome 22 imported from GFF3 format. We extract the ranges from the TxDb object and match them with additional information from the GFF3 file[^6].
 
-[^5]: Note that we prepared this file beforehand and only load the final object (see /inst/scripts/PrepareExampleData.R) 
+[^6]: Note that we prepared this file beforehand and only load the final object (see /inst/scripts/PrepareExampleData.R) 
 
 ```{r, eval=FALSE}
 library(GenomicFeatures)
@@ -295,9 +297,9 @@ ggplot(df, aes(x = geneOl)) +
     ) + theme_bw()
 ```
 
-In the present case most overlaps seemed to be cause by lncRNA annotations probably residing within introns of protein coding genes. Since we are interested in the binding of our RBP on protein coding genes, we simply remove all binding sites on spurious annotations[^6].
+In the present case most overlaps seemed to be cause by lncRNA annotations probably residing within introns of protein coding genes. Since we are interested in the binding of our RBP on protein coding genes, we simply remove all binding sites on spurious annotations[^7].
 
-[^6] Note: This is a simplified scheme and might be adapted for more complex research questions.
+[^7] Note: This is a simplified scheme and might be adapted for more complex research questions.
 
 ```{r}
 # show which gene types cause the most annoation overlaps. Split binding sites
@@ -337,9 +339,9 @@ targetGenes = subset(targetGenes, gene_type == "protein_coding")
 
 ## Transcript level profile
 
-Now that we know our RBP targets mainly protein coding genes, we will have a closer look at positioning within transcript regions of protein coding genes. Again we use a TxDB compiled from gencode annotations to extract the relevant genomic regions[^7].
+Now that we know our RBP targets mainly protein coding genes, we will have a closer look at positioning within transcript regions of protein coding genes. Again we use a TxDB compiled from gencode annotations to extract the relevant genomic regions[^8].
 
-[^7]: Note that we prepared this file beforehand and only load the final object (see /inst/scripts/PrepareExampleData.R) 
+[^8]: Note that we prepared this file beforehand and only load the final object (see /inst/scripts/PrepareExampleData.R) 
 
 ```{r, eval=FALSE}
 # Count the overlaps of each binding site fore each part of the transcript. 
@@ -381,9 +383,9 @@ ggplot(df, aes(x = type, y = count)) +
     ) + theme_bw()
 ```
 
-Before assigning binding sites to distinct transcript regions, it is worth to look at the unresolved profile[^8]. Here we observe a predominance for binding sites within intronic regions. 
+Before assigning binding sites to distinct transcript regions, it is worth to look at the unresolved profile[^9]. Here we observe a predominance for binding sites within intronic regions. 
 
-[^8]: Note: Binding sites are essentially counted multiple times here.
+[^9]: Note: Binding sites are essentially counted multiple times here.
 
 ```{r}
 # Count the number of binding sites within each transcript region, ignoring the 
@@ -420,9 +422,9 @@ m = make_comb_mat(plotCountDf)
 UpSet(m)
 ```
 
-Resolving these types of conflicts is not straight forward and always involves setting up rules that define when to choose which annotation over the other. In our case we went for a majority vote based system, while resolving ties in the vote based on a hierarchical rule prefering introns over 3'UTRs over CDS over 5'UTRs[^9].
+Resolving these types of conflicts is not straight forward and always involves setting up rules that define when to choose which annotation over the other. In our case we went for a majority vote based system, while resolving ties in the vote based on a hierarchical rule prefering introns over 3'UTRs over CDS over 5'UTRs[^10].
 
-[^9]: Note: In rear cases additional intergenic binding sites can be found even though we removed these in a previous step. This is because some binding sites overlap with the annotation of a gene, but not with any of the transcript isoforms associated with the gene.
+[^10]: Note: In rear cases additional intergenic binding sites can be found even though we removed these in a previous step. This is because some binding sites overlap with the annotation of a gene, but not with any of the transcript isoforms associated with the gene.
 
 ```{r}
 # Solve the overlapping transcript types problem with majority votes and 
@@ -451,9 +453,9 @@ ggplot(df, aes(x = fct_infreq(Region))) +
     ) + theme_bw()
 ```
 
-For a splicing regulator protein such as U2AF65 binding to introns is expected. However, due to the sheer size difference in introns one might also expect to observe more binding in introns just by chance. For that reason one could divide the number of binding sites by the summed up region length to compute a relative enrichment score[^10].
+For a splicing regulator protein such as U2AF65 binding to introns is expected. However, due to the sheer size difference in introns one might also expect to observe more binding in introns just by chance. For that reason one could divide the number of binding sites by the summed up region length to compute a relative enrichment score[^11].
 
-[^10]: Note: Such a relative enrichment heavily favours smaller regions such as 5'UTRs. Therefore absolute numbers and relative enrichment should both be considered. 
+[^11]: Note: Such a relative enrichment heavily favours smaller regions such as 5'UTRs. Therefore absolute numbers and relative enrichment should both be considered. 
 
 ```{r}
 # Sum up the length of each transcript region with overlapping binding sites.
