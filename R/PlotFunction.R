@@ -528,7 +528,7 @@ reproducibiliyCutoffPlot <-
 #' files <- system.file("extdata", package="BindingSiteFinder")
 #' load(list.files(files, pattern = ".rda$", full.names = TRUE))
 #'
-#' supportRatioPlot(bds, bsWidths = c(3,7,9),
+#' supportRatioPlot(bds, bsWidths = c(3,7),
 #' minWidth = 1, minClSites = 1, minCrosslinks = 2)
 #'
 #' @export

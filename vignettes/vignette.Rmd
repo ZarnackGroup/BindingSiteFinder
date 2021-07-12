@@ -71,7 +71,7 @@ cs
 
 
 
-```{r}
+```{r, fig.retina = 1, dpi = 100}
 library(ggplot2)
 quants = quantile(cs$score, probs = seq(0,1, by = 0.05))
 csFilter = cs[cs$score >= quants[2]]
@@ -126,7 +126,7 @@ At first, a ratio between the crosslink events within binding sites and the cros
 supportRatioPlot(bds, bsWidths = seq(from = 3, to = 19, by = 2), sub.chr = "chr22")
 ```
 
-```{r}
+```{r, fig.retina = 1, dpi = 100}
 supportRatioPlot(bds, bsWidths = seq(from = 3, to = 19, by = 2))
 ```
 To further guide the choice, a selection of potential width can be computed explicitly, here for width 3, 9, 19 and 29 while holding all other parameters constant.
@@ -151,7 +151,7 @@ The effect of the binding site size choice can be visualized by looking at the t
 
 [^3]: Note that given the little difference between 7nt and 9nt both options seem to be reasonable 
 
-```{r}
+```{r, fig.retina = 1, dpi = 100}
 rangeCoveragePlot(l, width = 20) 
 ```
 
@@ -175,13 +175,13 @@ bds4 <- makeBindingSites(object = bds, bsSize = 9, minWidth = 2,
 
 As one might have expected the number of final binding sites that meet the threshold drops with higher constraints. The coverage on the other hand spans wider around the binding site center, resulting in a broader coverage.
 
-```{r}
+```{r, fig.retina = 1, dpi = 100}
 l = list(`1. minClSites = 1` = bds1, `2. minClSites = 2` = bds2, 
          `3. minClSites = 3` = bds3, `4. minClSites = 4` = bds4)
 mergeSummaryPlot(l, select = "minClSites")
 ```
 
-```{r}
+```{r, fig.retina = 1, dpi = 100}
 l = list(`1. minClSites = 1` = bds1, `2. minClSites = 2` = bds2, 
          `3. minClSites = 3` = bds3, `4. minClSites = 4` = bds4)
 rangeCoveragePlot(l, width = 20)
@@ -196,7 +196,7 @@ Since the initial PureCLIP run was based on the merged summary of all four repli
 
 [^4]: A lower boundary of 1 nucleotide is set as default minimum support.
 
-```{r}
+```{r, fig.retina = 1, dpi = 100}
 reproducibiliyCutoffPlot(bds1, max.range = 20, cutoff = c(0.05))
 reproducibiliyCutoffPlot(bds1, max.range = 20, cutoff = c(0.2))
 ```
@@ -205,7 +205,7 @@ If replicates from multiple different conditions are used in the binding site de
 
 [^5]: Note that the order of how multiple thresholds are applied is defined based on the order of the factor levels of *condition*.
 
-```{r}
+```{r, fig.retina = 1, dpi = 100}
 reproducibiliyCutoffPlot(bds1, max.range = 20, cutoff = c(0.05, 0.1))
 reproducibiliyCutoffPlot(bds1, max.range = 20, cutoff = c(0.1, 0.05))
 ```
@@ -214,7 +214,7 @@ reproducibiliyCutoffPlot(bds1, max.range = 20, cutoff = c(0.1, 0.05))
 
 After one has decided which quantile cutoff to use for the replicates the number of replicates that must meet the selected threshold must be specified. This includes another level of regulation and allows for some variation, since not always all replicates are forced to agree on every binding sites. For instance we could implement the rule that 3 out of 4 replicates should agree for each binding site while setting the quantile cutoff to 5% for all 4 replicates. This can be achieved with the *reproducibilityFilter* function. When setting the returnType = "data.frame", the function returns a plottable object instead of a final filtered GRanges object. The overlap among the four replicates after the filtering can be easily visualized as an upset plot, using the *complexHeatmaps* package.
 
-```{r}
+```{r, fig.retina = 1, dpi = 100}
 s1 = reproducibilityFilter(bds1, cutoff = c(0.05), n.reps = c(3), returnType = "data.frame")
 library(ComplexHeatmap)
 m1 = make_comb_mat(s1)
@@ -223,7 +223,7 @@ UpSet(m1)
 
 Another more complex example could make use of both conditions. For instance we could implement the rule that a binding site should pass the filter if it is supported by 2 WT replicates, while for the KD only one replicate is sufficient. As quantile cutoffs we use 5% for the WT and 10% for the KD.
 
-```{r}
+```{r, fig.retina = 1, dpi = 100}
 s2 = reproducibilityFilter(bds1, cutoff = c(0.1, 0.05), n.reps = c(1, 2),
                            returnType = "data.frame")
 m2 = make_comb_mat(s2)
@@ -279,7 +279,7 @@ gns
 
 Depending on the annotation source and organism type gene annotation overlap each other to some degree. This complicates assiging binding sites to their host genes.
 
-```{r}
+```{r, fig.retina = 1, dpi = 100}
 # count the number of annotation overlaps
 mcols(bindingSites)$geneOl = factor(countOverlaps(bindingSites, gns))
 df = as.data.frame(mcols(bindingSites))
@@ -301,7 +301,7 @@ In the present case most overlaps seemed to be cause by lncRNA annotations proba
 
 [^7] Note: This is a simplified scheme and might be adapted for more complex research questions.
 
-```{r}
+```{r, fig.retina = 1, dpi = 100}
 # show which gene types cause the most annoation overlaps. Split binding sites
 # by the number of overlaps and remove those binding sites that do not overlap
 # with any annotation (intergenic)
@@ -360,7 +360,7 @@ load(regionFile)
 
 As one would expect a lot of multiple different transcript type annotations overlap with single binding sites. These numbers usually rise with more complex annotation sources used. Here most binding sites (3.716) overlap with a single distinct transcript region already, but a substantially amount does not.
 
-```{r}
+```{r, fig.retina = 1, dpi = 100}
 # Count the overlaps of each binding site fore each part of the transcript. 
 cdseq = regions$CDS %>% countOverlaps(bindingSites,.)
 intrns = regions$Intron %>% countOverlaps(bindingSites,.)
@@ -387,7 +387,7 @@ Before assigning binding sites to distinct transcript regions, it is worth to lo
 
 [^9]: Note: Binding sites are essentially counted multiple times here.
 
-```{r}
+```{r, fig.retina = 1, dpi = 100}
 # Count the number of binding sites within each transcript region, ignoring the 
 # problem of overlapping annotations (counting binding sites multiple times).
 plotCountDf = countDf
@@ -416,7 +416,7 @@ ggplot(df, aes(x = name, y = count)) +
 
 The complexity of the problem can also be showcased using an UpSet plot representation. From this plot it becomes very clear that most binding sites reside within introns and that the most annotation conflicts are between introns and 3'UTRs. 
 
-```{r}
+```{r, fig.retina = 1, dpi = 100}
 # Show how many annotation overlaps are caused by what transcript types.
 m = make_comb_mat(plotCountDf)
 UpSet(m)
@@ -426,7 +426,7 @@ Resolving these types of conflicts is not straight forward and always involves s
 
 [^10]: Note: In rear cases additional intergenic binding sites can be found even though we removed these in a previous step. This is because some binding sites overlap with the annotation of a gene, but not with any of the transcript isoforms associated with the gene.
 
-```{r}
+```{r, fig.retina = 1, dpi = 100}
 # Solve the overlapping transcript types problem with majority votes and 
 # hierarchical rule. 
 rule = c("Intron", "UTR3", "CDS", "UTR5")
@@ -478,7 +478,7 @@ utrs5Len = regions$UTR5 %>%
 lenSum = c(cdsLen, intrnsLen, utrs3Len, utrs5Len)
 ```
 
-```{r}
+```{r, fig.retina = 1, dpi = 100}
 # Compute the relative enrichment per transcript region.
 bindingSites = subset(bindingSites, region != "Intergenic")
 df = data.frame(region = names(table(bindingSites$region)),
