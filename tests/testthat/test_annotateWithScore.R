@@ -6,7 +6,7 @@ if (.Platform$OS.type != "windows") {
         cs = rtracklayer::import(con = csFile, format = "BED")
         clipFiles <- system.file("extdata", package="BindingSiteFinder")
 
-        # two experimental conditions
+        # use only if not windows
         meta = data.frame(condition = factor(c("WT", "WT", "KD", "KD"), levels = c("KD", "WT")),
                           clPlus = list.files(clipFiles, pattern = "plus.bw$", full.names = TRUE),
                           clMinus = list.files(clipFiles, pattern = "minus.bw$", full.names = TRUE))
