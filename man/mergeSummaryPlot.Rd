@@ -36,16 +36,8 @@ each list element.
 }
 \examples{
 # load data
-csFile <- system.file("extdata", "PureCLIP_crosslink_sites_example.bed",
-package="BindingSiteFinder")
-cs = rtracklayer::import(con = csFile, format = "BED")
-clipFiles <- system.file("extdata", package="BindingSiteFinder")
-
-# one experimental condition
-meta = data.frame(condition = c("WT", "WT", "WT", "WT"),
-clPlus = list.files(clipFiles, pattern = "plus.bw$", full.names = TRUE),
-clMinus = list.files(clipFiles, pattern = "minus.bw$", full.names = TRUE))
-bds = BSFDataSet(ranges = cs, meta = meta)
+files <- system.file("extdata", package="BindingSiteFinder")
+load(list.files(files, pattern = ".rda$", full.names = TRUE))
 
 # plotting a single object
 bds0 <- makeBindingSites(object = bds, bsSize = 9, minWidth = 2,

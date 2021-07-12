@@ -39,16 +39,8 @@ The median over all ratios is reported as representative value.
 }
 \examples{
 # load data
-csFile <- system.file("extdata", "PureCLIP_crosslink_sites_example.bed",
- package="BindingSiteFinder")
-cs = rtracklayer::import(con = csFile, format = "BED")
-clipFiles <- system.file("extdata", package="BindingSiteFinder")
-
-# one experimental condition
-meta = data.frame(condition = c("WT", "WT", "WT", "WT"),
-clPlus = list.files(clipFiles, pattern = "plus.bw$", full.names = TRUE),
-clMinus = list.files(clipFiles, pattern = "minus.bw$", full.names = TRUE))
-bds = BSFDataSet(ranges = cs, meta = meta)
+files <- system.file("extdata", package="BindingSiteFinder")
+load(list.files(files, pattern = ".rda$", full.names = TRUE))
 
 supportRatio(bds, bsWidths = c(3,7))
 

@@ -36,16 +36,8 @@ Plotting function for settings specified in \code{\link{reproducibilityFilter}}.
 \examples{
 
 # load data
-csFile <- system.file("extdata", "PureCLIP_crosslink_sites_example.bed",
- package="BindingSiteFinder")
-cs = rtracklayer::import(con = csFile, format = "BED")
-clipFiles <- system.file("extdata", package="BindingSiteFinder")
-
-# two experimental conditions
-meta = data.frame(condition = factor(c("WT", "WT", "KD", "KD"), levels = c("KD", "WT")),
-clPlus = list.files(clipFiles, pattern = "plus.bw$", full.names = TRUE),
-clMinus = list.files(clipFiles, pattern = "minus.bw$", full.names = TRUE))
-bds = BSFDataSet(ranges = cs, meta = meta)
+files <- system.file("extdata", package="BindingSiteFinder")
+load(list.files(files, pattern = ".rda$", full.names = TRUE))
 
 # merge binding sites
 bds <- makeBindingSites(object = bds, bsSize = 9, minWidth = 2,
