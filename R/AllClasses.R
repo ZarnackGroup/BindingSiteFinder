@@ -118,10 +118,10 @@ BSFDataSet <- function(ranges, meta, forceEqualNames = TRUE, silent = FALSE) {
     }
     # build colSignal by importing files as RLE
     signalPlus = sapply(meta$clPlus, function(x) {
-        rtracklayer::import(x, as = "Rle")
+        rtracklayer::import(con = x, as = "RleList")
     })
     signalMinus = sapply(meta$clMinus, function(x) {
-        abs(rtracklayer::import(x, as = "Rle"))
+        abs(rtracklayer::import(con = x, as = "RleList"))
     })
     names(signalPlus) = paste0(seq_len(nrow(meta)), "_", meta$condition)
     names(signalMinus) = paste0(seq_len(nrow(meta)), "_", meta$condition)

@@ -396,7 +396,7 @@ supportRatio <- function(object, bsWidths, bsFlank = NA, ...) {
     if (any(round(bsWidths) != bsWidths)) {
         stop("bsWidth is not an integer. ")
     }
-    # check bsFank vector if set
+    # check bsFlank vector if set
     if (!any(is.na(bsFlank))) {
         if (!any(is.numeric(bsFlank))) {
             stop("bsFlank needs to be numeric. ")

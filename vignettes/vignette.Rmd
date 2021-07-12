@@ -119,7 +119,17 @@ bds
 
 ## Choosing the binding site width
 
-Choosing how wide the final binding sites should be is not an easy choice and depends various different factors. For that reason different filter options alongside with diagnostic plots were implemented to guide the decision. In the following example we compute binding sites of size 3, 9, 19 and 29 while holding all other parameters constant.
+Choosing how wide the final binding sites should be is not an easy choice and depends various different factors. For that reason different filter options alongside with diagnostic plots were implemented to guide the decision. 
+At first, a ratio between the crosslink events within binding sites and the crosslink events in adjacent windows to the binding sites can be computed. The higher the ratio, the better the associated binding site width captures the distribution of the underlying crosslink events. The *supportRatioPlot* function offers a quick screen for different width choices. 
+
+```{r, eval=FALSE}
+supportRatioPlot(bds, bsWidths = seq(from = 3, to = 19, by = 2), sub.chr = "chr22")
+```
+
+```{r}
+supportRatioPlot(bds, bsWidths = seq(from = 3, to = 19, by = 2))
+```
+To further guide the choice, a selection of potential width can be computed explicitly, here for width 3, 9, 19 and 29 while holding all other parameters constant.
 
 ```{r}
 bds1 <- makeBindingSites(object = bds, bsSize = 3, minWidth = 2,

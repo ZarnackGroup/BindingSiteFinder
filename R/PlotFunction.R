@@ -575,6 +575,7 @@ supportRatioPlot <- function(object, bsWidths, bsFlank = NA, ...){
             title = "Binding site widths signal ratios",
             x = "Binding site widths",
             y = "Signal to flank ratio"
-        )
+        ) +
+        theme_bw()
     p
 }
