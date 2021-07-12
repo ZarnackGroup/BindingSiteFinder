@@ -19,15 +19,23 @@ This function can be used to annotate a \code{BSFDataSet} object with merged bin
 sites with scores from the initial ranges (eg. PureCLIP scores).
 }
 \examples{
-# load data
-files <- system.file("extdata", package="BindingSiteFinder")
-load(list.files(files, pattern = ".rda$", full.names = TRUE))
+if (.Platform$OS.type != "windows") {
+    # load data
+    csFile <- system.file("extdata", "PureCLIP_crosslink_sites_example.bed",
+                        package="BindingSiteFinder")
+    cs = rtracklayer::import(con = csFile, format = "BED")
+    clipFiles <- system.file("extdata", package="BindingSiteFinder")
+    # two experimental conditions
+    meta = data.frame(condition = factor(c("WT", "WT", "KD", "KD"), levels = c("KD", "WT")),
+    clPlus = list.files(clipFiles, pattern = "plus.bw$", full.names = TRUE),
+    clMinus = list.files(clipFiles, pattern = "minus.bw$", full.names = TRUE))
+    bds = BSFDataSet(ranges = cs, meta = meta)
 
-# merge binding sites
-bds <- makeBindingSites(object = bds, bsSize = 9, minWidth = 2,
-minCrosslinks = 2, minClSites = 1)
+    # merge binding sites
+    bds <- makeBindingSites(object = bds, bsSize = 9, minWidth = 2,
+    minCrosslinks = 2, minClSites = 1)
 
-# annotate with original pureCLIP score
-bdsRe = annotateWithScore(bds, cs)
-
+    # annotate with original pureCLIP score
+    bdsRe = annotateWithScore(bds, cs)
+}
 }
