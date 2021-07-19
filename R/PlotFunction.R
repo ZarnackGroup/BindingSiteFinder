@@ -1,12 +1,12 @@
 #' Plot crosslink events coverage over range
 #'
-#' A diagnostic plot function that allows to check the coverage of crosslink events
-#' over different merged regions. The cverage is shown as mean over all replicates
-#' and conditions, with a standard deviation corridor.
+#' A diagnostic plot function that allows to check the coverage of crosslink
+#' events over different merged regions. The coverage is shown as mean over all
+#' replicates and conditions, with a standard deviation corridor.
 #'
-#' If \code{object} is a single BSFDataObject a single coverage plot will be drawn,
-#' whereas if it is a list of BSFDataObjects, then faceting is used to make a plot for
-#' each list element.
+#' If \code{object} is a single BSFDataObject a single coverage plot will be
+#' drawn, whereas if it is a list of BSFDataObjects, then faceting is used to
+#' make a plot for each list element.
 #'
 #' @param object a BSFDataSet, or a list of BSFDataSet
 #' @param width a numeric value that defines the plotting ranges
@@ -98,9 +98,10 @@ rangeCoveragePlot <-
         }
         # make plot if a list of BSFDataSet objects is given
         if (is(object, "list")) {
-            stopifnot(sapply(object, function(x) {
-                is(x, "BSFDataSet")
-            }))
+            stopifnot(vapply(object, function(x) {
+                is(x, "BSFDataSet")},
+                FUN.VALUE = logical(1))
+            )
 
             objectNames = names(object)
             df = lapply(seq_along(object), function(x) {
@@ -121,10 +122,10 @@ rangeCoveragePlot <-
                 return(df)
             })
             df = do.call(rbind, df)
-
-            bsSize = sapply(object, function(x) {
+            bsSize = vapply(object, function(x) {
                 unique(width(getRanges(x)))
-            })
+            }, FUN.VALUE = integer(1))
+
             dfFrame = data.frame(
                 name = names(bsSize),
                 xmin = (-floor(bsSize / 2)),
@@ -169,20 +170,22 @@ rangeCoveragePlot <-
     }
 
 
-#' Plot summarized results of the different binding site merging and filtering steps
+#' Plot summarized results of the different binding site merging and filtering
+#' steps
 #'
-#' Bar charts produced for the different filter steps in the binding site merging
-#' routine. Depending on the selected option (\code{select}) all or only a user
-#' defined filter can be shown.
+#' Bar charts produced for the different filter steps in the binding site
+#' merging routine. Depending on the selected option (\code{select}) all or
+#' only a user defined filter can be shown.
 #'
-#' If \code{object} is a single BSFDataObject a single coverage plot will be drawn,
-#' whereas if it is a list of BSFDataObjects, then faceting is used to make a plot for
-#' each list element.
+#' If \code{object} is a single BSFDataObject a single coverage plot will be
+#' drawn, whereas if it is a list of BSFDataObjects, then faceting is used to
+#' make a plot for each list element.
 #'
 #' @param object a BSFDataObject, with the makeBindingSites function already run
-#' @param select one of "all", "filter", "inputRanges", "minCLSites", "mergeCrosslinkSites",
-#' "minCrosslinks", "centerIsClSite" or "centerIsSummit". Defines which parameter is selected
-#' for plotting.
+#' @param select one of "all", "filter", "inputRanges",
+#' "minCLSites", "mergeCrosslinkSites", "minCrosslinks",
+#' "centerIsClSite" or "centerIsSummit".
+#' Defines which parameter is selected for plotting.
 #' @param ... further arguments passed to ggplot
 #'
 #' @return a plot of type ggplot after the \code{\link{makeBindingSites}}
@@ -263,9 +266,9 @@ mergeSummaryPlot <- function(object,
             )
         )
 
-        stopifnot(all(sapply(object, function(o) {
-            (is(o, "BSFDataSet"))
-        })))
+        stopifnot(all(vapply(object, function(o) {
+            (is(o, "BSFDataSet"))},
+            FUN.VALUE = logical(1))))
 
         smry = lapply(object, getSummary)
         df = do.call("rbind", smry)
@@ -326,19 +329,20 @@ mergeSummaryPlot <- function(object,
 
 #' Plot to that shows how many replicates support each binding site
 #'
-#' Plotting function for settings specified in \code{\link{reproducibilityFilter}}.
+#' Plotting function for settings specified in
+#' \code{\link{reproducibilityFilter}}.
 #'
 #' @param object a BSFDataSet object
-#' @param cutoff a vector of length = 1, or of length = levels(meta$conditions) with
-#' a single number (between 0-1) indicating the quantile cutoff
-#' @param min.crosslinks numeric of length = 1, defines the lower boundary for the minimum
-#' number of crosslinks a binding site has to be supported by all replicates, regardless
-#' of the replicate specific quantile threshold
+#' @param cutoff a vector of length = 1, or of length = levels(meta$conditions)
+#' with a single number (between 0-1) indicating the quantile cutoff
+#' @param min.crosslinks numeric of length = 1, defines the lower boundary for
+#' the minimum number of crosslinks a binding site has to be supported by all
+#' replicates, regardless of the replicate specific quantile threshold
 #' @param max.range maximum number of crosslinks per sites that should be shown
 #' @param ... further arguments passed to ggplot
 #'
-#' @return a plot of type \code{ggplot2} showing the per replicate reproducibility
-#' cutoffs based on a given quantile threshold
+#' @return a plot of type \code{ggplot2} showing the per replicate
+#' reproducibility cutoffs based on a given quantile threshold
 #'
 #' @seealso \code{\link{reproducibilityFilter}}
 #'
@@ -392,7 +396,9 @@ reproducibiliyCutoffPlot <-
             # prepare objects for plotting
             df[df > max.range] = max.range
             df = df %>% pivot_longer(everything())
-            df$condition = sapply(strsplit(df$name, "_"), `[`, 2)
+            df$condition = vapply(strsplit(df$name, "_"), `[`, 2,
+                                  FUN.VALUE = character(1))
+
             rectDf = data.frame(
                 condition = cond,
                 name = unique(df$name),
@@ -452,7 +458,8 @@ reproducibiliyCutoffPlot <-
             # prepare objects for plotting
             df[df > max.range] = max.range
             df = df %>% pivot_longer(everything())
-            df$condition = sapply(strsplit(df$name, "_"), `[`, 2)
+            df$condition = vapply(strsplit(df$name, "_"), `[`, 2,
+                                  FUN.VALUE = character(1))
             idx = match(df$condition, unique(cond))
             df$cutoff = cutoff[idx]
             rectDf = data.frame(
@@ -491,10 +498,10 @@ reproducibiliyCutoffPlot <-
                     size = 1.5
                 ) +
                 theme_classic() +
-                ggtitle(paste(sapply(levels(cond), function(x) {
+                ggtitle(paste(vapply(levels(cond), function(x) {
                     paste0("Cutoff: ",
                            unique(qSel$per[qSel$applyTo == x]), " ", x)
-                }),
+                }, FUN.VALUE = character(1)),
                 collapse = "; ")) +
                 xlab("Crosslinks per site") +
                 ylab("Number of sites")
@@ -506,19 +513,19 @@ reproducibiliyCutoffPlot <-
 
 #' Plot that shows the binding site support ratio
 #'
-#' Function that shows a ratio to determine how well a given binding site with
-#' is supported by the crosslink coverage of the data. Ratios are computed using
-#' the \code{\link{supportRatio}} function.
+#' Function that shows a ratio to determine how well a given binding
+#' site with is supported by the crosslink coverage of the data.
+#' Ratios are computed using the \code{\link{supportRatio}} function.
 #'
-#' The higher the ratio, the more does the given binding site width caputres
-#' the enrichment of crosslinks compared the the local surrounding. A ratio equal
-#' to 1 would mean no enrichemnt at all.
+#' The higher the ratio, the more does the given binding site width captures
+#' the enrichment of crosslinks compared the the local surrounding. A ratio
+#' equal to 1 would mean no enrichemnt at all.
 #'
 #' @param object a BSFDataSet object
 #' @param bsWidths a numeric vector indicating the different binding site
 #' width to compute the ratio for
-#' @param bsFlank optional; a numeric vector of the same length as \code{bsWidth}
-#' used to specify the width of the flanking regions
+#' @param bsFlank optional; a numeric vector of the same length as
+#' \code{bsWidth} used to specify the width of the flanking regions
 #' @param ... further arguments passed to \code{makeBindingSites}
 #'
 #' @return an object of class \code{ggplot2}
