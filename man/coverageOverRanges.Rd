@@ -22,14 +22,15 @@ for each nucleotide in the range individually}
 an object of class specified in \code{returnType}
 }
 \description{
-The crosslink coverage is computed for all ranges in the the given \code{BSFDataSet}
-object (see \code{\link{BSFDataSet}} for details). The coverage of the crosslinks
-stored in the singnal slot of the \code{BSFDataSet} is computed over the ranges
-in the \code{BSFDataSet} object.
+The crosslink coverage is computed for all ranges in the the given
+\code{BSFDataSet} object (see \code{\link{BSFDataSet}} for details).
+The coverage of the crosslinks stored in the singnal slot of the
+\code{BSFDataSet} is computed over the ranges in the \code{BSFDataSet}
+object.
 }
 \details{
-If \code{returnType} is set to GRanges, the coverge information is stored in the
-metadata slot.
+If \code{returnType} is set to GRanges, the coverge information is stored
+in the metadata slot.
 }
 \examples{
 # load data

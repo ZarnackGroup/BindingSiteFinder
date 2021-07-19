@@ -15,23 +15,24 @@ reproducibiliyCutoffPlot(
 \arguments{
 \item{object}{a BSFDataSet object}
 
-\item{cutoff}{a vector of length = 1, or of length = levels(meta$conditions) with
-a single number (between 0-1) indicating the quantile cutoff}
+\item{cutoff}{a vector of length = 1, or of length = levels(meta$conditions)
+with a single number (between 0-1) indicating the quantile cutoff}
 
-\item{min.crosslinks}{numeric of length = 1, defines the lower boundary for the minimum
-number of crosslinks a binding site has to be supported by all replicates, regardless
-of the replicate specific quantile threshold}
+\item{min.crosslinks}{numeric of length = 1, defines the lower boundary for
+the minimum number of crosslinks a binding site has to be supported by all
+replicates, regardless of the replicate specific quantile threshold}
 
 \item{max.range}{maximum number of crosslinks per sites that should be shown}
 
 \item{...}{further arguments passed to ggplot}
 }
 \value{
-a plot of type \code{ggplot2} showing the per replicate reproducibility
-cutoffs based on a given quantile threshold
+a plot of type \code{ggplot2} showing the per replicate
+reproducibility cutoffs based on a given quantile threshold
 }
 \description{
-Plotting function for settings specified in \code{\link{reproducibilityFilter}}.
+Plotting function for settings specified in
+\code{\link{reproducibilityFilter}}.
 }
 \examples{
 

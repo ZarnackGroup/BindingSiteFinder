@@ -20,14 +20,14 @@ a plot of type \code{ggplot2} displaying the crosslink coverage over
 the ranges of the given \code{\link{BSFDataSet}}
 }
 \description{
-A diagnostic plot function that allows to check the coverage of crosslink events
-over different merged regions. The cverage is shown as mean over all replicates
-and conditions, with a standard deviation corridor.
+A diagnostic plot function that allows to check the coverage of crosslink
+events over different merged regions. The coverage is shown as mean over all
+replicates and conditions, with a standard deviation corridor.
 }
 \details{
-If \code{object} is a single BSFDataObject a single coverage plot will be drawn,
-whereas if it is a list of BSFDataObjects, then faceting is used to make a plot for
-each list element.
+If \code{object} is a single BSFDataObject a single coverage plot will be
+drawn, whereas if it is a list of BSFDataObjects, then faceting is used to
+make a plot for each list element.
 }
 \examples{
 # load data

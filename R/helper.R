@@ -38,7 +38,8 @@
         idx = match(qSel$cut, applyDf$userCutoff)
         qSel$applyTo = applyDf$levels.userCond.[idx]
         qSel = qSel %>% pivot_longer(-c(cut, per, applyTo))
-        qSel$sel = sapply(strsplit(qSel$name, "_"), `[`, 2)
+        qSel$sel = vapply(strsplit(qSel$name, "_"), `[`, 2,
+                          FUN.VALUE = character(1))
         qSel = qSel[qSel$applyTo == qSel$sel, ]
 
         # add n.reps support to df
@@ -64,7 +65,8 @@
         # select that part of q that was chosen by user
         qSel = q[q$cut %in% userCutoff, ]
         qSel = qSel %>% pivot_longer(-c(cut, per))
-        qSel$sel = sapply(strsplit(qSel$name, "_"), `[`, 2)
+        qSel$sel = vapply(strsplit(qSel$name, "_"), `[`, 2,
+                          FUN.VALUE = character(1))
 
         # add n.reps support to df
         nRepsDf = data.frame(n.reps = userNreps, applyTo = levels(userCond))

@@ -16,9 +16,18 @@ shows the current object state
 }
 \description{
 Prints the information for each of the slots in the \code{BSFDataSet} object.
-Ranges of the \code{\link{getRanges}} slot are shown, as well as the number of
-crosslinks per strand \code{\link{getSignal}} and the levels of the experimental
-conditions (\code{\link{getMeta}}).
+Ranges of the \code{\link{getRanges}} slot are shown, as well as the number
+of crosslinks per strand \code{\link{getSignal}} and the levels of the
+experimental conditions (\code{\link{getMeta}}).
+}
+\examples{
+
+# load data
+files <- system.file("extdata", package="BindingSiteFinder")
+load(list.files(files, pattern = ".rda$", full.names = TRUE))
+
+show(bds)
+
 }
 \seealso{
 \code{\link{BSFDataSet}}

@@ -12,8 +12,8 @@ supportRatioPlot(object, bsWidths, bsFlank = NA, ...)
 \item{bsWidths}{a numeric vector indicating the different binding site
 width to compute the ratio for}
 
-\item{bsFlank}{optional; a numeric vector of the same length as \code{bsWidth}
-used to specify the width of the flanking regions}
+\item{bsFlank}{optional; a numeric vector of the same length as
+\code{bsWidth} used to specify the width of the flanking regions}
 
 \item{...}{further arguments passed to \code{makeBindingSites}}
 }
@@ -21,14 +21,14 @@ used to specify the width of the flanking regions}
 an object of class \code{ggplot2}
 }
 \description{
-Function that shows a ratio to determine how well a given binding site with
-is supported by the crosslink coverage of the data. Ratios are computed using
-the \code{\link{supportRatio}} function.
+Function that shows a ratio to determine how well a given binding
+site with is supported by the crosslink coverage of the data.
+Ratios are computed using the \code{\link{supportRatio}} function.
 }
 \details{
-The higher the ratio, the more does the given binding site width caputres
-the enrichment of crosslinks compared the the local surrounding. A ratio equal
-to 1 would mean no enrichemnt at all.
+The higher the ratio, the more does the given binding site width captures
+the enrichment of crosslinks compared the the local surrounding. A ratio
+equal to 1 would mean no enrichemnt at all.
 }
 \examples{
 # load data

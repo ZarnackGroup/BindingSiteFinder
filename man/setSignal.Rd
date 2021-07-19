@@ -21,8 +21,8 @@ setSignal(object, ...)
 an object of type \code{\link{BSFDataSet}} with updated signal
 }
 \description{
-Signal data is loaded from the path specified in \code{\link{getMeta}} columns
-"clPlus" and "clMinus" and stored as a list of RLE lists.
+Signal data is loaded from the path specified in \code{\link{getMeta}}
+columns "clPlus" and "clMinus" and stored as a list of RLE lists.
 }
 \examples{
 

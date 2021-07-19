@@ -39,6 +39,18 @@ suppressPackageStartupMessages({
 })
 ```
 
+
+# Installation
+
+The `r Biocpkg("BindingSiteFinder")` package is available at [https://bioconductor.org](https://bioconductor.org) and can be installed via `BiocManager::install`:
+
+```{r BiocManager, eval=FALSE}
+if (!require("BiocManager"))
+    install.packages("BiocManager")
+BiocManager::install("BindingSiteFinder")
+```
+
+
 # Motivation
 
 Most cellular processes are regulated by RNA-binding proteins (RBPs). Knowledge on their exact positioning can be obtained from individual-nucleotide resolution UV crosslinking and immunoprecipitation (iCLIP) experiments. In a recent publication we described a complete analysis workflow to detect RBP binding sites from iCLIP data. The workflow covers all essential steps, from quality control of sequencing reads, different peak calling options, to the downstream analysis and definition of binding sites. Pre-processing and peak calling steps relies on publicly available software, whereas the definition of the final binding sites follows a custom procedure implemented in R. This vignette explains how equally sized binding sites can be defined from a genome-wide iCLIP coverage.
@@ -64,7 +76,8 @@ The following example is based on four replicates of the RNA-binding protein U2A
 
 ```{r}
 library(rtracklayer)
-csFile <- system.file("extdata", "PureCLIP_crosslink_sites_example.bed", package="BindingSiteFinder")
+csFile <- system.file("extdata", "PureCLIP_crosslink_sites_example.bed", 
+                      package="BindingSiteFinder")
 cs = import(con = csFile, format = "BED")
 cs
 ```
@@ -96,7 +109,9 @@ files <- system.file("extdata", package="BindingSiteFinder")
 clipFilesP <- list.files(files, pattern = "plus.bw$", full.names = TRUE)
 clipFilesM <- list.files(files, pattern = "minus.bw$", full.names = TRUE)
 
-meta = data.frame(condition = factor(c("WT", "WT", "KD", "KD"), levels = c("KD", "WT")), clPlus = clipFilesP, clMinus = clipFilesM)
+meta = data.frame(condition = factor(c("WT", "WT", "KD", "KD"), 
+                                     levels = c("KD", "WT")), 
+                  clPlus = clipFilesP, clMinus = clipFilesM)
 meta
 ```
 
@@ -121,10 +136,6 @@ bds
 
 Choosing how wide the final binding sites should be is not an easy choice and depends various different factors. For that reason different filter options alongside with diagnostic plots were implemented to guide the decision. 
 At first, a ratio between the crosslink events within binding sites and the crosslink events in adjacent windows to the binding sites can be computed. The higher the ratio, the better the associated binding site width captures the distribution of the underlying crosslink events. The *supportRatioPlot* function offers a quick screen for different width choices. 
-
-```{r, eval=FALSE}
-supportRatioPlot(bds, bsWidths = seq(from = 3, to = 19, by = 2), sub.chr = "chr22")
-```
 
 ```{r, fig.retina = 1, dpi = 100}
 supportRatioPlot(bds, bsWidths = seq(from = 3, to = 19, by = 2))
@@ -215,7 +226,8 @@ reproducibiliyCutoffPlot(bds1, max.range = 20, cutoff = c(0.1, 0.05))
 After one has decided which quantile cutoff to use for the replicates the number of replicates that must meet the selected threshold must be specified. This includes another level of regulation and allows for some variation, since not always all replicates are forced to agree on every binding sites. For instance we could implement the rule that 3 out of 4 replicates should agree for each binding site while setting the quantile cutoff to 5% for all 4 replicates. This can be achieved with the *reproducibilityFilter* function. When setting the returnType = "data.frame", the function returns a plottable object instead of a final filtered GRanges object. The overlap among the four replicates after the filtering can be easily visualized as an upset plot, using the *complexHeatmaps* package.
 
 ```{r, fig.retina = 1, dpi = 100}
-s1 = reproducibilityFilter(bds1, cutoff = c(0.05), n.reps = c(3), returnType = "data.frame")
+s1 = reproducibilityFilter(bds1, cutoff = c(0.05), n.reps = c(3), 
+                           returnType = "data.frame")
 library(ComplexHeatmap)
 m1 = make_comb_mat(s1)
 UpSet(m1)
@@ -309,8 +321,9 @@ library(forcats)
 splitSites = split(bindingSites, bindingSites$geneOl)
 df = as(lapply(splitSites, function(x){subsetByOverlaps(gns,x)}), "GRangesList")
 df = df[2:length(df)]
-df = lapply(1:length(df), function(x){data.frame(olClass = names(df[x]),
-                                                 geneType = factor(df[[x]]$gene_type))})
+df = lapply(1:length(df), function(x) {
+    data.frame(olClass = names(df[x]),
+               geneType = factor(df[[x]]$gene_type))})
 df = do.call(rbind,df)
 df = df %>% mutate(geneType = fct_lump_n(geneType, 4)) 
 # 
@@ -376,10 +389,10 @@ ggplot(df, aes(x = type, y = count)) +
     geom_text(aes(label = count), vjust=-0.3) +
     labs(
         title = "Overlapping transcript annotation crashes",
-        caption = "Bar plot that show how many times a binding site overlaps with
-    an annotation of a different transcript part",
-    x = "Number of overlaps", 
-    y = "Count (log10)"
+        caption = "Bar plot that show how many times a binding site 
+        overlaps with an annotation of a different transcript part",
+        x = "Number of overlaps", 
+        y = "Count (log10)"
     ) + theme_bw()
 ```
 
