@@ -1,7 +1,7 @@
 Package: BindingSiteFinder
 Type: Package
 Title: Binding site defintion based on iCLIP data
-Version: 0.99.6
+Version: 0.99.7
 Authors@R: c(
     person("Mirko", "Brüggemann",
         email="mirko.brueggemann@mail.de",
@@ -11,15 +11,19 @@ Authors@R: c(
         email="kathi.zarnack@bmls.de",
         role = c("aut"),
         comment = c(ORCID = "0000-0003-3527-3378")))
-Description: Precise knowledge on the binding sites of an RNA-binding protein (RBP)
-    is key to understand (post-) transcriptional regulatory processes. 
-    Here we present a workflow that describes how exact binding sites can be defined from iCLIP data.
+Description: Precise knowledge on the binding sites of an RNA-binding 
+    protein (RBP) is key to understand (post-) transcriptional regulatory 
+    processes. Here we present a workflow that describes how exact 
+    binding sites can be defined from iCLIP data. The package provides functions
+    for binding site definition and result visualization. For details please
+    see the vignette. 
 License: Artistic-2.0
 Encoding: UTF-8
 VignetteBuilder: knitr
 Imports: tidyr, matrixStats, stats, ggplot2, methods, rtracklayer, S4Vectors
 Depends: GenomicRanges, R (>= 4.1)
-Suggests: testthat, BiocStyle, knitr, rmarkdown, dplyr, GenomicAlignments, ComplexHeatmap, GenomeInfoDb, forcats, scales
+Suggests: testthat, BiocStyle, knitr, rmarkdown, dplyr, GenomicAlignments, 
+    ComplexHeatmap, GenomeInfoDb, forcats, scales
 RoxygenNote: 7.1.1
 Collate: 
     'AllClasses.R'
@@ -29,4 +33,6 @@ Collate:
     'bindingsites.R'
     'helper.R'
     'PlotFunction.R'
-biocViews: Sequencing, GeneExpression, GeneRegulation, FunctionalGenomics, Coverage, DataImport
+biocViews: Sequencing, GeneExpression, GeneRegulation, FunctionalGenomics, 
+    Coverage, DataImport
+BugReports: https://github.com/ZarnackGroup/BindingSiteFinder/issues
