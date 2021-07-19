@@ -1,59 +1,66 @@
-#' Define equally sized binding sites from peak calling results and iCLIP crosslink events.
+#' Define equally sized binding sites from peak calling results and iCLIP
+#' crosslink events.
 #'
 #' This function performs the merging of single nucleotide crosslink sites into
-#' binding sites of a user defined width (\code{bsSize}). Depending on the desired
-#' output width crosslink sites with a distance closer than \code{bsSize} -1 are concatenated.
-#' Initially all input regions are concatenated and then imperatively merged and extended.
-#' Concatenated regions smaller than \code{minWidth} are removed prior to the merge
-#' and extension routine. This prevents outlier crosslink pileup, eg. mapping artifacts
-#' to be integrated into the final binding sites. All remaining regions are further
-#' processed and regions larger than the desired output width are imperatively split up
-#' by setting always the position with the highest number of crosslinks as center.
-#' Regions smaller than the desired width are symmetrically extended.
-#' Resulting binding sites are then filtered by the defined constraints.
+#' binding sites of a user defined width (\code{bsSize}). Depending on the
+#' desired output width crosslink sites with a distance closer than
+#' \code{bsSize} -1 are concatenated. Initially all input regions are
+#' concatenated and then imperatively merged and extended. Concatenated regions
+#' smaller than \code{minWidth} are removed prior to the merge and extension
+#' routine. This prevents outlier crosslink pileup, eg. mapping artifacts
+#' to be integrated into the final binding sites. All remaining regions are
+#' further processed and regions larger than the desired output width are
+#' interactively split up by setting always the position with the highest
+#' number of crosslinks as center. Regions smaller than the desired width are
+#' symmetrically extended. Resulting binding sites are then filtered by the
+#' defined constraints.
 #'
-#' The \code{bsSize} argument defines the final output width of the merged binding sites.
-#' I has to be an ood number, to ensure that a binding site has a distinct center.
+#' The \code{bsSize} argument defines the final output width of the merged
+#' binding sites. It has to be an odd number, to ensure that a binding site
+#' has a distinct center.
 #'
-#' The \code{minWidth} parameter is used to describe the minimum width a ranges has
-#' to be after the initial concatenation step. For example: Consider bsSize = 9 and
-#' minWidht = 2. Then all initial crosslink sites that are closer to each other than
-#' 8 nucleotides (bsSize -1) will be concatenated. Any of these ranges with less than
-#' 2 nucleotides of width will be removed.
+#' The \code{minWidth} parameter is used to describe the minimum width a ranges
+#' has to be after the initial concatenation step. For example:
+#' Consider bsSize = 9 and minWidht = 2. Then all initial crosslink sites that
+#' are closer to each other than 8 nucleotides (bsSize -1) will be concatenated.
+#' Any of these ranges with less than 2 nucleotides of width will be removed.
 #'
-#' The argument \code{minCrosslinks} defines how many single nucleotide resolition
-#' crosslink events need to overlap a binding site to pass. A default of 2 is very inclusive
-#' resulting in only the removal of the most extreme cases.
+#' The argument \code{minCrosslinks} defines how many single nucleotide
+#' resolution crosslink events need to overlap a binding site to pass.
+#' A default of 2 is very inclusive resulting in only the removal of the most
+#' extreme cases.
 #'
 #' The \code{minClSites} argument defines how many positions of the binding site
 #' must have been covered by the original crosslink site input. If the input was
 #' based on the single nucleotide crosslink positions computed by PureCLIP than
-#' this filter checks for the number of positions originally identified by PureCLIP
-#' in the computed binding sites. The default of \code{minClSites} = 1 essentially
-#' deactivates this filter.
+#' this filter checks for the number of positions originally identified by
+#' PureCLIP in the computed binding sites. The default of \code{minClSites} = 1
+#' essentially deactivates this filter.
 #'
-#' The options \code{centerIsClSite} and \code{centerIsSummit} ensure that the center
-#' of each binding site is covered by an initial crosslink site and represents the
-#' summit of crosslink events in the binding site, respectively.
+#' The options \code{centerIsClSite} and \code{centerIsSummit} ensure that the
+#' center of each binding site is covered by an initial crosslink site and
+#' represents the summit of crosslink events in the binding site, respectively.
 #'
-#' The option \code{sub.chr} allows to run the binding site merging on a smaller subset
-#' (eg. "chr1") for improoved computational speed when testing the effect of various
-#' binding site width and filtering options.
+#' The option \code{sub.chr} allows to run the binding site merging on a
+#' smaller subset (eg. "chr1") for improoved computational speed when testing
+#' the effect of various binding site width and filtering options.
 #'
 #' @param object a BSFDataSet object (see \code{\link{BSFDataSet}})
-#' @param bsSize an odd integer value specifiying the size of the output binding sites
-#' @param minWidth the minimum size of regions that are subjected to the iterative
-#' merging routine, after the initial region concatenation.
-#' @param minCrosslinks the minimal number of crosslink events that have to overlap a
-#' final binding site
-#' @param minClSites the minimal number of crosslink sites that have to overlap a
-#' final binding site
-#' @param centerIsClSite logical, whether the center of a final binding site must
-#' be covered by an intial crosslink site
-#' @param centerIsSummit logical, whether the center of a final binding site must
-#' exhibit the highest number of crosslink events
+#' @param bsSize an odd integer value specifying the size of the output
+#' binding sites
+#' @param minWidth the minimum size of regions that are subjected to the
+#' iterative merging routine, after the initial region concatenation.
+#' @param minCrosslinks the minimal number of crosslink events that have
+#' to overlap a final binding site
+#' @param minClSites the minimal number of crosslink sites that have to
+#' overlap a final binding site
+#' @param centerIsClSite logical, whether the center of a final binding
+#' site must be covered by an initial crosslink site
+#' @param centerIsSummit logical, whether the center of a final binding
+#' site must exhibit the highest number of crosslink events
 #' @param sub.chr chromosome identifier (eg, chr1, chr2) used for subsetting the
-#' BSFDataSet object. This option can be used for testing different parameter options
+#' BSFDataSet object. This option can be used for testing different
+#' parameter options
 #'
 #' @return an object of type BSFDataSet with modified ranges
 #'
@@ -89,7 +96,8 @@ makeBindingSites <- function(object,
         stop("bsSize not set. Please provide a desired binding site width.")
     }
     if (c(bsSize %% 2) == 0) {
-        stop("bsSize is even. An odd number is required to have a distinct binding site center.")
+        stop("bsSize is even. An odd number is required to have a distinct
+             binding site center.")
     }
     if (!is.numeric(bsSize)) {
         stop("bsSize must be of type numeric")
@@ -104,7 +112,8 @@ makeBindingSites <- function(object,
         stop("minCrosslinks must be of type numeric")
     }
     if (minClSites > bsSize) {
-        stop("Number of forced crosslink sites is larger than desired binding site size. ")
+        stop("Number of forced crosslink sites is larger than
+             desired binding site size. ")
     }
 
     #---------------------------------------------------------------------------
@@ -162,7 +171,8 @@ makeBindingSites <- function(object,
         rngS4 = rngS3
     }
     if (length(rngS4) <= 0) {
-        stop("No ranges left after appying crosslink site has to be center of binding site filter. ")
+        stop("No ranges left after appying crosslink site has to be center of
+             binding site filter. ")
     }
 
     if (isTRUE(centerIsSummit)) {
@@ -171,7 +181,8 @@ makeBindingSites <- function(object,
         rngS5 = rngS4
     }
     if (length(rngS5) <= 0) {
-        stop("No ranges left after appying binding site center has to be summit filter. ")
+        stop("No ranges left after appying binding site center has
+             to be summit filter. ")
     }
 
     # summarize number of ranges after each step
@@ -216,7 +227,6 @@ makeBindingSites <- function(object,
     sgnMergePlus = sgn$signalPlus
     sgnMergeMinus = sgn$signalMinus
 
-    # rngS1 = GenomeInfoDb::keepStandardChromosomes(rng, pruning.mode = "coarse")
     rngS1 = rng
 
     ### Merge peaks for given bs size
@@ -243,37 +253,45 @@ makeBindingSites <- function(object,
                 # get max xlink position of each peak
                 peaksMaxPosPlus = as.matrix(sgnMergePlus[rngToProcessPlus])
                 peaksMaxPosPlus[is.na(peaksMaxPosPlus)] = -Inf
-                peaksMaxPosPlus = max.col(peaksMaxPosPlus, ties.method = "first")
+                peaksMaxPosPlus = max.col(peaksMaxPosPlus,
+                                          ties.method = "first")
 
                 # make new peaks centered arround max position
                 currentPeaksPlus = rngToProcessPlus
-                start(currentPeaksPlus) = start(currentPeaksPlus) + peaksMaxPosPlus -1
+                start(currentPeaksPlus) =
+                    start(currentPeaksPlus) + peaksMaxPosPlus -1
                 end(currentPeaksPlus) = start(currentPeaksPlus)
                 currentPeaksPlus = currentPeaksPlus + ((bsSize - 1) / 2)
                 # store peaks
                 rngCenterPlus = c(rngCenterPlus, currentPeaksPlus)
                 # remove peak regions from rest of possible regions
-                currentPeaksPlus = as(currentPeaksPlus + ((bsSize - 1) / 2), "GRangesList")
+                currentPeaksPlus = as(currentPeaksPlus + ((bsSize - 1) / 2),
+                                      "GRangesList")
 
                 # update peak regions that are left for processing
-                rngToProcessPlus = unlist(psetdiff(rngToProcessPlus, currentPeaksPlus))
+                rngToProcessPlus = unlist(psetdiff(rngToProcessPlus,
+                                                   currentPeaksPlus))
             }
             if (length(rngToProcessMinus) != 0) {
                 peaksMaxPosMinus = as.matrix(sgnMergeMinus[rngToProcessMinus])
                 peaksMaxPosMinus[is.na(peaksMaxPosMinus)] = -Inf
-                peaksMaxPosMinus = max.col(peaksMaxPosMinus, ties.method = "last")
+                peaksMaxPosMinus = max.col(peaksMaxPosMinus,
+                                           ties.method = "last")
 
                 currentPeaksMinus = rngToProcessMinus
-                start(currentPeaksMinus) = start(currentPeaksMinus) + peaksMaxPosMinus -1
+                start(currentPeaksMinus) =
+                    start(currentPeaksMinus) + peaksMaxPosMinus -1
                 end(currentPeaksMinus) = start(currentPeaksMinus)
                 currentPeaksMinus = currentPeaksMinus + ((bsSize - 1) / 2)
 
                 rngCenterMinus = c(rngCenterMinus, currentPeaksMinus)
 
-                currentPeaksMinus = as(currentPeaksMinus + ((bsSize - 1) /
-                                                                2), "GRangesList")
+                currentPeaksMinus =
+                    as(currentPeaksMinus + ((bsSize - 1) /2),
+                       "GRangesList")
 
-                rngToProcessMinus = unlist(psetdiff(rngToProcessMinus, currentPeaksMinus))
+                rngToProcessMinus = unlist(psetdiff(rngToProcessMinus,
+                                                    currentPeaksMinus))
             }
             Counter = Counter + 1
         }
@@ -295,7 +313,8 @@ makeBindingSites <- function(object,
         # split by strand plus
         rngCurrPlus = rng[strand(rng) == "+"]
         rngCurrPlusMat = as.matrix(sgnMergePlus[rngCurrPlus])
-        rngCurrPlus = rngCurrPlus[apply((rngCurrPlusMat > 0), 1, sum) > minCrosslinks]
+        rngCurrPlus = rngCurrPlus[apply((rngCurrPlusMat > 0), 1, sum) >
+                                      minCrosslinks]
     }
     if (!"+" %in% unique(strand(rng))) {
         rngCurrPlus = NULL
@@ -305,7 +324,8 @@ makeBindingSites <- function(object,
         # split by strand minus
         rngCurrMinus = rng[strand(rng) == "-"]
         rngCurrMinusMat = as.matrix(sgnMergeMinus[rngCurrMinus])
-        rngCurrMinus = rngCurrMinus[apply((rngCurrMinusMat > 0), 1, sum) > minCrosslinks]
+        rngCurrMinus = rngCurrMinus[apply((rngCurrMinusMat > 0), 1, sum) >
+                                        minCrosslinks]
     }
     if (!"-" %in% unique(strand(rng))) {
         rngCurrMinus = NULL
@@ -336,7 +356,8 @@ makeBindingSites <- function(object,
         rngPlus = rng[strand(rng) == "+"]
         rngCurrPlusMat = as.matrix(sgnMergePlus[rngPlus])
         rngCurrPlusCount = apply(rngCurrPlusMat, 1, max)
-        rngCurrPlus = rngPlus[rngCurrPlusCount == rngCurrPlusMat[, ((unique(width(rng)) -1) / 2) + 1]]
+        rngCurrPlus = rngPlus[rngCurrPlusCount == rngCurrPlusMat[, (
+            (unique(width(rng)) -1) / 2) + 1]]
     }
     if (!"+" %in% unique(strand(rng))) {
         rngCurrPlus = NULL
@@ -346,7 +367,8 @@ makeBindingSites <- function(object,
         rngMinus = rng[strand(rng) == "-"]
         rngCurrMinusMat = as.matrix(sgnMergeMinus[rngMinus])
         rngCurrMinusCount = apply(rngCurrMinusMat, 1, max)
-        rngCurrMinus = rngMinus[rngCurrMinusCount == rngCurrMinusMat[, ((unique(width(rng)) - 1) / 2) + 1]]
+        rngCurrMinus = rngMinus[rngCurrMinusCount == rngCurrMinusMat[, (
+            (unique(width(rng)) - 1) / 2) + 1]]
     }
     if (!"-" %in% unique(strand(rng))) {
         rngCurrMinus = NULL

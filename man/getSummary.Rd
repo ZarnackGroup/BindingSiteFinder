@@ -20,8 +20,8 @@ returns the summary information storted in the summary slot after
 \code{\link{makeBindingSites}} was run
 }
 \description{
-The summary slot is used to track information of the filtering steps applied in
-the \code{\link{makeBindingSites}} function
+The summary slot is used to track information of the filtering steps applied
+in the \code{\link{makeBindingSites}} function
 }
 \examples{
 

@@ -1,9 +1,9 @@
 #' Show method to for the BSFDataSet
 #'
 #' Prints the information for each of the slots in the \code{BSFDataSet} object.
-#' Ranges of the \code{\link{getRanges}} slot are shown, as well as the number of
-#' crosslinks per strand \code{\link{getSignal}} and the levels of the experimental
-#' conditions (\code{\link{getMeta}}).
+#' Ranges of the \code{\link{getRanges}} slot are shown, as well as the number
+#' of crosslinks per strand \code{\link{getSignal}} and the levels of the
+#' experimental conditions (\code{\link{getMeta}}).
 #'
 #' @docType methods
 #' @name show
@@ -15,6 +15,14 @@
 #' @return shows the current object state
 #'
 #' @seealso \code{\link{BSFDataSet}}
+#'
+#' @examples
+#'
+#' # load data
+#' files <- system.file("extdata", package="BindingSiteFinder")
+#' load(list.files(files, pattern = ".rda$", full.names = TRUE))
+#'
+#' show(bds)
 #'
 #' @export
 setMethod("show",
@@ -31,9 +39,11 @@ setMethod("show",
               cat("----> Number of chromosomes: ",
                   length(levels(seqnames(object@ranges))), "\n")
               if(length(unique(width(object@ranges))) > 6) {
-                  cat("----> Ranges width: ", unique(width(object@ranges))[seq(1,6)], "...\n")
+                  cat("----> Ranges width: ",
+                      unique(width(object@ranges))[seq(1,6)], "...\n")
               } else {
-                  cat("----> Ranges width: ", unique(width(object@ranges)), "\n")
+                  cat("----> Ranges width: ",
+                      unique(width(object@ranges)), "\n")
               }
               cat("Contained conditions: ",
                   levels(object@meta$condition),
@@ -151,8 +161,8 @@ setMethod(
 
 #' Accessor method for the signal data of the BSFDataSet object
 #'
-#' Signal data is loaded from the path specified in \code{\link{getMeta}} columns
-#' "clPlus" and "clMinus" and stored as a list of RLE lists.
+#' Signal data is loaded from the path specified in \code{\link{getMeta}}
+#' columns "clPlus" and "clMinus" and stored as a list of RLE lists.
 #'
 #' @docType methods
 #' @name getSignal
@@ -186,8 +196,8 @@ setMethod(
 
 #' Setter method for the signal data of the BSFDataSet object
 #'
-#' Signal data is loaded from the path specified in \code{\link{getMeta}} columns
-#' "clPlus" and "clMinus" and stored as a list of RLE lists.
+#' Signal data is loaded from the path specified in \code{\link{getMeta}}
+#' columns "clPlus" and "clMinus" and stored as a list of RLE lists.
 #'
 #' @docType methods
 #' @name setSignal
@@ -229,8 +239,8 @@ setMethod(
 
 #' Accessor method for the summary slot of the BSFDataSet object
 #'
-#' The summary slot is used to track information of the filtering steps applied in
-#' the \code{\link{makeBindingSites}} function
+#' The summary slot is used to track information of the filtering steps applied
+#' in the \code{\link{makeBindingSites}} function
 #'
 #' @docType methods
 #' @name getSummary
@@ -276,8 +286,8 @@ setMethod(
 
 #' Setter method for the summary slot of the BSFDataSet object
 #'
-#' The summary slot is used to track information of the filtering steps applied in
-#' the \code{\link{makeBindingSites}} function
+#' The summary slot is used to track information of the filtering steps applied
+#' in the \code{\link{makeBindingSites}} function
 #'
 #' @docType methods
 #' @name setSummary
@@ -285,7 +295,8 @@ setMethod(
 #' @aliases setSummary setSummary,BSFDataSet-method
 #'
 #' @param object a BSFDataSet object
-#' @param summary a data.frame with the summary information to be stored in \code{BSFDataSet}
+#' @param summary a data.frame with the summary information to be stored in
+#' \code{BSFDataSet}
 #' @param ... additional arguments
 #'
 #' @return an object of type \code{\link{BSFDataSet}} with updated summary info

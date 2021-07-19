@@ -2,7 +2,8 @@
 % Please edit documentation in R/PlotFunction.R
 \name{mergeSummaryPlot}
 \alias{mergeSummaryPlot}
-\title{Plot summarized results of the different binding site merging and filtering steps}
+\title{Plot summarized results of the different binding site merging and filtering
+steps}
 \usage{
 mergeSummaryPlot(
   object,
@@ -14,9 +15,10 @@ mergeSummaryPlot(
 \arguments{
 \item{object}{a BSFDataObject, with the makeBindingSites function already run}
 
-\item{select}{one of "all", "filter", "inputRanges", "minCLSites", "mergeCrosslinkSites",
-"minCrosslinks", "centerIsClSite" or "centerIsSummit". Defines which parameter is selected
-for plotting.}
+\item{select}{one of "all", "filter", "inputRanges",
+"minCLSites", "mergeCrosslinkSites", "minCrosslinks",
+"centerIsClSite" or "centerIsSummit".
+Defines which parameter is selected for plotting.}
 
 \item{...}{further arguments passed to ggplot}
 }
@@ -25,14 +27,14 @@ a plot of type ggplot after the \code{\link{makeBindingSites}}
 function was run
 }
 \description{
-Bar charts produced for the different filter steps in the binding site merging
-routine. Depending on the selected option (\code{select}) all or only a user
-defined filter can be shown.
+Bar charts produced for the different filter steps in the binding site
+merging routine. Depending on the selected option (\code{select}) all or
+only a user defined filter can be shown.
 }
 \details{
-If \code{object} is a single BSFDataObject a single coverage plot will be drawn,
-whereas if it is a list of BSFDataObjects, then faceting is used to make a plot for
-each list element.
+If \code{object} is a single BSFDataObject a single coverage plot will be
+drawn, whereas if it is a list of BSFDataObjects, then faceting is used to
+make a plot for each list element.
 }
 \examples{
 # load data

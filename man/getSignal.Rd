@@ -18,8 +18,8 @@ returns the signal data, as list of RLE list for each strand, named
 after the meta data columns "clPlus" and "clMinus"
 }
 \description{
-Signal data is loaded from the path specified in \code{\link{getMeta}} columns
-"clPlus" and "clMinus" and stored as a list of RLE lists.
+Signal data is loaded from the path specified in \code{\link{getMeta}}
+columns "clPlus" and "clMinus" and stored as a list of RLE lists.
 }
 \examples{
 

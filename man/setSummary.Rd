@@ -15,14 +15,15 @@ setSummary(object, ...)
 
 \item{...}{additional arguments}
 
-\item{summary}{a data.frame with the summary information to be stored in \code{BSFDataSet}}
+\item{summary}{a data.frame with the summary information to be stored in
+\code{BSFDataSet}}
 }
 \value{
 an object of type \code{\link{BSFDataSet}} with updated summary info
 }
 \description{
-The summary slot is used to track information of the filtering steps applied in
-the \code{\link{makeBindingSites}} function
+The summary slot is used to track information of the filtering steps applied
+in the \code{\link{makeBindingSites}} function
 }
 \examples{
 

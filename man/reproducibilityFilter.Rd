@@ -15,42 +15,47 @@ reproducibilityFilter(
 \arguments{
 \item{object}{a BSFDataSet object}
 
-\item{cutoff}{a vector of length = 1, or of length = levels(getMeta(object)$conditions) with
-a single number (between 0-1) indicating the quantile cutoff}
+\item{cutoff}{a vector of length = 1, or of length =
+levels(getMeta(object)$conditions) with a single number (between 0-1)
+indicating the quantile cutoff}
 
-\item{n.reps}{a vector of length = 1, or of length = levels(getMeta(object)$conditions) indicating
-how many replicates need to meet their threshold for a binding site to be called reproducible.}
+\item{n.reps}{a vector of length = 1, or of length = l
+evels(getMeta(object)$conditions) indicating how many replicates need to
+meet their threshold for a binding site to be called reproducible.}
 
-\item{min.crosslinks}{numeric of length = 1, defines the lower boundary for the minimum
-number of crosslinks a binding site has to be supported by all replicates, regardless
-of the replicate specific quantile threshold}
+\item{min.crosslinks}{numeric of length = 1, defines the lower boundary for
+the minimum number of crosslinks a binding site has to be supported by all
+replicates, regardless of the replicate specific quantile threshold}
 
-\item{returnType}{one of "BSFDataSet" or "data.frame". "BSFDataSet" is the default and
-"matrix" can be used for easy plotting.}
+\item{returnType}{one of "BSFDataSet" or "data.frame". "BSFDataSet" is the
+default and "matrix" can be used for easy plotting.}
 }
 \value{
 an object of type BSFDataSet
 }
 \description{
-For each replicate the number of binding sites with a certain number of crosslinks is
-calculated. A quantile based threshold (\code{cutoff}) is applied to each replicate.
-This indicates how many of the merged binding sites are supported by crosslinks
-from the respective replicate. Next, one can specify how many replicates need to
-pass the defined threshold for a binding site to be considered reproducible.
+For each replicate the number of binding sites with a certain number of
+crosslinks is calculated. A quantile based threshold (\code{cutoff}) is
+applied to each replicate. This indicates how many of the merged binding
+sites are supported by crosslinks from the respective replicate. Next, one
+can specify how many replicates need to pass the defined threshold for a
+binding site to be considered reproducible.
 }
 \details{
-If \code{cutoff} is a single number then the indicated cutoff will be applied to
-all replicates. If it is a vector then each element in the vector is applied to all
-replicates of the respective condition. The order is hereby given by the levels
-of the condition column of the meta data (see \code{\link{BSFDataSet}},
-\code{\link{getMeta}}). If the condition specific filter is applied, a meta column
-is added to the GRanges of the \code{BSFDataSet} object, indicating the support for each condition.
+If \code{cutoff} is a single number then the indicated cutoff will be
+applied to all replicates. If it is a vector then each element in the vector
+is applied to all replicates of the respective condition. The order is
+hereby given by the levels of the condition column of the meta data
+(see \code{\link{BSFDataSet}},\code{\link{getMeta}}). If the condition
+specific filter is applied, a meta column is added to the GRanges of the
+\code{BSFDataSet} object, indicating the support for each condition.
 
-If \code{n.reps} is a single number then this number is used as treshold for all
-binding sites. If it is a vector then it is applied to the replicates of the respective
-condition (like in \code{cutoff}). This allows the application of different thresholds
-for experiments of different experimental conditions. If the condition specific filter
-is applied, a meta column is added to the GRanges of the \code{BSFDataSet} object,
+If \code{n.reps} is a single number then this number is used as treshold for
+all binding sites. If it is a vector then it is applied to the replicates of
+the respective condition (like in \code{cutoff}). This allows the
+application of different thresholds for experiments of different
+experimental conditions. If the condition specific filter is applied, a meta
+column is added to the GRanges of the \code{BSFDataSet} object,
 indicating the support for each condition.
 }
 \examples{
