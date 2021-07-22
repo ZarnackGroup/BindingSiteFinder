@@ -132,6 +132,44 @@ load(exampleFile)
 bds
 ```
 
+```{r}
+# no merge at all
+# -> return a list of matrices with counts per position in ranges and replicates
+# --> matrix: cols == position of ranges and rows = ranges
+# --> list: one entry per replicate
+
+# merge over ranges
+# -> return a single matrix with cols == replicates and rows == ranges
+
+# merge over replicates
+# -> return a single matrix with rows == ranges and cols = positions and counts == mean/ sum over reps
+
+# bisher/ old
+# -> merge == TRUE
+# --> positions were merged, but reps were kept seperate
+# Ranges object with 3204 ranges and 4 metadata columns:
+#        seqnames            ranges strand |      1_WT      2_WT      3_KD      4_KD
+#           <Rle>         <IRanges>  <Rle> | <numeric> <numeric> <numeric> <numeric>
+#      1    chr22 11630139-11630141      + |        51        93       127        72
+#      2    chr22 11630414-11630416      + |         9        19        37        15
+#      3    chr22 15785521-15785523      + |         1         3         1         2
+#      3    chr22 15785524-15785526      + |         1         4         4         2
+#      4    chr22 15785541-15785543      + |         2         1         6         2
+
+# -> merge == FALSE
+# --> merge over pos and replicate
+#        V1    V2   V3
+# 1_WT 1677  3788 1816
+# 2_WT 5946 13175 6251
+# 3_KD 8059 17042 7923
+# 4_KD 3434  7288 3263
+
+# merge == TRUE -> merge_positions_keep_replicates
+
+# merge == FALSE -> merge_ranges_keep_positions
+```
+
+
 ## Choosing the binding site width
 
 Choosing how wide the final binding sites should be is not an easy choice and depends various different factors. For that reason different filter options alongside with diagnostic plots were implemented to guide the decision. 

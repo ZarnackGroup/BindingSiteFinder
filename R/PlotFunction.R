@@ -58,8 +58,11 @@ rangeCoveragePlot <-
             rngResize = resize(rng, width = 1, fix = "center") + width
             newObj = setRanges(object, rngResize)
 
-            df = coverageOverRanges(newObj, merge = FALSE,
-                                    returnType = "data.frame")
+            df = coverageOverRanges(
+                newObj, returnOptions = "merge_ranges_keep_positions",
+                silent = TRUE)
+            df = as.data.frame(df)
+
             df = data.frame(
                 mean = colMeans(df),
                 sd = colSds(as.matrix(df)),
@@ -110,8 +113,11 @@ rangeCoveragePlot <-
                                    fix = "center") + width
                 newObject = setRanges(object[[x]], rngResize)
 
-                df = coverageOverRanges(newObject, merge = FALSE,
-                                        returnType = "data.frame")
+                df = coverageOverRanges(
+                    newObject, returnOptions = "merge_ranges_keep_positions",
+                    silent = TRUE)
+                df = as.data.frame(df)
+
                 df = data.frame(
                     mean = colMeans(df),
                     sd = colSds(as.matrix(df)),
@@ -379,7 +385,10 @@ reproducibiliyCutoffPlot <-
         stopifnot(is(object, "BSFDataSet"))
 
         cond = getMeta(object)$condition
-        df = coverageOverRanges(object, returnType = "data.frame")
+        df = coverageOverRanges(
+            object, returnOptions = "merge_positions_keep_replicates",
+            silent = TRUE)
+        df = as.data.frame(mcols(df))
 
         if (length(cutoff) == 1) {
             # calculate sample specific thresholds

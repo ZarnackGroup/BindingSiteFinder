@@ -71,7 +71,9 @@ reproducibilityFilter <- function(object,
     stopifnot(is(object, "BSFDataSet"))
 
     cond = getMeta(object)$condition
-    df = coverageOverRanges(object, returnType = "data.frame")
+    df = as.data.frame(mcols(coverageOverRanges(
+        object, returnOptions = "merge_positions_keep_replicates",
+        silent = TRUE)))
 
     if (length(cutoff) == 1) {
         # calculate sample specific thresholds
@@ -92,7 +94,7 @@ reproducibilityFilter <- function(object,
             ifelse(x > qSel$value[matchIdx], 1, 0)
         }) %>%
             t %>% as.data.frame() #TODO use this for plotting the upset plot
-        support = rowSums(s) > n.reps
+        support = rowSums(s) >= n.reps
         # store results in output
         newRanges = getRanges(object)
         newRanges = newRanges[support]
@@ -124,7 +126,8 @@ reproducibilityFilter <- function(object,
         sSplit = vapply(levels(cond), function(x) {
             s %>% dplyr::select(contains(x)) %>% rowSums()
         }, FUN.VALUE = numeric(nrow(s))) %>% as.data.frame()
-        idx = match(colnames(sSplit), qSel$applyTo)
+        # idx = match(colnames(sSplit), qSel$applyTo)
+        idx = match(colnames(sSplit), qSel$sel)
         support = apply(sSplit, 1, function(x) {
             x >= qSel$n.reps[idx]
         }) %>%
@@ -149,113 +152,6 @@ reproducibilityFilter <- function(object,
 
     return(retObj)
 }
-
-
-#' Coverage function for BSFDataSet objects
-#'
-#' The crosslink coverage is computed for all ranges in the the given
-#' \code{BSFDataSet} object (see \code{\link{BSFDataSet}} for details).
-#' The coverage of the crosslinks stored in the singnal slot of the
-#' \code{BSFDataSet} is computed over the ranges in the \code{BSFDataSet}
-#' object.
-#'
-#' If \code{returnType} is set to GRanges, the coverge information is stored
-#' in the metadata slot.
-#'
-#' @param object a BSFDataSet object
-#' @param merge logical, if coverage should be merged per replicate or reported
-#' for each nucleotide in the range individually
-#' @param returnType one of "GRanges", "matrix" or "data.frame"
-#'
-#' @return an object of class specified in \code{returnType}
-#' @import GenomicRanges
-#'
-#' @examples
-#' # load data
-#' # load data
-#' files <- system.file("extdata", package="BindingSiteFinder")
-#' load(list.files(files, pattern = ".rda$", full.names = TRUE))
-#'
-#' rng = coverageOverRanges(bds)
-#'
-#' @export
-coverageOverRanges <- function(object,
-                               merge = TRUE,
-                               returnType = c("GRanges",
-                                              "matrix",
-                                              "data.frame")) {
-    stopifnot(is(object, "BSFDataSet"))
-    # split by strand
-    rng = getRanges(object)
-    rngPlus = rng[strand(rng) == "+"]
-    rngMinus = rng[strand(rng) == "-"]
-    # prepare signal
-    sgn = getSignal(object)
-    # signal coverage is reported for each position in the range of the peak
-    if (!isTRUE(merge)) {
-        # manage return type
-        # only return type data.frame is possible with this option
-        returnType = match.arg(returnType,
-                               choices = c("GRanges", "matrix", "data.frame"))
-        if (returnType != "data.frame") {
-            warning("Only return type 'data.frame'
-                    possible with non-merged output.")
-        }
-        returnType = "data.frame"
-
-        if (length(rngPlus) > 0) {
-            matPlus = lapply(sgn$signalPlus, function(x) {
-                as.matrix(x[rngPlus])
-            })
-            covPlus = do.call(rbind, lapply(matPlus, colSums))
-        }
-        if (length(rngPlus) == 0) {
-            covPlus = 0
-        }
-        if (length(rngMinus) > 0) {
-            matMinus = lapply(sgn$signalMinus, function(x) {
-                as.matrix(x[rngMinus])
-            })
-            covMinus = do.call(rbind, lapply(matMinus, colSums))
-            # flip orientation of minus strand coverage
-            covMinus = covMinus %>% as.data.frame() %>% rev() %>% as.matrix()
-        }
-        if (length(rngMinus) == 0) {
-            covMinus = 0
-        }
-        covDf = covPlus + covMinus
-        retObj = as.data.frame(covDf)
-    }
-    # signal is merged over all positions in the range
-    if (isTRUE(merge)) {
-        mcols(rngPlus) = as.matrix(
-            do.call(cbind, lapply(sgn$signalPlus, function(x) {
-                sum(x[rngPlus])
-            })))
-        mcols(rngMinus) = as.matrix(
-            do.call(cbind, lapply(sgn$signalMinus, function(x) {
-                sum(x[rngMinus])
-            })))
-        # sort ranges
-        rngCov = c(rngPlus, rngMinus)
-        rngCov = GenomeInfoDb::sortSeqlevels(rngCov)
-        rngCov = sort(rngCov)
-        # manage return type
-        returnType = match.arg(returnType,
-                               choices = c("GRanges", "matrix", "data.frame"))
-        if (returnType == "GRanges") {
-            retObj = rngCov
-        }
-        if (returnType == "matrix") {
-            retObj = as.matrix(mcols(rngCov))
-        }
-        if (returnType == "data.frame") {
-            retObj = as.data.frame(mcols(rngCov))
-        }
-    }
-    return(retObj)
-}
-
 
 #' Annotation function for BSFDataSet object
 #'
@@ -417,3 +313,87 @@ supportRatio <- function(object, bsWidths, bsFlank = NA, ...) {
 }
 
 
+
+
+
+
+################################################################################
+#                                   OLD                                        #
+################################################################################
+
+# coverageOverRanges <- function(object,
+#                                merge = TRUE,
+#                                returnType = c("GRanges",
+#                                               "matrix",
+#                                               "data.frame")) {
+#     stopifnot(is(object, "BSFDataSet"))
+#     # split by strand
+#     rng = getRanges(object)
+#     rngPlus = rng[strand(rng) == "+"]
+#     rngMinus = rng[strand(rng) == "-"]
+#     # prepare signal
+#     sgn = getSignal(object)
+#     # signal coverage is reported for each position in the range of the peak
+#     if (!isTRUE(merge)) {
+#         # manage return type
+#         # only return type data.frame is possible with this option
+#         returnType = match.arg(returnType,
+#                                choices = c("GRanges", "matrix", "data.frame"))
+#         if (returnType != "data.frame") {
+#             warning("Only return type 'data.frame'
+#                     possible with non-merged output.")
+#         }
+#         returnType = "data.frame"
+#
+#         if (length(rngPlus) > 0) {
+#             matPlus = lapply(sgn$signalPlus, function(x) {
+#                 as.matrix(x[rngPlus])
+#             })
+#             covPlus = do.call(rbind, lapply(matPlus, colSums))
+#         }
+#         if (length(rngPlus) == 0) {
+#             covPlus = 0
+#         }
+#         if (length(rngMinus) > 0) {
+#             matMinus = lapply(sgn$signalMinus, function(x) {
+#                 as.matrix(x[rngMinus])
+#             })
+#             covMinus = do.call(rbind, lapply(matMinus, colSums))
+#             # flip orientation of minus strand coverage
+#             covMinus = covMinus %>% as.data.frame() %>% rev() %>% as.matrix()
+#         }
+#         if (length(rngMinus) == 0) {
+#             covMinus = 0
+#         }
+#         covDf = covPlus + covMinus
+#         retObj = as.data.frame(covDf)
+#     }
+#     # signal is merged over all positions in the range
+#     if (isTRUE(merge)) {
+#         mcols(rngPlus) = as.matrix(
+#             do.call(cbind, lapply(sgn$signalPlus, function(x) {
+#                 sum(x[rngPlus])
+#             })))
+#         mcols(rngMinus) = as.matrix(
+#             do.call(cbind, lapply(sgn$signalMinus, function(x) {
+#                 sum(x[rngMinus])
+#             })))
+#         # sort ranges
+#         rngCov = c(rngPlus, rngMinus)
+#         rngCov = GenomeInfoDb::sortSeqlevels(rngCov)
+#         rngCov = sort(rngCov)
+#         # manage return type
+#         returnType = match.arg(returnType,
+#                                choices = c("GRanges", "matrix", "data.frame"))
+#         if (returnType == "GRanges") {
+#             retObj = rngCov
+#         }
+#         if (returnType == "matrix") {
+#             retObj = as.matrix(mcols(rngCov))
+#         }
+#         if (returnType == "data.frame") {
+#             retObj = as.data.frame(mcols(rngCov))
+#         }
+#     }
+#     return(retObj)
+# }
