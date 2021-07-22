@@ -106,12 +106,21 @@
         stop("flankSize is not an integer. ")
     }
 
-    c0 = rowSums(coverageOverRanges(object, merge = TRUE,
-                                    returnType = "data.frame"))
+    # c0 = rowSums(coverageOverRanges(object, merge = TRUE,
+    #                                 returnType = "data.frame"))
+
+    c0 = rowSums(as.data.frame(mcols(coverageOverRanges(
+        object, returnOptions = "merge_positions_keep_replicates",
+        silent = TRUE))))
+
     objMod = object
     objMod = setRanges(objMod, getRanges(object) + flankSize)
-    c1 = rowSums(coverageOverRanges(objMod, merge = TRUE,
-                                    returnType = "data.frame"))
+    # c1 = rowSums(coverageOverRanges(objMod, merge = TRUE,
+    #                                 returnType = "data.frame"))
+    c1 = rowSums(as.data.frame(mcols(coverageOverRanges(
+        objMod, returnOptions = "merge_positions_keep_replicates",
+        silent = TRUE))))
+
     # use 0.1 as pseudocount for the score
     score = c0 / (((c1 - c0) + 0.1) / 2)
     # report median over all binding sites
