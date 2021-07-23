@@ -64,9 +64,12 @@ library(BindingSiteFinder)
 # clipFiles = "/Users/mirko/Projects/clip_methods/01_cov/lujh32-combined___bw/DR/raw/"
 clipFilesP <- list.files(clipFiles, pattern = "plus.bw$", full.names = TRUE)
 clipFilesM <- list.files(clipFiles, pattern = "minus.bw$", full.names = TRUE)
-meta = data.frame(condition = c("WT", "WT", "KD", "KD"), clPlus = clipFilesP, clMinus = clipFilesM)
+meta = data.frame(id = c(1,2,3,4),
+                  condition = c("WT", "WT", "KD", "KD"),
+                  clPlus = clipFilesP, clMinus = clipFilesM)
 
-bdsFull = BSFDataSet(ranges = csFilter, meta = meta)
+# bdsFull = BSFDataSet(ranges = csFilter, meta = meta)
+bdsFull = BSFDataSetFromBigWig(ranges = csFilter, meta = meta)
 bds = .subsetByChr(bdsFull, chr = "chr22")
 
 save(bds, file = "./bds.rda")

@@ -3,22 +3,28 @@
 \docType{class}
 \name{BSFDataSet}
 \alias{BSFDataSet}
+\alias{BSFDataSet,}
+\alias{BSFDataSet-class,}
+\alias{BSFDataSetFromBigWig}
 \title{BSFDataSet object and constructors}
 \usage{
-BSFDataSet(ranges, meta, forceEqualNames = TRUE, silent = FALSE)
+BSFDataSet(ranges, meta, signal, forceEqualNames = TRUE)
 
-BSFDataSet(ranges, meta, forceEqualNames = TRUE, silent = FALSE)
+BSFDataSet(ranges, meta, signal, forceEqualNames = TRUE)
+
+BSFDataSetFromBigWig(ranges, meta, silent = FALSE)
 }
 \arguments{
 \item{ranges}{a \code{GenomicRanges} with the desired ranges to process. The
 strand slot must be either + or -.}
 
-\item{meta}{a \code{data.frame} with a minimum of three columns. The first
-column holds sample type information, such as the condition. The second and
-third column must be named 'clPlus' and 'clMinus' and must contain the path
-to the files with the individual crosslink events. This can be in
-.bw (bigwig) format for example.
-See the vignette for how such files can be obtained from sequenced reads.}
+\item{meta}{a \code{data.frame} with at least two columns. The first column
+should be a unique numeric id. The second column holds sample type
+information, such as the condition.}
+
+\item{signal}{a \code{list} with the two entries 'signalPlus' and
+'signalMinus', following a special representation of \code{SimpleRleList}
+for counts per replicates (see details for more information).}
 
 \item{forceEqualNames}{to maintain the integrity of chromosome
 names (TRUE/ FALSE). The option ensures that chromosome names present in
@@ -32,38 +38,44 @@ A BSFDataSet object.
 }
 \description{
 \code{BSFDataSet} contains the class \code{GenomicRanges}, which is used to
-store input ranges. It enforces for all ranges to have a "+" or "-" strand
-annotation,"*" is not allowed. Alongside these ranges meta data is stored
-as \code{data.frame}.This dataframe needs to contain three columns which
-must be named "condition", "clPlus" and "clMinus". It is used to provide the
-location to the iCLIP coverage files to the import function. On object
-initialization these files are loaded and internally represented
-as RLE-Lists. See the vignette for different construction examples.
+store input ranges. Alongside with the iCLIP signal in \code{list} structure
+and additional meta data as \code{data.frame}.
+}
+\details{
+The ranges are enforced to have to have a "+" or "-" strand
+annotation,"*" is not allowed. They are expected to be of the same width
+and a warning is thrown otherwise.
+
+The meta information is stored as \code{data.frame} with at least two
+required columns, 'id' and 'condition'. They are used to build the unique
+identifier for each replicate split by '_' (eg. id = 1 and condition = WT
+will result in 1_WT).
+
+The meta data needs to have the additional columns 'clPlus' and 'clMinus'
+to be present if \code{BSFDataSetFromBigWig} is called.
+It is used to provide the location to the iCLIP coverage
+files to the import function. On object initialization these files are
+loaded and internally represented in the signal slot of the object
+(see \code{\link{BSFDataSet}}).
+
+The iCLIP signal is stored in a special list structure.
+At the lowest level crosslink counts per nucleotide are stored as
+\code{Rle} per chromosome summarized as a \code{SimpleRleList}. Such a list
+exits for each replicate and must be named by the replicate identifier
+(eg. 1_WT). Therefore this list contains always exactly the same number of
+entries as the number of replicates in the dataset. Since we handle strands
+initially seperated from each other this list must be given twice, once
+for each strand. The strand specific entries must be named 'signalPlus' and
+'signalMinus'.
 }
 \examples{
-if (.Platform$OS.type != "windows") {
-   csFile <- system.file("extdata", "PureCLIP_crosslink_sites_example.bed",
-                         package="BindingSiteFinder")
-   cs = rtracklayer::import(con = csFile, format = "BED")
-   clipFiles <- system.file("extdata", package="BindingSiteFinder")
 
-   # do only if not windows
-   meta = data.frame(condition = factor(c("WT", "WT", "KD", "KD"),
-    levels = c("KD", "WT")),
-                     clPlus = list.files(clipFiles, pattern = "plus.bw$",
-                      full.names = TRUE),
-                     clMinus = list.files(clipFiles, pattern = "minus.bw$",
-                      full.names = TRUE))
-   bds = BSFDataSet(ranges = cs, meta = meta)
-
-   # one experimental condition
-   meta = data.frame(condition = c("WT", "WT", "WT", "WT"),
-                     clPlus = list.files(clipFiles, pattern = "plus.bw$",
-                      full.names = TRUE),
-                     clMinus = list.files(clipFiles, pattern = "minus.bw$",
-                      full.names = TRUE))
-   bds = BSFDataSet(ranges = cs, meta = meta, forceEqualNames = TRUE)
-
-}
+# load data
+files <- system.file("extdata", package="BindingSiteFinder")
+load(list.files(files, pattern = ".rda$", full.names = TRUE))
+rng = getRanges(bds)
+sgn = getSignal(bds)
+mta = getMeta(bds)
+bdsNew = BSFDataSet(ranges = rng, signal = sgn, meta = mta)
 
 }

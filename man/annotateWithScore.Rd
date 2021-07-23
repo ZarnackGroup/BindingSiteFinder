@@ -27,12 +27,14 @@ if (.Platform$OS.type != "windows") {
     cs = rtracklayer::import(con = csFile, format = "BED")
     clipFiles <- system.file("extdata", package="BindingSiteFinder")
     # two experimental conditions
-    meta = data.frame(condition = factor(c("WT", "WT", "KD", "KD"),
+    meta = data.frame(
+    id = c(1,2,3,4),
+    condition = factor(c("WT", "WT", "KD", "KD"),
     levels = c("KD", "WT")),
     clPlus = list.files(clipFiles, pattern = "plus.bw$", full.names = TRUE),
     clMinus = list.files(clipFiles, pattern = "minus.bw$",
      full.names = TRUE))
-    bds = BSFDataSet(ranges = cs, meta = meta)
+    bds = BSFDataSetFromBigWig(ranges = cs, meta = meta, silent = TRUE)
 
     # merge binding sites
     bds <- makeBindingSites(object = bds, bsSize = 9, minWidth = 2,

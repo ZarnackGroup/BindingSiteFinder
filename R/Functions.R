@@ -174,12 +174,14 @@ reproducibilityFilter <- function(object,
 #'     cs = rtracklayer::import(con = csFile, format = "BED")
 #'     clipFiles <- system.file("extdata", package="BindingSiteFinder")
 #'     # two experimental conditions
-#'     meta = data.frame(condition = factor(c("WT", "WT", "KD", "KD"),
+#'     meta = data.frame(
+#'     id = c(1,2,3,4),
+#'     condition = factor(c("WT", "WT", "KD", "KD"),
 #'     levels = c("KD", "WT")),
 #'     clPlus = list.files(clipFiles, pattern = "plus.bw$", full.names = TRUE),
 #'     clMinus = list.files(clipFiles, pattern = "minus.bw$",
 #'      full.names = TRUE))
-#'     bds = BSFDataSet(ranges = cs, meta = meta)
+#'     bds = BSFDataSetFromBigWig(ranges = cs, meta = meta, silent = TRUE)
 #'
 #'     # merge binding sites
 #'     bds <- makeBindingSites(object = bds, bsSize = 9, minWidth = 2,
@@ -313,87 +315,3 @@ supportRatio <- function(object, bsWidths, bsFlank = NA, ...) {
 }
 
 
-
-
-
-
-################################################################################
-#                                   OLD                                        #
-################################################################################
-
-# coverageOverRanges <- function(object,
-#                                merge = TRUE,
-#                                returnType = c("GRanges",
-#                                               "matrix",
-#                                               "data.frame")) {
-#     stopifnot(is(object, "BSFDataSet"))
-#     # split by strand
-#     rng = getRanges(object)
-#     rngPlus = rng[strand(rng) == "+"]
-#     rngMinus = rng[strand(rng) == "-"]
-#     # prepare signal
-#     sgn = getSignal(object)
-#     # signal coverage is reported for each position in the range of the peak
-#     if (!isTRUE(merge)) {
-#         # manage return type
-#         # only return type data.frame is possible with this option
-#         returnType = match.arg(returnType,
-#                                choices = c("GRanges", "matrix", "data.frame"))
-#         if (returnType != "data.frame") {
-#             warning("Only return type 'data.frame'
-#                     possible with non-merged output.")
-#         }
-#         returnType = "data.frame"
-#
-#         if (length(rngPlus) > 0) {
-#             matPlus = lapply(sgn$signalPlus, function(x) {
-#                 as.matrix(x[rngPlus])
-#             })
-#             covPlus = do.call(rbind, lapply(matPlus, colSums))
-#         }
-#         if (length(rngPlus) == 0) {
-#             covPlus = 0
-#         }
-#         if (length(rngMinus) > 0) {
-#             matMinus = lapply(sgn$signalMinus, function(x) {
-#                 as.matrix(x[rngMinus])
-#             })
-#             covMinus = do.call(rbind, lapply(matMinus, colSums))
-#             # flip orientation of minus strand coverage
-#             covMinus = covMinus %>% as.data.frame() %>% rev() %>% as.matrix()
-#         }
-#         if (length(rngMinus) == 0) {
-#             covMinus = 0
-#         }
-#         covDf = covPlus + covMinus
-#         retObj = as.data.frame(covDf)
-#     }
-#     # signal is merged over all positions in the range
-#     if (isTRUE(merge)) {
-#         mcols(rngPlus) = as.matrix(
-#             do.call(cbind, lapply(sgn$signalPlus, function(x) {
-#                 sum(x[rngPlus])
-#             })))
-#         mcols(rngMinus) = as.matrix(
-#             do.call(cbind, lapply(sgn$signalMinus, function(x) {
-#                 sum(x[rngMinus])
-#             })))
-#         # sort ranges
-#         rngCov = c(rngPlus, rngMinus)
-#         rngCov = GenomeInfoDb::sortSeqlevels(rngCov)
-#         rngCov = sort(rngCov)
-#         # manage return type
-#         returnType = match.arg(returnType,
-#                                choices = c("GRanges", "matrix", "data.frame"))
-#         if (returnType == "GRanges") {
-#             retObj = rngCov
-#         }
-#         if (returnType == "matrix") {
-#             retObj = as.matrix(mcols(rngCov))
-#         }
-#         if (returnType == "data.frame") {
-#             retObj = as.data.frame(mcols(rngCov))
-#         }
-#     }
-#     return(retObj)
-# }
