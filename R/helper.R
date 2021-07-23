@@ -44,43 +44,12 @@
         if (length(unique(userCutoff)) > 1) {
             qSel = qSel[qSel$applyTo == qSel$sel, ]
         }
-
         # add n.reps support to df
         nRepsDf = data.frame(n.reps = userNreps, applyTo = levels(userCond))
-        # idx = match(qSel$applyTo, nRepsDf$applyTo)
         idx = match(qSel$sel, nRepsDf$applyTo)
         qSel$n.reps = nRepsDf$n.reps[idx]
         return(qSel)
     }
-# .selectQuantilesMultipleConditions <-
-#     function(covDf, userCond, userNreps, userCutoff) {
-#         # bind locally used variables
-#         per <- applyTo <- NULL
-#
-#         # construct general cutoff matrix in 1% steps
-#         q = as.data.frame(apply(covDf, 2, function(x) {
-#             quantile(x, probs = seq(0, 1, by = 0.01))
-#         }))
-#         q$cut = seq(0, 1, by = 0.01)
-#         q$per = rownames(q)
-#
-#         # select that part of q that was chosen by user
-#         qSel = q[q$cut %in% userCutoff, ]
-#         applyDf = data.frame(levels(userCond), userCutoff)
-#
-#         idx = match(qSel$cut, applyDf$userCutoff)
-#         qSel$applyTo = applyDf$levels.userCond.[idx]
-#         qSel = qSel %>% pivot_longer(-c(cut, per, applyTo))
-#         qSel$sel = vapply(strsplit(qSel$name, "_"), `[`, 2,
-#                           FUN.VALUE = character(1))
-#         qSel = qSel[qSel$applyTo == qSel$sel, ]
-#
-#         # add n.reps support to df
-#         nRepsDf = data.frame(n.reps = userNreps, applyTo = levels(userCond))
-#         idx = match(qSel$applyTo, nRepsDf$applyTo)
-#         qSel$n.reps = nRepsDf$n.reps[idx]
-#         return(qSel)
-#     }
 
 #' @importFrom stats quantile
 .selectQuantilesSingleCondtion <-
