@@ -34,17 +34,19 @@
         # select that part of q that was chosen by user
         qSel = q[q$cut %in% userCutoff, ]
         applyDf = data.frame(levels(userCond), userCutoff)
+        # applyDf = data.frame(levels(userCond), userCutoff, userCond)
 
         idx = match(qSel$cut, applyDf$userCutoff)
         qSel$applyTo = applyDf$levels.userCond.[idx]
         qSel = qSel %>% pivot_longer(-c(cut, per, applyTo))
         qSel$sel = vapply(strsplit(qSel$name, "_"), `[`, 2,
                           FUN.VALUE = character(1))
-        qSel = qSel[qSel$applyTo == qSel$sel, ]
-
+        if (length(unique(userCutoff)) > 1) {
+            qSel = qSel[qSel$applyTo == qSel$sel, ]
+        }
         # add n.reps support to df
         nRepsDf = data.frame(n.reps = userNreps, applyTo = levels(userCond))
-        idx = match(qSel$applyTo, nRepsDf$applyTo)
+        idx = match(qSel$sel, nRepsDf$applyTo)
         qSel$n.reps = nRepsDf$n.reps[idx]
         return(qSel)
     }
@@ -106,12 +108,21 @@
         stop("flankSize is not an integer. ")
     }
 
-    c0 = rowSums(coverageOverRanges(object, merge = TRUE,
-                                    returnType = "data.frame"))
+    # c0 = rowSums(coverageOverRanges(object, merge = TRUE,
+    #                                 returnType = "data.frame"))
+
+    c0 = rowSums(as.data.frame(mcols(coverageOverRanges(
+        object, returnOptions = "merge_positions_keep_replicates",
+        silent = TRUE))))
+
     objMod = object
     objMod = setRanges(objMod, getRanges(object) + flankSize)
-    c1 = rowSums(coverageOverRanges(objMod, merge = TRUE,
-                                    returnType = "data.frame"))
+    # c1 = rowSums(coverageOverRanges(objMod, merge = TRUE,
+    #                                 returnType = "data.frame"))
+    c1 = rowSums(as.data.frame(mcols(coverageOverRanges(
+        objMod, returnOptions = "merge_positions_keep_replicates",
+        silent = TRUE))))
+
     # use 0.1 as pseudocount for the score
     score = c0 / (((c1 - c0) + 0.1) / 2)
     # report median over all binding sites

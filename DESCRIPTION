@@ -1,7 +1,7 @@
 Package: BindingSiteFinder
 Type: Package
 Title: Binding site defintion based on iCLIP data
-Version: 0.99.7
+Version: 0.99.8
 Authors@R: c(
     person("Mirko", "Brüggemann",
         email="mirko.brueggemann@mail.de",
@@ -33,6 +33,7 @@ Collate:
     'bindingsites.R'
     'helper.R'
     'PlotFunction.R'
+    'CoverageFunctions.R'
 biocViews: Sequencing, GeneExpression, GeneRegulation, FunctionalGenomics, 
     Coverage, DataImport
 BugReports: https://github.com/ZarnackGroup/BindingSiteFinder/issues

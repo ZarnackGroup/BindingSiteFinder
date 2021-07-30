@@ -109,9 +109,11 @@ files <- system.file("extdata", package="BindingSiteFinder")
 clipFilesP <- list.files(files, pattern = "plus.bw$", full.names = TRUE)
 clipFilesM <- list.files(files, pattern = "minus.bw$", full.names = TRUE)
 
-meta = data.frame(condition = factor(c("WT", "WT", "KD", "KD"), 
-                                     levels = c("KD", "WT")), 
-                  clPlus = clipFilesP, clMinus = clipFilesM)
+meta = data.frame(
+  id = c(1,2,3,4),
+  condition = factor(c("WT", "WT", "KD", "KD"), 
+                     levels = c("KD", "WT")), 
+  clPlus = clipFilesP, clMinus = clipFilesM)
 meta
 ```
 
@@ -123,7 +125,7 @@ This table has to have at minimum three columns, which must be named *condition*
 
 ```{r, eval=FALSE}
 library(BindingSiteFinder)
-bds = BSFDataSet(ranges = csFilter, meta = meta)
+bds = BSFDataSetFromBigWig(ranges = csFilter, meta = meta, silent = TRUE)
 ```
 
 ```{r}
