@@ -353,6 +353,7 @@ mergeSummaryPlot <- function(object,
 #' @seealso \code{\link{reproducibilityFilter}}
 #'
 #' @importFrom tidyr pivot_longer
+#' @importFrom ggforce geom_mark_rect
 #' @import ggplot2 GenomicRanges
 #'
 #' @examples
@@ -414,39 +415,34 @@ reproducibiliyCutoffPlot <-
                 value = 1
             )
 
-            p = ggplot(df, aes(
-                x = value,
-                group = name,
-                fill = condition
-            ), ...) +
-                geom_rect(
-                    data = rectDf,
-                    aes(
-                        xmin = -Inf,
-                        xmax = Inf,
-                        ymin = -Inf,
-                        ymax = Inf,
-                        color = condition
-                    ),
-                    alpha = 0.3
-                ) +
-                scale_fill_brewer(palette = "Dark2") +
-                scale_color_brewer(palette = "Dark2") +
-                geom_bar(fill = "lightblue", color = "blue") +
-                facet_wrap( ~ name) +
-                geom_vline(
-                    data = qSel,
-                    aes(xintercept = value, group = name),
-                    color = "darkgrey",
-                    size = 1.5
-                ) +
+            qSel$lower = ifelse(qSel$value == min.crosslinks, TRUE, FALSE)
+
+            p = ggplot(df,
+                       aes(x = value, group = name, fill = condition), ...) +
+                geom_rect(data = rectDf,
+                          aes(xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf,
+                              color = condition), alpha = 0.3) +
+                scale_fill_brewer(palette = "Set1") +
+                scale_color_brewer(palette = "Set1") +
+                geom_bar(fill = "#2d5986", color = "#2d5986") +
+                facet_wrap( ~ name, scales = "free_x") +
+                geom_vline(data = qSel,
+                           aes(xintercept = value, group = name),
+                           color = "darkgrey", size = 1.5) +
                 theme_classic() +
-                ggtitle(paste(paste0(
-                    "Cutoff: ", unique(qSel$per), " ",
-                    unique(qSel$sel)
-                ), collapse = "; ")) +
+                ggforce::geom_mark_rect(data = qSel, aes(x = value, y = Inf,
+                                                label = value, group = name),
+                               radius = unit(1, "mm"), expand = unit(1, "mm"),
+                               label.fill = "white") +
+                ggtitle(
+                    paste0(paste(paste0("Cutoff: ", unique(qSel$per), " ",
+                                        unique(qSel$sel)), collapse = "; "),
+                           "; min.crosslinks = ", min.crosslinks)
+                    ) +
                 xlab("Crosslinks per site") +
                 ylab("Number of sites")
+
+
         }
 
         if (length(cutoff) > 1) {
@@ -476,42 +472,30 @@ reproducibiliyCutoffPlot <-
                 name = unique(df$name),
                 value = 1
             )
+            qSel$lower = ifelse(qSel$value == min.crosslinks, TRUE, FALSE)
 
-            p = ggplot(df, aes(
-                x = value,
-                group = name,
-                fill = condition
-            ), ...) +
-                geom_rect(
-                    data = rectDf,
-                    aes(
-                        xmin = -Inf,
-                        xmax = Inf,
-                        ymin = -Inf,
-                        ymax = Inf,
-                        color = condition
-                    ),
-                    alpha = 0.3
-                ) +
-                scale_fill_brewer(palette = "Dark2") +
-                scale_color_brewer(palette = "Dark2") +
-                geom_bar(fill = "lightblue", color = "blue") +
-                facet_wrap( ~name) +
-                geom_vline(
-                    data = qSel,
-                    aes(
-                        xintercept = value,
-                        group = name,
-                        color = applyTo
-                    ),
-                    size = 1.5
-                ) +
+            p = ggplot(df,
+                       aes(x = value, group = name, fill = condition), ...) +
+                geom_rect(data = rectDf,
+                          aes(xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf,
+                              color = condition), alpha = 0.3) +
+                scale_fill_brewer(palette = "Set1") +
+                scale_color_brewer(palette = "Set1") +
+                geom_bar(fill = "#2d5986", color = "#2d5986") +
+                facet_wrap( ~ name, scales = "free_x") +
+                geom_vline(data = qSel,
+                           aes(xintercept = value, group = name,
+                               color = applyTo), size = 1.5) +
                 theme_classic() +
-                ggtitle(paste(vapply(levels(cond), function(x) {
-                    paste0("Cutoff: ",
-                           unique(qSel$per[qSel$applyTo == x]), " ", x)
-                }, FUN.VALUE = character(1)),
-                collapse = "; ")) +
+                ggforce::geom_mark_rect(data = qSel, aes(x = value, y = Inf,
+                                                         label = value, group = name),
+                                        radius = unit(1, "mm"), expand = unit(1, "mm"),
+                                        label.fill = "white") +
+                ggtitle(
+                    paste0(paste(paste0("Cutoff: ", unique(qSel$per), " ",
+                                        unique(qSel$sel)), collapse = "; "),
+                           "; min.crosslinks = ", min.crosslinks)
+                ) +
                 xlab("Crosslinks per site") +
                 ylab("Number of sites")
         }

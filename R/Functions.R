@@ -65,7 +65,7 @@
 #' @export
 reproducibilityFilter <- function(object,
                                   cutoff = 0.05,
-                                  n.reps = 2,
+                                  n.reps = 1,
                                   min.crosslinks = 1,
                                   returnType = c("BSFDataSet", "data.frame")) {
     stopifnot(is(object, "BSFDataSet"))
