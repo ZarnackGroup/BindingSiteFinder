@@ -26,17 +26,19 @@
 #' Any of these ranges with less than 3 nucleotides of width will be removed,
 #' which reflects about 1/3 of the desired binding site width.
 #'
-#' The argument \code{minCrosslinks} defines how many single nucleotide
-#' resolution crosslink events need to overlap a binding site to pass.
-#' A default of 2 is very inclusive resulting in only the removal of the most
-#' extreme cases.
+#' The argument \code{minCrosslinks} defines how many positions of the binding
+#' sites are covered with at least one crosslink event. This threshold has to
+#' be defined in conjunction with the binding site width. A default value of 3
+#' with a binding site width of 9 means that 1/3 of all positions in the final
+#' binding site must be covered by a crosslink event. Setting this filter to 1
+#' deactivates it.
 #'
 #' The \code{minClSites} argument defines how many positions of the binding site
 #' must have been covered by the original crosslink site input. If the input was
 #' based on the single nucleotide crosslink positions computed by PureCLIP than
 #' this filter checks for the number of positions originally identified by
 #' PureCLIP in the computed binding sites. The default of \code{minClSites} = 1
-#' essentially deactivates this filter.
+#' essentially deactivates this filter. Setting this filter to 1 deactivates it.
 #'
 #' The options \code{centerIsClSite} and \code{centerIsSummit} ensure that the
 #' center of each binding site is covered by an initial crosslink site and
@@ -51,8 +53,8 @@
 #' binding sites
 #' @param minWidth the minimum size of regions that are subjected to the
 #' iterative merging routine, after the initial region concatenation.
-#' @param minCrosslinks the minimal number of crosslink events that have
-#' to overlap a final binding site
+#' @param minCrosslinks the minimal number of positions to overlap with at least
+#' one crosslink event in the final binding sites
 #' @param minClSites the minimal number of crosslink sites that have to
 #' overlap a final binding site
 #' @param centerIsClSite logical, whether the center of a final binding

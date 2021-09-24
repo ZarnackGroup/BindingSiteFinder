@@ -136,33 +136,33 @@ bds
 
 ## Choosing the binding site width
 
-Choosing how wide the final binding sites should be is not an easy choice and depends various different factors. For that reason different filter options alongside with diagnostic plots were implemented to guide the decision. 
-At first, a ratio between the crosslink events within binding sites and the crosslink events in adjacent windows to the binding sites can be computed. The higher the ratio, the better the associated binding site width captures the distribution of the underlying crosslink events. The *supportRatioPlot* function offers a quick screen for different width choices. 
+Choosing how wide the final binding sites is not an easy choice and depends on various different factors. For that reason different filter options alongside with diagnostic plots were implemented to guide the decision. 
+At first, a ratio between the crosslink events within binding sites and the crosslink events in adjacent windows to the binding sites can be computed. The higher the ratio, the better the associated binding site width captures the distribution of the underlying crosslink events. The *supportRatioPlot* function offers a quick screen for different width choices[^3].
+
+[^3]: Note that given the little difference between 7nt and 9nt both options seem to be reasonable 
 
 ```{r, fig.retina = 1, dpi = 100}
 supportRatioPlot(bds, bsWidths = seq(from = 3, to = 19, by = 2))
 ```
-To further guide the choice, a selection of potential width can be computed explicitly, here for width 3, 9, 19 and 29 while holding all other parameters constant.
+To further guide the choice, a selection of potential width can be computed explicitly, here for width 3, 9, 19 and 29 while holding all other parameters constant. 
 
 ```{r}
-bds1 <- makeBindingSites(object = bds, bsSize = 3, minWidth = 2,
+bds1 <- makeBindingSites(object = bds, bsSize = 3, minWidth = 3,
                          minCrosslinks = 2, minClSites = 1)
 
-bds2 <- makeBindingSites(object = bds, bsSize = 9, minWidth = 2,
+bds2 <- makeBindingSites(object = bds, bsSize = 9, minWidth = 3,
                          minCrosslinks = 2, minClSites = 1)
 
-bds3 <- makeBindingSites(object = bds, bsSize = 19, minWidth = 2,
+bds3 <- makeBindingSites(object = bds, bsSize = 19, minWidth = 3,
                          minCrosslinks = 2, minClSites = 1)
 
-bds4 <- makeBindingSites(object = bds, bsSize = 29, minWidth = 2,
+bds4 <- makeBindingSites(object = bds, bsSize = 29, minWidth = 3,
                          minCrosslinks = 2, minClSites = 1)
 l = list(`1. bsSize = 3` = bds1, `2. bsSize = 9` = bds2, 
          `3. bsSize = 19` = bds3, `4. bsSize = 29` = bds4)
 ```
 
-The effect of the binding site size choice can be visualized by looking at the total iCLIP coverage. Here each plot is centered around the binding site`s midpoint and the computed width is indicated by the gray frame. In our example size = 3 appears too small, since not all of the relevant peak signal seems to be captured. On the contrary size = 29 appears extremely large. Here we decided for size = 9 because it seems to capture the central coverage peak best[^3].
-
-[^3]: Note that given the little difference between 7nt and 9nt both options seem to be reasonable 
+The effect of the binding site size choice can be visualized by looking at the total iCLIP coverage. Here each plot is centered around the binding site`s midpoint and the computed width is indicated by the gray frame. In our example size = 3 appears too small, since not all of the relevant peak signal seems to be captured. On the contrary size = 29 appears extremely large. Here we decided for size = 9 because it seems to capture the central coverage peak best. 
 
 ```{r, fig.retina = 1, dpi = 100}
 rangeCoveragePlot(l, width = 20) 
@@ -173,16 +173,16 @@ rangeCoveragePlot(l, width = 20)
 Once a decision on a binding site width has been made additional filtering options can be used to force more/ less stringent binding sites. Essentially an initially computed set of binding sites is filtered by a certain parameter. The *minClSites* parameter for instance allows the user to define how many of the initially computed crosslink sites should fall within the range of the computed binding site.
 
 ```{r}
-bds1 <- makeBindingSites(object = bds, bsSize = 9, minWidth = 2,
+bds1 <- makeBindingSites(object = bds, bsSize = 9, minWidth = 3,
                          minCrosslinks = 2, minClSites = 1)
 
-bds2 <- makeBindingSites(object = bds, bsSize = 9, minWidth = 2,
+bds2 <- makeBindingSites(object = bds, bsSize = 9, minWidth = 3,
                          minCrosslinks = 2, minClSites = 2)
 
-bds3 <- makeBindingSites(object = bds, bsSize = 9, minWidth = 2,
+bds3 <- makeBindingSites(object = bds, bsSize = 9, minWidth = 3,
                          minCrosslinks = 2, minClSites = 3)
 
-bds4 <- makeBindingSites(object = bds, bsSize = 9, minWidth = 2,
+bds4 <- makeBindingSites(object = bds, bsSize = 9, minWidth = 3,
                          minCrosslinks = 2, minClSites = 4)
 ```
 
@@ -199,6 +199,23 @@ l = list(`1. minClSites = 1` = bds1, `2. minClSites = 2` = bds2,
          `3. minClSites = 3` = bds3, `4. minClSites = 4` = bds4)
 rangeCoveragePlot(l, width = 20)
 ```
+
+A further point to consider is the number of position within the binding site that are actually covered by iCLIP signal (crosslink events). The *minCrosslinks* parameter can be used to filter for that. In principal this parameter represents a 'weaker' version of the *minClSites* filter. It should be set in conjunction with the binding site width. Here for example we aim to have about one third of all position to be covered by a crosslink event.  
+
+```{r}
+bds10 <- makeBindingSites(object = bds, bsSize = 3, minWidth = 3,
+                         minCrosslinks = 1, minClSites = 1)
+
+bds20 <- makeBindingSites(object = bds, bsSize = 9, minWidth = 3,
+                         minCrosslinks = 3, minClSites = 1)
+
+bds30 <- makeBindingSites(object = bds, bsSize = 19, minWidth = 3,
+                         minCrosslinks = 6, minClSites = 1)
+
+bds40 <- makeBindingSites(object = bds, bsSize = 29, minWidth = 3,
+                         minCrosslinks = 10, minClSites = 1)
+```
+
 
 
 # Reproducibility filter
