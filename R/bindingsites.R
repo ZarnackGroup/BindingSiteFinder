@@ -21,9 +21,10 @@
 #'
 #' The \code{minWidth} parameter is used to describe the minimum width a ranges
 #' has to be after the initial concatenation step. For example:
-#' Consider bsSize = 9 and minWidht = 2. Then all initial crosslink sites that
+#' Consider bsSize = 9 and minWidth = 3. Then all initial crosslink sites that
 #' are closer to each other than 8 nucleotides (bsSize -1) will be concatenated.
-#' Any of these ranges with less than 2 nucleotides of width will be removed.
+#' Any of these ranges with less than 3 nucleotides of width will be removed,
+#' which reflects about 1/3 of the desired binding site width.
 #'
 #' The argument \code{minCrosslinks} defines how many single nucleotide
 #' resolution crosslink events need to overlap a binding site to pass.
@@ -83,7 +84,7 @@
 #' @export
 makeBindingSites <- function(object,
                              bsSize,
-                             minWidth = 2,
+                             minWidth = 3,
                              minCrosslinks = 2,
                              minClSites = 1,
                              centerIsClSite = TRUE,
@@ -233,7 +234,7 @@ makeBindingSites <- function(object,
     rngS2 = reduce(rngS1, min.gapwidth = bsSize - 1)
 
     ### Remove peaks smaller than min width
-    rngS3 = rngS2[width(rngS2) > minWidth]
+    rngS3 = rngS2[width(rngS2) >= minWidth]
     names(rngS3) = seq_along(rngS3)
 
     ### Center detection and extension
