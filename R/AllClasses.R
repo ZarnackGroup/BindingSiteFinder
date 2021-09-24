@@ -156,6 +156,10 @@ BSFDataSet <- function(ranges, meta, signal, forceEqualNames = TRUE) {
         message("Condition column is not factor, converting to factor. ")
         meta$condition = factor(meta$condition)
     }
+    if (any(duplicated(meta$clPlus)) |
+        any(duplicated(meta$clMinus))) {
+        message("Given path are duplicated. Please check your input.")
+    }
 
     # check input signal
     if (isTRUE(forceEqualNames)) {
@@ -213,6 +217,11 @@ BSFDataSetFromBigWig <- function(ranges, meta, silent = FALSE) {
             !file.exists(meta$clMinus))) {
         stop("Given path do not point to existing files. ")
     }
+    if (any(duplicated(meta$clPlus)) |
+        any(duplicated(meta$clMinus))) {
+        warning("Given path are duplicated. Please check your input.")
+    }
+
     # load the bigwig files and construct list
     # Loading message
     if (!isTRUE(silent)){
