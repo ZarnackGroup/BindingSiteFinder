@@ -85,13 +85,13 @@ rangeCoveragePlot <-
                         ymin = mean - sd,
                         ymax = mean + sd
                     ),
-                    fill = "lightblue"
+                    fill = "#8cb3d9"
                 ) +
                 geom_line(
                     data = df,
                     aes(x = position, y = mean),
                     size = 1,
-                    color = "blue"
+                    color = "#2d5986"
                 ) +
                 theme_classic() +
                 ggtitle(name) +
@@ -159,13 +159,13 @@ rangeCoveragePlot <-
                         ymin = mean - sd,
                         ymax = mean + sd
                     ),
-                    fill = "lightblue"
+                    fill = "#8cb3d9"
                 ) +
                 geom_line(
                     data = df,
                     aes(x = position, y = mean),
                     size = 1,
-                    color = "blue"
+                    color = "#2d5986"
                 ) +
                 theme_classic() +
                 facet_wrap( ~ name) +
