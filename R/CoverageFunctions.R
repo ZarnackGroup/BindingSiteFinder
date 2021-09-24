@@ -60,11 +60,21 @@ coverageOverRanges <- function(
     # Check input
     # --------------------------------------------------------------------------
     stopifnot(is(object, "BSFDataSet"))
-    # split by strand
+
+    # manage return option
+    returnOptions = match.arg(
+        returnOptions,
+        choices = c("merge_ranges_keep_positions",
+                    "merge_replicates_per_condition",
+                    "merge_all_replicates",
+                    "merge_positions_keep_replicates"))
+    # get range
     rng = getRanges(object)
     # check for length of ranges
     if (length(unique(width(getRanges(object)))) > 1) {
-        stop("width of ranges are not identical")
+        warning("Width of ranges are not identical. Only return type
+                `merge_positions_keep_replicates` is possible. ")
+        returnOptions = "merge_positions_keep_replicates"
     }
     # check for unique range names
     if (!isTRUE(silent)) {
@@ -74,19 +84,13 @@ coverageOverRanges <- function(
         }
     }
     # split by strand
-    rngPlus = rng[strand(rng) == "+"]
-    rngMinus = rng[strand(rng) == "-"]
+    # rngPlus = rng[strand(rng) == "+"]
+    # rngMinus = rng[strand(rng) == "-"]
     # prepare signal
     sgn = getSignal(object)
     # extract present conditions
     condition = levels(getMeta(object)$condition)
-    # manage return option
-    returnOptions = match.arg(
-        returnOptions,
-        choices = c("merge_ranges_keep_positions",
-                    "merge_replicates_per_condition",
-                    "merge_all_replicates",
-                    "merge_positions_keep_replicates"))
+
 
     # Forward to helper functions
     # --------------------------------------------------------------------------
@@ -101,7 +105,7 @@ coverageOverRanges <- function(
         )
     }
     if (returnOptions == "merge_positions_keep_replicates") {
-        covRet = .coverageOverRanges.merge_positions_keep_replicates(
+        covRet = .coverageOverRanges.merge_positions_keep_replicates( # TODO works for uneven ranges
             sgn = sgn, rng = rng
         )
     }

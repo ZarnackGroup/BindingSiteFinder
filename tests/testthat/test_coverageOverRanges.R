@@ -41,12 +41,15 @@ test_that("Coverage function works", {
     expect_identical(ncol(mcols(test)), nrow(getMeta(bds1)))
 
     # test different width ranges
-    g = getRanges(bds)
-    g1 = getRanges(bds1)
-    gg = c(g,g1)
-    bds2 = setRanges(bds1, gg)
-    expect_error(coverageOverRanges(
-        bds2, returnOptions = "merge_replicates_per_condition"))
+    rngMod = getRanges(bds1)
+    rngMod = resize(x = rngMod, fix = "center",
+                    width = sample(1:10, size = length(rngMod),
+                                   replace = TRUE))
+    bdsMod = setRanges(bds1, rngMod)
+    expect_warning(
+        coverageOverRanges(bdsMod,
+                           returnOptions = "merge_positions_keep_replicates"))
+
 
 })
 
