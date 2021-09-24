@@ -1,2 +1,25 @@
-Changes in version 0.99.0 (2018-05-15)
+CHANGES IN VERSION 0.99.9
++ BSFDataSet() and BSFDataSetFromBigWig() now check the path to the bigwig
+files in the meta data for potential duplicates
++ coverageOverRanges() now supports also ranges with different width, if
+returnOption = `merge_positions_keep_replicates`
++ Fix bug in makeBindingSites(); The minWidth parameter is now implemented as
+true lower boundary (>= instead of >). The default has changed from 2 to 3.
++ Fix description in makeBindingSites(); The minCrosslinks parameter describes
+the number of positions covered by crosslink events, instead of the total
+number of crosslinks.
++ Updated color scheme in rangeCoveragePlot(); and changed position of indicator
+box
++ Updated visual of reproducibiliyCutoffPlot() function
+
+
+CHANGES IN VERSION 0.99.8
++ Updated coverageOverRange(), Function now does support different output
+formats, summarizing the coverage differently over range, replicates and
+condition
+
+CHANGES IN VERSION 0.99.1 - 0.99.7
++ Fix bugs for Bioconductor submission
+
+CHANGES IN VERSION 0.99.0 (2021-05-15)
 + Submitted to Bioconductor
