@@ -69,6 +69,15 @@ rangeCoveragePlot <-
                 position = c(rev(-seq_len(width)), 0, seq_len(width))
             )
             p = ggplot(...) +
+                annotate(
+                    "rect",
+                    xmin = (-floor(bsSize / 2)),
+                    xmax = (floor(bsSize / 2)),
+                    ymin = -Inf,
+                    ymax = Inf,
+                    alpha = 0.2,
+                    color = "grey"
+                ) +
                 geom_ribbon(
                     data = df,
                     aes(
@@ -86,15 +95,6 @@ rangeCoveragePlot <-
                 ) +
                 theme_classic() +
                 ggtitle(name) +
-                annotate(
-                    "rect",
-                    xmin = (-floor(bsSize / 2)),
-                    xmax = (floor(bsSize / 2)),
-                    ymin = -Inf,
-                    ymax = Inf,
-                    alpha = 0.2,
-                    color = "grey"
-                ) +
                 xlab("Position (nt)") +
                 ylab("Crosslink events (mean of replicates)")
 
@@ -141,6 +141,17 @@ rangeCoveragePlot <-
             )
 
             p = ggplot(...) +
+                geom_rect(
+                    data = dfFrame,
+                    aes(
+                        xmin = xmin,
+                        xmax = xmax,
+                        ymin = ymin,
+                        ymax = ymax
+                    ),
+                    alpha = 0.2,
+                    color = "grey"
+                ) +
                 geom_ribbon(
                     data = df,
                     aes(
@@ -158,17 +169,6 @@ rangeCoveragePlot <-
                 ) +
                 theme_classic() +
                 facet_wrap( ~ name) +
-                geom_rect(
-                    data = dfFrame,
-                    aes(
-                        xmin = xmin,
-                        xmax = xmax,
-                        ymin = ymin,
-                        ymax = ymax
-                    ),
-                    alpha = 0.2,
-                    color = "grey"
-                ) +
                 xlab("Position (nt)") +
                 ylab("Crosslink events (mean of replicates)")
         }
