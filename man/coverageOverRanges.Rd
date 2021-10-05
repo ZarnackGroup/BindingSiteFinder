@@ -8,6 +8,7 @@ coverageOverRanges(
   object,
   returnOptions = c("merge_ranges_keep_positions", "merge_replicates_per_condition",
     "merge_all_replicates", "merge_positions_keep_replicates"),
+  method = "sum",
   silent = FALSE
 )
 }
@@ -17,6 +18,8 @@ coverageOverRanges(
 \item{returnOptions}{one of merge_ranges_keep_positions,
 merge_replicates_per_condition, merge_all_replicates,
 merge_positions_keep_replicates}
+
+\item{method}{sum/ mean, select how replicates/ ranges should be summarized}
 
 \item{silent}{TRUE/ FALSE, suppress warning messages}
 }

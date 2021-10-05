@@ -29,6 +29,7 @@
 #' @param returnOptions one of merge_ranges_keep_positions,
 #' merge_replicates_per_condition, merge_all_replicates,
 #' merge_positions_keep_replicates
+#' @param method sum/ mean, select how replicates/ ranges should be summarized
 #' @param silent TRUE/ FALSE, suppress warning messages
 #'
 #' @return an object of class specified in \code{returnOptions}
@@ -55,6 +56,7 @@ coverageOverRanges <- function(
                       "merge_replicates_per_condition",
                       "merge_all_replicates",
                       "merge_positions_keep_replicates"),
+    method = "sum",
     silent = FALSE
     ) {
     # Check input
@@ -68,6 +70,9 @@ coverageOverRanges <- function(
                     "merge_replicates_per_condition",
                     "merge_all_replicates",
                     "merge_positions_keep_replicates"))
+    method = match.arg(
+        method,
+        choices = c("sum", "mean"))
     # get range
     rng = getRanges(object)
     # check for length of ranges
@@ -83,9 +88,6 @@ coverageOverRanges <- function(
             names(rng) = paste0(c(seq_along(rng)), "_", names(rng))
         }
     }
-    # split by strand
-    # rngPlus = rng[strand(rng) == "+"]
-    # rngMinus = rng[strand(rng) == "-"]
     # prepare signal
     sgn = getSignal(object)
     # extract present conditions
@@ -96,22 +98,22 @@ coverageOverRanges <- function(
     # --------------------------------------------------------------------------
     if (returnOptions == "merge_replicates_per_condition") {
         covRet = .coverageOverRanges.merge_replicates_per_condition(
-            sgn = sgn, rng = rng, condition = condition
+            sgn = sgn, rng = rng, condition = condition, method = method
         )
     }
     if (returnOptions == "merge_all_replicates") {
         covRet = .coverageOverRanges.merge_all_replicates(
-            sgn = sgn, rng = rng
+            sgn = sgn, rng = rng, method = method
         )
     }
     if (returnOptions == "merge_positions_keep_replicates") {
         covRet = .coverageOverRanges.merge_positions_keep_replicates( # TODO works for uneven ranges
-            sgn = sgn, rng = rng
+            sgn = sgn, rng = rng, method = method
         )
     }
     if (returnOptions == "merge_ranges_keep_positions") {
         covRet = .coverageOverRanges.merge_ranges_keep_positions(
-            sgn = sgn, rng = rng
+            sgn = sgn, rng = rng, method = method
         )
     }
     return(covRet)
@@ -119,7 +121,7 @@ coverageOverRanges <- function(
 
 
 
-.coverageOverRanges.merge_positions_keep_replicates <- function(sgn, rng) {
+.coverageOverRanges.merge_positions_keep_replicates <- function(sgn, rng, method) {
 
     # split by strand
     rngPlus = rng[strand(rng) == "+"]
@@ -129,20 +131,37 @@ coverageOverRanges <- function(
     # --------------------------------------------------------------------------
     if (length(rngPlus) > 0) {
         # compute initial coverage
-        mcols(rngPlus) = as.matrix(
-            do.call(cbind, lapply(sgn$signalPlus, function(x) {
-                sum(x[rngPlus])
-            })))
+        if (method == "sum") {
+            mcols(rngPlus) = as.matrix(
+                do.call(cbind, lapply(sgn$signalPlus, function(x) {
+                    sum(x[rngPlus])
+                })))
+        }
+        if (method == "mean") {
+            mcols(rngPlus) = as.matrix(
+                do.call(cbind, lapply(sgn$signalPlus, function(x) {
+                    mean(x[rngPlus])
+                })))
+        }
+
     }
 
     # Minus strand
     # --------------------------------------------------------------------------
     if (length(rngMinus) > 0) {
         # compute initial coverage
-        mcols(rngMinus) = as.matrix(
-            do.call(cbind, lapply(sgn$signalMinus, function(x) {
-                sum(x[rngMinus])
-            })))
+        if (method == "sum") {
+            mcols(rngMinus) = as.matrix(
+                do.call(cbind, lapply(sgn$signalMinus, function(x) {
+                    sum(x[rngMinus])
+                })))
+        }
+        if (method == "mean") {
+            mcols(rngMinus) = as.matrix(
+                do.call(cbind, lapply(sgn$signalMinus, function(x) {
+                    mean(x[rngMinus])
+                })))
+        }
     }
 
     # Combine strands for return
@@ -164,7 +183,7 @@ coverageOverRanges <- function(
     return(rngCov)
 }
 
-.coverageOverRanges.merge_ranges_keep_positions <- function(sgn, rng) {
+.coverageOverRanges.merge_ranges_keep_positions <- function(sgn, rng, method) {
     # split by strand
     rngPlus = rng[strand(rng) == "+"]
     rngMinus = rng[strand(rng) == "-"]
@@ -179,7 +198,12 @@ coverageOverRanges <- function(
             return(y)
         })
         # summarize
-        covPlus = do.call(rbind, lapply(matPlus, colSums))
+        if (method == "sum") {
+            covPlus = do.call(rbind, lapply(matPlus, colSums))
+        }
+        if (method == "mean") {
+            covPlus = do.call(rbind, lapply(matPlus, colMeans))
+        }
     }
     if (length(rngPlus) == 0) {
         # set cov on plus strand to zero if no range is present
@@ -196,7 +220,12 @@ coverageOverRanges <- function(
             return(y)
         })
         # summarize
-        covMinus = do.call(rbind, lapply(matMinus, colSums))
+        if (method == "sum") {
+            covMinus = do.call(rbind, lapply(matMinus, colSums))
+        }
+        if (method == "mean") {
+            covMinus = do.call(rbind, lapply(matMinus, colMeans))
+        }
         # reverse orientation
         covMinus = as.matrix(rev(as.data.frame(covMinus)))
     }
@@ -219,7 +248,7 @@ coverageOverRanges <- function(
     return(retCov)
 }
 
-.coverageOverRanges.merge_all_replicates <- function(sgn, rng) {
+.coverageOverRanges.merge_all_replicates <- function(sgn, rng, method) {
     # split by strand
     rngPlus = rng[strand(rng) == "+"]
     rngMinus = rng[strand(rng) == "-"]
@@ -234,7 +263,12 @@ coverageOverRanges <- function(
             return(y)
         })
         # summarize
-        covPlus = Reduce('+', matPlus)
+        if (method == "sum") {
+            covPlus = Reduce('+', matPlus)
+        }
+        if (method == "mean") {
+            covPlus = Reduce('+', matPlus) / length(matPlus)
+        }
     }
     if (length(rngPlus) == 0) {
         # set cov on plus strand to zero if no range is present
@@ -251,7 +285,12 @@ coverageOverRanges <- function(
             return(y)
         })
         # summarize
-        covMinus = Reduce('+', matMinus)
+        if (method == "sum") {
+            covMinus = Reduce('+', matMinus)
+        }
+        if (method == "mean") {
+            covMinus = Reduce('+', matMinus) / length(matMinus)
+        }
         # reverse orientation
         covMinus = as.matrix(rev(as.data.frame(covMinus)))
     }
@@ -274,7 +313,7 @@ coverageOverRanges <- function(
     return(retCov)
 }
 
-.coverageOverRanges.merge_replicates_per_condition <- function(sgn, rng, condition) {
+.coverageOverRanges.merge_replicates_per_condition <- function(sgn, rng, condition, method) {
     # split by strand
     rngPlus = rng[strand(rng) == "+"]
     rngMinus = rng[strand(rng) == "-"]
@@ -292,7 +331,13 @@ coverageOverRanges <- function(
         matPlusCond = lapply(condition, function(x){
             matPlus[c(grep(x, names(matPlus)))]})
         names(matPlusCond) = condition
-        covPlus = lapply(matPlusCond, function(x){Reduce('+', x)})
+        # manage combine method
+        if (method == "sum") {
+            covPlus = lapply(matPlusCond, function(x){Reduce('+', x)})
+        }
+        if (method == "mean") {
+            covPlus = lapply(matPlusCond, function(x){Reduce('+', x) / length(x)})
+        }
     }
     if (length(rngPlus) == 0) {
         # set cov on plus strand to zero if no range is present
@@ -312,7 +357,13 @@ coverageOverRanges <- function(
         matMinusCond = lapply(condition, function(x){
             matMinus[c(grep(x, names(matMinus)))]})
         names(matMinusCond) = condition
-        covMinus = lapply(matMinusCond, function(x){Reduce('+', x)})
+        # mange combine method
+        if (method == "sum") {
+            covMinus = lapply(matMinusCond, function(x){Reduce('+', x)})
+        }
+        if (method == "mean") {
+            covMinus = lapply(matMinusCond, function(x){Reduce('+', x) / length(x)})
+        }
         # reverse orientation
         covMinus = lapply(covMinus, function(x){
             as.matrix(rev(as.data.frame(x)))})

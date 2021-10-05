@@ -50,7 +50,21 @@ test_that("Coverage function works", {
         coverageOverRanges(bdsMod,
                            returnOptions = "merge_positions_keep_replicates"))
 
+    # test sum/ mean method
+    test = coverageOverRanges(bds1,
+        returnOptions = "merge_positions_keep_replicates")
+    test1 = coverageOverRanges(bds1, method = "sum",
+                              returnOptions = "merge_positions_keep_replicates")
+    expect_identical(test,test1)
+
+    test = coverageOverRanges(bds1, method = "mean",
+                              returnOptions = "merge_replicates_per_condition")
+    test = coverageOverRanges(bds1, method = "mean",
+                             returnOptions = "merge_all_replicates")
+    test = coverageOverRanges(bds1, method = "mean",
+                             returnOptions = "merge_positions_keep_replicates")
+    test = coverageOverRanges(bds1, method = "mean",
+                             returnOptions = "merge_ranges_keep_positions")
 
 })
-
 
