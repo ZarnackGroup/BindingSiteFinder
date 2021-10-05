@@ -1,3 +1,7 @@
+CHANGES IN VERSION 0.99.10
++ coverageOverRanges() now supports mean and sum as combination method. Dpending
+on the returnOption, mean/ sum are computed over ranges or replicates.
+
 CHANGES IN VERSION 0.99.9
 + BSFDataSet() and BSFDataSetFromBigWig() now check the path to the bigwig
 files in the meta data for potential duplicates
