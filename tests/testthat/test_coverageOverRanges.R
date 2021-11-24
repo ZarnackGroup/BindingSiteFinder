@@ -68,3 +68,10 @@ test_that("Coverage function works", {
 
 })
 
+# sgn = getSignal(bds1)
+# rng = getRanges(bds1)
+# # names(rng) = sample(1:length(rng))
+# rng0 = rng[order(sample(1:length(rng))),]
+# names(rng0) = NULL
+# method = "sum"
+# condition = levels(getMeta(bds1)$condition)

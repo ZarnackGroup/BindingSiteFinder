@@ -249,6 +249,8 @@ coverageOverRanges <- function(
 }
 
 .coverageOverRanges.merge_all_replicates <- function(sgn, rng, method) {
+    # set names
+    names(rng) = seq_along(rng)
     # split by strand
     rngPlus = rng[strand(rng) == "+"]
     rngMinus = rng[strand(rng) == "-"]
@@ -310,10 +312,15 @@ coverageOverRanges <- function(
     if (length(rngPlus) == 0) {
         retCov = covMinus
     }
+    # match results to manage order
+    idx = match(rownames(retCov), names(rng))
+    retCov = retCov[order(idx),]
     return(retCov)
 }
 
 .coverageOverRanges.merge_replicates_per_condition <- function(sgn, rng, condition, method) {
+    # set names
+    names(rng) = seq_along(rng)
     # split by strand
     rngPlus = rng[strand(rng) == "+"]
     rngMinus = rng[strand(rng) == "-"]
@@ -387,5 +394,9 @@ coverageOverRanges <- function(
     if (length(rngPlus) == 0) {
         retCov = covMinus
     }
-    return(retCov)
+    # match results to manage order
+    retCov = lapply(retCov, function(x){
+        idx = match(rownames(x), names(rng))
+        x = x[order(idx),]
+    })
 }
