@@ -36,6 +36,7 @@
 #'
 #' @return an object of class specified in \code{returnOptions}
 #' @import GenomicRanges
+#' @importFrom plyr rbind.fill
 #'
 #' @examples
 #' # load data
@@ -104,12 +105,12 @@ coverageOverRanges <- function(
     # --------------------------------------------------------------------------
     if (returnOptions == "merge_replicates_per_condition") {
         covRet = .coverageOverRanges.merge_replicates_per_condition(
-            sgn = sgn, rng = rng, condition = condition, method = method
+            sgn = sgn, rng = rng, condition = condition, method = method, allowNA = allowNA
         )
     }
     if (returnOptions == "merge_all_replicates") {
         covRet = .coverageOverRanges.merge_all_replicates(
-            sgn = sgn, rng = rng, method = method
+            sgn = sgn, rng = rng, method = method, allowNA = allowNA
         )
     }
     if (returnOptions == "merge_positions_keep_replicates") {
@@ -254,7 +255,7 @@ coverageOverRanges <- function(
     return(retCov)
 }
 
-.coverageOverRanges.merge_all_replicates <- function(sgn, rng, method) {
+.coverageOverRanges.merge_all_replicates <- function(sgn, rng, method, allowNA) {
     # set names
     names(rng) = seq_along(rng)
     # split by strand
@@ -310,7 +311,12 @@ coverageOverRanges <- function(
     # Combine strands for return
     # --------------------------------------------------------------------------
     if (length(rngMinus) > 0 & length(rngPlus) > 0) {
-        retCov = rbind(covPlus, covMinus)
+        if (allowNA == TRUE) {
+            retCov = plyr::rbind.fill(as.data.frame(covPlus), as.data.frame(covMinus))
+        }
+        if (allowNA == FALSE) {
+            retCov = rbind(covPlus, covMinus)
+        }
     }
     if (length(rngMinus) == 0) {
         retCov = covPlus
@@ -324,7 +330,7 @@ coverageOverRanges <- function(
     return(retCov)
 }
 
-.coverageOverRanges.merge_replicates_per_condition <- function(sgn, rng, condition, method) {
+.coverageOverRanges.merge_replicates_per_condition <- function(sgn, rng, condition, method, allowNA) {
     # set names
     names(rng) = seq_along(rng)
     # split by strand
@@ -389,9 +395,16 @@ coverageOverRanges <- function(
     # Combine strands for return
     # --------------------------------------------------------------------------
     if (length(rngMinus) > 0 & length(rngPlus) > 0) {
-        retCov = lapply(seq_along(covPlus), function(x){
-            rbind(covPlus[[x]],covMinus[[x]])
-        })
+        if (allowNA == TRUE) {
+            retCov = lapply(seq_along(covPlus), function(x){
+                retCov = plyr::rbind.fill(as.data.frame(covPlus[[x]]), as.data.frame(covMinus[[x]]))
+            })
+        }
+        if (allowNA == FALSE) {
+            retCov = lapply(seq_along(covPlus), function(x){
+                rbind(covPlus[[x]],covMinus[[x]])
+            })
+        }
         names(retCov) = names(covPlus)
     }
     if (length(rngMinus) == 0) {

@@ -1,7 +1,7 @@
 Package: BindingSiteFinder
 Type: Package
 Title: Binding site defintion based on iCLIP data
-Version: 1.1.2
+Version: 1.0.2
 Authors@R: c(
     person("Mirko", "Brüggemann",
         email="mirko.brueggemann@mail.de",
@@ -20,8 +20,8 @@ Description: Precise knowledge on the binding sites of an RNA-binding
 License: Artistic-2.0
 Encoding: UTF-8
 VignetteBuilder: knitr
-Imports: tidyr, matrixStats, stats, ggplot2, methods, rtracklayer, S4Vectors,
-    ggforce
+Imports: tidyr, plyr, matrixStats, stats, ggplot2, methods, rtracklayer,
+    S4Vectors, ggforce
 Depends: GenomicRanges, R (>= 4.1)
 Suggests: testthat, BiocStyle, knitr, rmarkdown, dplyr, GenomicAlignments, 
     ComplexHeatmap, GenomeInfoDb, forcats, scales
