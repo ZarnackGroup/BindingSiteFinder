@@ -1,8 +1,8 @@
-CHANGES IN VERSION 1.0.2
+CHANGES IN VERSION 1.1.2
 + coverageOverRanges() can be allowed to produce NAs for uneven ranges in the
 output
 
-CHANGES IN VERSION 1.0.1
+CHANGES IN VERSION 1.1.1
 + coverageOverRanges() matches the order of input ranges and output matrix for
 options merge_all_replicates and merge_replicates_per_condition
 
