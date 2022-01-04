@@ -9,6 +9,7 @@ coverageOverRanges(
   returnOptions = c("merge_ranges_keep_positions", "merge_replicates_per_condition",
     "merge_all_replicates", "merge_positions_keep_replicates"),
   method = "sum",
+  allowNA = FALSE,
   silent = FALSE
 )
 }
@@ -20,6 +21,9 @@ merge_replicates_per_condition, merge_all_replicates,
 merge_positions_keep_replicates}
 
 \item{method}{sum/ mean, select how replicates/ ranges should be summarized}
+
+\item{allowNA}{TRUE/ FALSE, allow NA values in the output if input ranges
+are of different width}
 
 \item{silent}{TRUE/ FALSE, suppress warning messages}
 }

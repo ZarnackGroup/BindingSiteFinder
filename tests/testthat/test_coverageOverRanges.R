@@ -6,6 +6,8 @@ test_that("Coverage function works", {
     bds1 <- makeBindingSites(object = bds, bsSize = 5, minWidth = 2,
                               minCrosslinks = 2, minClSites = 1)
 
+    # 1) Return option results output with same sized input
+    # --------------------------------------------------------------------------
     expect_warning(coverageOverRanges(
         bds1, returnOptions = "merge_ranges_keep_positions"))
 
@@ -40,17 +42,40 @@ test_that("Coverage function works", {
     expect_identical(length(test), length(getRanges(bds1)))
     expect_identical(ncol(mcols(test)), nrow(getMeta(bds1)))
 
-    # test different width ranges
+    # 2) Return option results output with different sized input
+    # --------------------------------------------------------------------------
     rngMod = getRanges(bds1)
     rngMod = resize(x = rngMod, fix = "center",
                     width = sample(1:10, size = length(rngMod),
                                    replace = TRUE))
     bdsMod = setRanges(bds1, rngMod)
-    expect_warning(
-        coverageOverRanges(bdsMod,
-                           returnOptions = "merge_positions_keep_replicates"))
 
-    # test sum/ mean method
+    expect_warning(
+        coverageOverRanges(
+            bdsMod, returnOptions = "merge_ranges_keep_positions"))
+    expect_warning(
+        coverageOverRanges(
+            bdsMod, returnOptions = "merge_replicates_per_condition"))
+    expect_warning(
+        coverageOverRanges(
+            bdsMod, returnOptions = "merge_all_replicates"))
+
+
+    test = coverageOverRanges(bdsMod,
+                              returnOptions = "merge_replicates_per_condition",
+                              allowNA = TRUE)
+    expect_false(isTRUE(is.na(test$KD)))
+    test = coverageOverRanges(bdsMod,
+                              returnOptions = "merge_all_replicates",
+                              allowNA = TRUE)
+    expect_false(isTRUE(is.na(test)))
+    test = coverageOverRanges(bdsMod,
+                              returnOptions = "merge_ranges_keep_positions",
+                              allowNA = TRUE)
+    expect_false(isTRUE(is.na(test)))
+
+    # 3) test sum/ mean method
+    # --------------------------------------------------------------------------
     test = coverageOverRanges(bds1,
         returnOptions = "merge_positions_keep_replicates")
     test1 = coverageOverRanges(bds1, method = "sum",
@@ -67,11 +92,3 @@ test_that("Coverage function works", {
                              returnOptions = "merge_ranges_keep_positions")
 
 })
-
-# sgn = getSignal(bds1)
-# rng = getRanges(bds1)
-# # names(rng) = sample(1:length(rng))
-# rng0 = rng[order(sample(1:length(rng))),]
-# names(rng0) = NULL
-# method = "sum"
-# condition = levels(getMeta(bds1)$condition)

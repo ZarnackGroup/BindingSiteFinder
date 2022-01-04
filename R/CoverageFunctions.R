@@ -30,6 +30,8 @@
 #' merge_replicates_per_condition, merge_all_replicates,
 #' merge_positions_keep_replicates
 #' @param method sum/ mean, select how replicates/ ranges should be summarized
+#' @param allowNA TRUE/ FALSE, allow NA values in the output if input ranges
+#' are of different width
 #' @param silent TRUE/ FALSE, suppress warning messages
 #'
 #' @return an object of class specified in \code{returnOptions}
@@ -57,6 +59,7 @@ coverageOverRanges <- function(
                       "merge_all_replicates",
                       "merge_positions_keep_replicates"),
     method = "sum",
+    allowNA = FALSE,
     silent = FALSE
     ) {
     # Check input
@@ -76,9 +79,12 @@ coverageOverRanges <- function(
     # get range
     rng = getRanges(object)
     # check for length of ranges
-    if (length(unique(width(getRanges(object)))) > 1) {
-        warning("Width of ranges are not identical. Only return type
-                `merge_positions_keep_replicates` is possible. ")
+    if (length(unique(width(getRanges(object)))) > 1 &
+        allowNA == FALSE &
+        returnOptions != "merge_positions_keep_replicates") {
+        warning("Width of ranges are not identical. This will cause NAs in the
+                output. Option `merge_positions_keep_replicates` is enforced.
+                Avoid this behavior by setting allowNA = TRUE.")
         returnOptions = "merge_positions_keep_replicates"
     }
     # check for unique range names
