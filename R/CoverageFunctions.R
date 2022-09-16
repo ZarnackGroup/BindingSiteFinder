@@ -184,6 +184,7 @@ coverageOverRanges <- function(
     }
     # sort ranges
     rngCov = c(retCov)
+    rngCov = .sortRanges(rngCov)
     # rngCov = GenomeInfoDb::sortSeqlevels(rngCov)
     # rngCov = sort(rngCov)
 
