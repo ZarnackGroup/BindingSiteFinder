@@ -1,3 +1,9 @@
+.sortRanges <- function(rng) {
+    rngSort = GenomeInfoDb::sortSeqlevels(rng)
+    rngSort = sort(rngSort)
+    return(rngSort)
+}
+
 # not exported functions that are for internal use only
 .collapesReplicates <- function(signal) {
     p = signal$signalPlus

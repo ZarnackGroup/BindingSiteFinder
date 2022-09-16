@@ -17,7 +17,14 @@ if (.Platform$OS.type != "windows") {
 
         testCs = cs
         strand(testCs) = c(rep("-", 500), rep("+", 500))
-        expect_silent(BSFDataSetFromBigWig(
+
+        # check correct range sorting
+        bds = expect_message(BSFDataSetFromBigWig(
+            ranges = testCs, meta = meta, silent = TRUE))
+        expect_identical(getRanges(bds), .sortRanges(getRanges(bds)))
+
+        # check builds
+        expect_message(BSFDataSetFromBigWig(
             ranges = testCs, meta = meta, silent = TRUE))
 
         testMeta = meta
@@ -30,7 +37,8 @@ if (.Platform$OS.type != "windows") {
             ranges = testCs, meta = testMeta, silent = TRUE))
 
         testMeta = meta[c(1,2),]
-        expect_silent(BSFDataSetFromBigWig(
+        expect_message(BSFDataSetFromBigWig(
             ranges = testCs, meta = testMeta, silent = TRUE))
+
     })
 }

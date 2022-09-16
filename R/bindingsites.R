@@ -300,8 +300,9 @@ makeBindingSites <- function(object,
         }
     }
     rngS4 = c(rngCenterPlus, rngCenterMinus)
-    rngS4 = GenomeInfoDb::sortSeqlevels(rngS4)
-    rngS4 = sort(rngS4)
+    rngS4 = .sortRanges(rngS4)
+    # rngS4 = GenomeInfoDb::sortSeqlevels(rngS4)
+    # rngS4 = sort(rngS4)
     return(rngS4)
 }
 
@@ -336,8 +337,9 @@ makeBindingSites <- function(object,
 
     # combine sort return
     rngCurr = c(rngCurrPlus, rngCurrMinus)
-    rngCurr = GenomeInfoDb::sortSeqlevels(rngCurr)
-    rngCurr = sort(rngCurr)
+    rngCurr = .sortRanges(rngCurr)
+    # rngCurr = GenomeInfoDb::sortSeqlevels(rngCurr)
+    # rngCurr = sort(rngCurr)
     return(rngCurr)
 }
 
@@ -346,8 +348,9 @@ makeBindingSites <- function(object,
     rngCurr = rng - (unique(width(rng)) - 1) / 2
     rngCurr = rng[queryHits(findOverlaps(rngCurr, rng0))]
     # combine sort return
-    rngCurr = GenomeInfoDb::sortSeqlevels(rngCurr)
-    rngCurr = sort(rngCurr)
+    rngCurr = .sortRanges(rngCurr)
+    # rngCurr = GenomeInfoDb::sortSeqlevels(rngCurr)
+    # rngCurr = sort(rngCurr)
     return(rngCurr)
 }
 
@@ -379,8 +382,9 @@ makeBindingSites <- function(object,
 
     # combine sort return
     rngCurr = c(rngCurrPlus, rngCurrMinus)
-    rngCurr = GenomeInfoDb::sortSeqlevels(rngCurr)
-    rngCurr = sort(rngCurr)
+    rngCurr = .sortRanges(rngCurr)
+    # rngCurr = GenomeInfoDb::sortSeqlevels(rngCurr)
+    # rngCurr = sort(rngCurr)
     return(rngCurr)
 }
 
@@ -391,7 +395,8 @@ makeBindingSites <- function(object,
     rngCurr = rng[idx]
 
     # combine sort return
-    rngCurr = GenomeInfoDb::sortSeqlevels(rngCurr)
-    rngCurr = sort(rngCurr)
+    # rngCurr = GenomeInfoDb::sortSeqlevels(rngCurr)
+    # rngCurr = sort(rngCurr)
+    rngCurr = .sortRanges(rngCurr)
     return(rngCurr)
 }

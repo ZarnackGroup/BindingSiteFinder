@@ -160,6 +160,10 @@ BSFDataSet <- function(ranges, meta, signal, forceEqualNames = TRUE) {
         any(duplicated(meta$clMinus))) {
         message("Given path are duplicated. Please check your input.")
     }
+    if (! identical(.sortRanges(ranges), ranges)){
+        message('Input ranges are not sorted, sorting for you.')
+        ranges = .sortRanges(ranges)
+    }
 
     # check input signal
     if (isTRUE(forceEqualNames)) {
