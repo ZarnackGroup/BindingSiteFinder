@@ -45,6 +45,10 @@ setMethod("show",
                   cat("----> Ranges width: ",
                       unique(width(object@ranges)), "\n")
               }
+              cat("Contained Signal:",
+                  format(sum(sapply(object@signal$signalPlus, sum) +
+                                 sapply(object@signal$signalMinus, sum)),
+                         big.mark = ","), "\n")
               cat("Contained conditions: ",
                   levels(object@meta$condition),
                   "\n")
@@ -324,3 +328,26 @@ setMethod(
     }
 
 )
+
+
+
+setMethod("[", c("BSFDataSet", "integer", "missing", "ANY"),
+          function(x, i, j, ..., drop=TRUE)
+          {
+              rng = getRanges(x)
+              sgn = getSignal(x)
+              rngSub = rng[i]
+
+              # Subset signal
+              sgnSub = lapply(sgn, function(currStrand){
+                  lapply(currStrand, function(currSample){
+                      currSample = currSample[names(currSample) %in% seqnames(rngSub)]
+                      as(lapply(currSample, function(currChr){
+                          rngCov = coverage(ranges(rngSub), width = length(currChr))
+                          currChr[rngCov == 0] = 0
+                          currChr
+                      }), "SimpleRleList")
+                  })
+              })
+              initialize(x, ranges = rngSub, signal = sgnSub)
+          })
