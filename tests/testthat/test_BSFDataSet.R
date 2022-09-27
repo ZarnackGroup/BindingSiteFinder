@@ -24,4 +24,14 @@ test_that("BSFDataSet() can be build correctly", {
 
     expect_identical(getRanges(bdsNew), .sortRanges(rngNew))
 
+    # check for inconsistent chromosomes
+    rng2 = rng %>% as.data.frame()
+    rng2$seqnames[1:10] = "chr1"
+    rng2 = makeGRangesFromDataFrame(rng2)
+
+    expect_message(BSFDataSet(ranges = rng2, signal = sgn, meta = mta))
+    expect_message(
+        expect_warning(
+            BSFDataSet(ranges = rng2, signal = sgn, meta = mta,
+                       forceEqualNames = FALSE)))
 })

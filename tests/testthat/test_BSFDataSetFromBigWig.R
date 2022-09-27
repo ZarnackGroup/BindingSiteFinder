@@ -13,7 +13,7 @@ if (.Platform$OS.type != "windows") {
             clPlus = list.files(clipFiles, pattern = "plus.bw$", full.names = TRUE),
             clMinus = list.files(clipFiles, pattern = "minus.bw$", full.names = TRUE)
         )
-        expect_warning(BSFDataSetFromBigWig(ranges = cs, meta = meta))
+        expect_message(expect_warning(BSFDataSetFromBigWig(ranges = cs, meta = meta)))
 
         testCs = cs
         strand(testCs) = c(rep("-", 500), rep("+", 500))
@@ -29,8 +29,10 @@ if (.Platform$OS.type != "windows") {
 
         testMeta = meta
         testMeta$id = c(1,2,3,3)
-        expect_error(BSFDataSetFromBigWig(
+        expect_message(
+            expect_error(BSFDataSetFromBigWig(
             ranges = testCs, meta = testMeta, silent = TRUE))
+        )
 
         testMeta = meta[,c(1,2)]
         expect_error(BSFDataSetFromBigWig(
