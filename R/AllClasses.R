@@ -167,28 +167,46 @@ BSFDataSet <- function(ranges, meta, signal, forceEqualNames = TRUE) {
 
     # check input signal
     if (isTRUE(forceEqualNames)) {
-        rngChrs = as.character(unique(seqnames(ranges)))
-        # fix input signal
-        signal = lapply(signal, function(selStrand) {
-            lapply(selStrand, function(chrList) {
-                chrList[names(chrList) %in% rngChrs]
+        # check which chromosomes do not fit
+        rngChrs = sort(as.character(unique(seqnames(ranges))))
+        check = lapply(signal, function(currStrand){
+            lapply(currStrand, function(currSample){
+                currChrs = sort(names(currSample))
+                currChrs
             })
         })
-        # fix input ranges
-        sgnChrs = names(signal[[1]][[1]])
-        rngChrs = rngChrs[rngChrs %in% sgnChrs]
-        ranges = ranges[as.character(seqnames(ranges)) %in% rngChrs]
+        l = append(list(), c(check$signalPlus, check$signalMinus,
+                             list('rngChr' = rngChrs)))
+        chrsToUse = Reduce(intersect, l)
+        # fix ranges
+        rngChrsNew = rngChrs[match(chrsToUse, rngChrs)]
+        ranges = subset(ranges, match(seqnames(ranges), rngChrsNew))
+        # fix siganl
+        signal = lapply(signal, function(currStrand) {
+            lapply(currStrand, function(currSample) {
+                currSample[match(chrsToUse, names(currSample))]
+            })
+        })
     }
     if (!isTRUE(forceEqualNames)) {
-        rngChrs = unique(seqnames(ranges))
-        sgnChrs = names(signal[[1]][[1]])
-        # check signal
-        if (!all(rngChrs %in% sgnChrs) & all(sgnChrs %in% rngChrs)) {
-            warning("forceEqualNames is FALSE and chromosome names in the
-                    ranges and signal objects do not match. ")
+        rngChrs = sort(as.character(unique(seqnames(ranges))))
+        check = lapply(signal, function(currStrand){
+            lapply(currStrand, function(currSample){
+                currChrs = sort(names(currSample))
+                sort(names(signal$signalPlus$`3_KO`))
+                identical(currChrs, rngChrs)
+            })
+        })
+        if(!all(unlist(check))) {
+            # not all identical
+            errorSamples = names(which(!unlist(check)))
+            warning(
+                paste0("forceEqualNames is FALSE and chromosome found in
+                           ranges and singal do not match in sample: ",
+                       errorSamples, "\n")
+            )
         }
     }
-
     # set placeholder for summary slot
     summary = data.frame()
 
@@ -205,7 +223,8 @@ BSFDataSet <- function(ranges, meta, signal, forceEqualNames = TRUE) {
 
 #' @rdname BSFDataSet
 #' @export
-BSFDataSetFromBigWig <- function(ranges, meta, silent = FALSE) {
+BSFDataSetFromBigWig <- function(ranges, meta, silent = FALSE,
+                                 forceEqualNames = TRUE) {
     # check the meta data dataframe for additional info where to find
     # the big wig files
     if(!all(c(
@@ -243,7 +262,8 @@ BSFDataSetFromBigWig <- function(ranges, meta, silent = FALSE) {
     signal = list(signalPlus = signalPlus, signalMinus = signalMinus)
 
     # construct BindingSiteFinder data set
-    object = BSFDataSet(ranges = ranges, meta = meta, signal = signal)
+    object = BSFDataSet(ranges = ranges, meta = meta, signal = signal,
+                        forceEqualNames = forceEqualNames)
     return(object)
 }
 

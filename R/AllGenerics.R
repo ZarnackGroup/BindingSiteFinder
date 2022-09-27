@@ -40,4 +40,3 @@ setGeneric("getSummary", function(object, ...) {
     standardGeneric("getSummary")
 })
 
-

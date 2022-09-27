@@ -25,7 +25,7 @@ Imports: tidyr, plyr, matrixStats, stats, ggplot2, methods, rtracklayer,
 Depends: GenomicRanges, R (>= 4.1)
 Suggests: testthat, BiocStyle, knitr, rmarkdown, dplyr, GenomicAlignments, 
     ComplexHeatmap, GenomeInfoDb, forcats, scales
-RoxygenNote: 7.1.1
+RoxygenNote: 7.2.1
 Collate: 
     'AllClasses.R'
     'AllGenerics.R'
