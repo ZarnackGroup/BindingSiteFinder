@@ -330,18 +330,50 @@ setMethod(
 )
 
 
-
-setMethod("[", c("BSFDataSet", "integer", "missing", "ANY"),
+#' Extract parts of BSFDataSet
+#'
+#' Use index i to subset a BSFDataSet. The included ranges will be reduced
+#' according to the index and the signal will be modified accordingly. Note
+#' that only signal that covers the ranges after sub-setting will be retained.
+#' This means all signal 'between' binding sites will be lost.
+#'
+#' @docType methods
+#'
+#' @name `[`
+#'
+#' @aliases [`,BSFDataSet-method
+#'
+#' @param x BSFDataSet
+#' @param i index to subset
+#' @param j ANY
+#' @param drop TRUE
+#' @param ... additional arguments
+#'
+#' @return an object of type \code{\link{BSFDataSet}} with ranges and signal
+#' sub-setted by index i
+#'
+#' @seealso \code{\link{BSFDataSet}}
+#'
+#' @examples
+#'
+#' # load data
+#' files <- system.file("extdata", package="BindingSiteFinder")
+#' load(list.files(files, pattern = ".rda$", full.names = TRUE))
+#'
+#' bdsNew = bds[1:10]
+#'
+#' @export
+setMethod("[", signature(x = "BSFDataSet", i = "ANY", j = "ANY"),
           function(x, i, j, ..., drop=TRUE)
           {
-              rng = getRanges(x)
-              sgn = getSignal(x)
+              rng = x@ranges
+              sgn = x@signal
               rngSub = rng[i]
 
               # Subset signal
               sgnSub = lapply(sgn, function(currStrand){
                   lapply(currStrand, function(currSample){
-                      currSample = currSample[names(currSample) %in% seqnames(rngSub)]
+                      currSample = currSample[match(names(currSample), seqnames(rngSub), nomatch = 0) > 0]
                       as(lapply(currSample, function(currChr){
                           rngCov = coverage(ranges(rngSub), width = length(currChr))
                           currChr[rngCov == 0] = 0
@@ -350,4 +382,5 @@ setMethod("[", c("BSFDataSet", "integer", "missing", "ANY"),
                   })
               })
               initialize(x, ranges = rngSub, signal = sgnSub)
-          })
+          }
+)

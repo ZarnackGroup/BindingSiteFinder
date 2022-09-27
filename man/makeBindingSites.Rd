@@ -106,4 +106,5 @@ minCrosslinks = 2, minClSites = 1)
 # standard options, with subsetting
 bds <- makeBindingSites(object = bds, bsSize = 9, minWidth = 2,
 minCrosslinks = 2, minClSites = 1, sub.chr = "chr22")
+
 }

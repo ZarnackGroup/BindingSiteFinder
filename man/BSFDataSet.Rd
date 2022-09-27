@@ -12,7 +12,7 @@ BSFDataSet(ranges, meta, signal, forceEqualNames = TRUE)
 
 BSFDataSet(ranges, meta, signal, forceEqualNames = TRUE)
 
-BSFDataSetFromBigWig(ranges, meta, silent = FALSE)
+BSFDataSetFromBigWig(ranges, meta, silent = FALSE, forceEqualNames = TRUE)
 }
 \arguments{
 \item{ranges}{a \code{GenomicRanges} with the desired ranges to process. The
