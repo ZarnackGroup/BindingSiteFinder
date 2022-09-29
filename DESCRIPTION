@@ -21,10 +21,10 @@ License: Artistic-2.0
 Encoding: UTF-8
 VignetteBuilder: knitr
 Imports: tidyr, plyr, matrixStats, stats, ggplot2, methods, rtracklayer,
-    S4Vectors, ggforce
+    S4Vectors, ggforce, GenomeInfoDb
 Depends: GenomicRanges, R (>= 4.1)
 Suggests: testthat, BiocStyle, knitr, rmarkdown, dplyr, GenomicAlignments, 
-    ComplexHeatmap, GenomeInfoDb, forcats, scales
+    ComplexHeatmap, forcats, scales
 RoxygenNote: 7.2.1
 Collate: 
     'AllClasses.R'
