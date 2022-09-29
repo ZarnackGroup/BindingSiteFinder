@@ -75,7 +75,7 @@ The argument \code{minCrosslinks} defines how many positions of the binding
 sites are covered with at least one crosslink event. This threshold has to
 be defined in conjunction with the binding site width. A default value of 3
 with a binding site width of 9 means that 1/3 of all positions in the final
-binding site must be covered by a crosslink event. Setting this filter to 1
+binding site must be covered by a crosslink event. Setting this filter to 0
 deactivates it.
 
 The \code{minClSites} argument defines how many positions of the binding site
@@ -83,7 +83,7 @@ must have been covered by the original crosslink site input. If the input was
 based on the single nucleotide crosslink positions computed by PureCLIP than
 this filter checks for the number of positions originally identified by
 PureCLIP in the computed binding sites. The default of \code{minClSites} = 1
-essentially deactivates this filter. Setting this filter to 1 deactivates it.
+essentially deactivates this filter. Setting this filter to 0 deactivates it.
 
 The options \code{centerIsClSite} and \code{centerIsSummit} ensure that the
 center of each binding site is covered by an initial crosslink site and

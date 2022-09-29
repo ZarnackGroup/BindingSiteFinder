@@ -330,38 +330,33 @@ setMethod(
 )
 
 
-#' Extract parts of BSFDataSet
+#' Subset a BSFDataSet object
 #'
-#' Use index i to subset a BSFDataSet. The included ranges will be reduced
-#' according to the index and the signal will be modified accordingly. Note
-#' that only signal that covers the ranges after sub-setting will be retained.
-#' This means all signal 'between' binding sites will be lost.
+#' You can subset \link{BSFDataSet} by identifier or by position using the
+#' \code{`[`} operator.
 #'
-#' @docType methods
+#' @param x A \link{BSFDataSet} object.
+#' @param i Position of the identifier or the name of the identifier itself.
+#' @param j Not used.
+#' @param ... Additional arguments not used here.
+#' @param drop Not used.
 #'
-#' @name `[`
+#' @return A \link{BSFDataSet} object.
 #'
-#' @aliases [`,BSFDataSet-method
-#'
-#' @param x BSFDataSet
-#' @param i index to subset
-#' @param j ANY
-#' @param drop TRUE
-#' @param ... additional arguments
-#'
-#' @return an object of type \code{\link{BSFDataSet}} with ranges and signal
-#' sub-setted by index i
-#'
-#' @seealso \code{\link{BSFDataSet}}
+#' @importFrom GenomeInfoDb seqlevels
+#' @importFrom GenomeInfoDb dropSeqlevels
 #'
 #' @examples
-#'
 #' # load data
 #' files <- system.file("extdata", package="BindingSiteFinder")
 #' load(list.files(files, pattern = ".rda$", full.names = TRUE))
 #'
 #' bdsNew = bds[1:10]
 #'
+#' @name subset-BSFDataSet
+NULL
+
+#' @rdname subset-BSFDataSet
 #' @export
 setMethod("[", signature(x = "BSFDataSet", i = "ANY", j = "ANY"),
           function(x, i, j, ..., drop=TRUE)
@@ -381,6 +376,13 @@ setMethod("[", signature(x = "BSFDataSet", i = "ANY", j = "ANY"),
                       }), "SimpleRleList")
                   })
               })
+              # drop unused seqlevels
+              rngSub = GenomeInfoDb::dropSeqlevels(rngSub,
+                                     value = seqlevels(rngSub)[
+                                         !match(seqlevels(rngSub),
+                                                unique(seqnames(rngSub)),
+                                                nomatch = 0) > 0])
               initialize(x, ranges = rngSub, signal = sgnSub)
           }
 )
+

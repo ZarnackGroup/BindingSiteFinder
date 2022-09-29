@@ -39,7 +39,7 @@ setValidity("BSFDataSet", function(object) {
                     names(object@signal) %in% c("signalMinus")))) {
         msg = c(msg, "Incorrect name in signal list. ")
     }
-
+    # check signal list structure
     if (!is.null(object@signal$signalPlus)) {
         if (!all(names(object@signal$signalPlus) ==
                  paste0(object@meta$id, "_", object@meta$condition))) {
@@ -61,6 +61,20 @@ setValidity("BSFDataSet", function(object) {
                                function(x){is(x, "SimpleRleList")})))) {
             msg = c(msg, "Signal minus elements are not of type RleList")
         }
+    }
+    # check signal and ranges integrity
+    rngChrs = sort(as.character(unique(seqnames(object@ranges))))
+    check = lapply(object@signal, function(currStrand){
+        lapply(currStrand, function(currSample){
+            currChrs = sort(names(currSample))
+            identical(currChrs, rngChrs)
+        })
+    })
+    if(!all(unlist(check))) {
+        # not all samples have the same seqlevels
+        msg = c(msg,
+                "Seqlevels in ranges and signal do not match. Check chromosome
+                names in input ranges and signal")
     }
     if (is.null(msg)) {
         TRUE
@@ -101,6 +115,11 @@ setValidity("BSFDataSet", function(object) {
 #' for each strand. The strand specific entries must be named 'signalPlus' and
 #' 'signalMinus'.
 #'
+#' The constructor enforces the seqnames of the ranges and the signal to be
+#' the same. If for a specific chromosome in the ranges no respective entry
+#' in the signal list can be found, then entries with that chromosome are removed.
+#' This behaviour is needed to keep the \link{BSFDataSet} object in sync.
+#'
 #' @param ranges a \code{GenomicRanges} with the desired ranges to process. The
 #' strand slot must be either + or -.
 #' @param meta a \code{data.frame} with at least two columns. The first column
@@ -109,10 +128,6 @@ setValidity("BSFDataSet", function(object) {
 #' @param signal a \code{list} with the two entries 'signalPlus' and
 #' 'signalMinus', following a special representation of \code{SimpleRleList}
 #' for counts per replicates (see details for more information).
-#' @param forceEqualNames to maintain the integrity of chromosome
-#' names (TRUE/ FALSE). The option ensures that chromosome names present in
-#' the GRanges are also all present in the signal list and vice versa.
-#' Chromosomes names present in only the signal list or the ranges are removed.
 #' @param silent suppress loading message (TRUE/ FALSE)
 #'
 #' @return A BSFDataSet object.
@@ -136,7 +151,7 @@ setValidity("BSFDataSet", function(object) {
 #'
 #' @rdname BSFDataSet
 #' @export
-BSFDataSet <- function(ranges, meta, signal, forceEqualNames = TRUE) {
+BSFDataSet <- function(ranges, meta, signal) {
     # check input ranges
     if (!all(c(any(strand(ranges) == "-"), any(strand(ranges) == "+")))) {
         warning("Input ranges are only on one strand. ")
@@ -164,49 +179,6 @@ BSFDataSet <- function(ranges, meta, signal, forceEqualNames = TRUE) {
         message('Input ranges are not sorted, sorting for you.')
         ranges = .sortRanges(ranges)
     }
-
-    # check input signal
-    if (isTRUE(forceEqualNames)) {
-        # check which chromosomes do not fit
-        rngChrs = sort(as.character(unique(seqnames(ranges))))
-        check = lapply(signal, function(currStrand){
-            lapply(currStrand, function(currSample){
-                currChrs = sort(names(currSample))
-                currChrs
-            })
-        })
-        l = append(list(), c(check$signalPlus, check$signalMinus,
-                             list('rngChr' = rngChrs)))
-        chrsToUse = Reduce(intersect, l)
-        # fix ranges
-        rngChrsNew = rngChrs[match(chrsToUse, rngChrs)]
-        ranges = subset(ranges, match(seqnames(ranges), rngChrsNew))
-        # fix siganl
-        signal = lapply(signal, function(currStrand) {
-            lapply(currStrand, function(currSample) {
-                currSample[match(chrsToUse, names(currSample))]
-            })
-        })
-    }
-    if (!isTRUE(forceEqualNames)) {
-        rngChrs = sort(as.character(unique(seqnames(ranges))))
-        check = lapply(signal, function(currStrand){
-            lapply(currStrand, function(currSample){
-                currChrs = sort(names(currSample))
-                sort(names(signal$signalPlus$`3_KO`))
-                identical(currChrs, rngChrs)
-            })
-        })
-        if(!all(unlist(check))) {
-            # not all identical
-            errorSamples = names(which(!unlist(check)))
-            warning(
-                paste0("forceEqualNames is FALSE and chromosome found in
-                           ranges and singal do not match in sample: ",
-                       errorSamples, "\n")
-            )
-        }
-    }
     # set placeholder for summary slot
     summary = data.frame()
 
@@ -223,8 +195,7 @@ BSFDataSet <- function(ranges, meta, signal, forceEqualNames = TRUE) {
 
 #' @rdname BSFDataSet
 #' @export
-BSFDataSetFromBigWig <- function(ranges, meta, silent = FALSE,
-                                 forceEqualNames = TRUE) {
+BSFDataSetFromBigWig <- function(ranges, meta, silent = FALSE) {
     # check the meta data dataframe for additional info where to find
     # the big wig files
     if(!all(c(
@@ -262,8 +233,7 @@ BSFDataSetFromBigWig <- function(ranges, meta, silent = FALSE,
     signal = list(signalPlus = signalPlus, signalMinus = signalMinus)
 
     # construct BindingSiteFinder data set
-    object = BSFDataSet(ranges = ranges, meta = meta, signal = signal,
-                        forceEqualNames = forceEqualNames)
+    object = BSFDataSet(ranges = ranges, meta = meta, signal = signal)
     return(object)
 }
 

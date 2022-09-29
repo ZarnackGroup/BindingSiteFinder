@@ -8,11 +8,11 @@
 \alias{BSFDataSetFromBigWig}
 \title{BSFDataSet object and constructors}
 \usage{
-BSFDataSet(ranges, meta, signal, forceEqualNames = TRUE)
+BSFDataSet(ranges, meta, signal)
 
-BSFDataSet(ranges, meta, signal, forceEqualNames = TRUE)
+BSFDataSet(ranges, meta, signal)
 
-BSFDataSetFromBigWig(ranges, meta, silent = FALSE, forceEqualNames = TRUE)
+BSFDataSetFromBigWig(ranges, meta, silent = FALSE)
 }
 \arguments{
 \item{ranges}{a \code{GenomicRanges} with the desired ranges to process. The
@@ -25,11 +25,6 @@ information, such as the condition.}
 \item{signal}{a \code{list} with the two entries 'signalPlus' and
 'signalMinus', following a special representation of \code{SimpleRleList}
 for counts per replicates (see details for more information).}
-
-\item{forceEqualNames}{to maintain the integrity of chromosome
-names (TRUE/ FALSE). The option ensures that chromosome names present in
-the GRanges are also all present in the signal list and vice versa.
-Chromosomes names present in only the signal list or the ranges are removed.}
 
 \item{silent}{suppress loading message (TRUE/ FALSE)}
 }
@@ -67,6 +62,11 @@ entries as the number of replicates in the dataset. Since we handle strands
 initially seperated from each other this list must be given twice, once
 for each strand. The strand specific entries must be named 'signalPlus' and
 'signalMinus'.
+
+The constructor enforces the seqnames of the ranges and the signal to be
+the same. If for a specific chromosome in the ranges no respective entry
+in the signal list can be found, then entries with that chromosome are removed.
+This behaviour is needed to keep the \link{BSFDataSet} object in sync.
 }
 \examples{
 

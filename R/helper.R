@@ -136,3 +136,70 @@
     return(score)
 }
 
+
+#' Helper function that fixes seqnames errors in ranges and signal
+#'
+#' Ranges and signal list must be in the same structure as it is used by
+#' the \link{BSFDataSet}. The function removes all ranges and signal entries
+#' where the seqlevels are not part of both signal and ranges.
+#'
+#' If only ranges are problematic, keepStandardChromosomes might solve the
+#' problem too.
+#'
+#' @param ranges GRanges object as it is used to build a \link{BSFDataSet}
+#' @param signal SignalList object as it is used to build a \link{BSFDataSet}
+#'
+#' @return GRanges list for ranges and SignalList for signal
+#'
+#' @importFrom GenomeInfoDb seqlevels
+#' @importFrom GenomeInfoDb dropSeqlevels
+#'
+#' @examples
+#' # load data
+#' files <- system.file("extdata", package="BindingSiteFinder")
+#' load(list.files(files, pattern = ".rda$", full.names = TRUE))
+#'
+#' rng = getRanges(bds)
+#' sgn = getSignal(bds)
+#'
+#' r = as.data.frame(granges(rng))
+#' d = data.frame(seqnames = "chr6", start = 1, end = 1, width = 1, strand = "+")
+#' rngNew = makeGRangesFromDataFrame(rbind(d, r), keep.extra.columns = TRUE)
+#'
+#' fixed = forceEqualNames(rngNew, sgn)
+#'
+#' bdsNew = setRanges(bds, fixed$ranges)
+#' bdsNew = setSignal(bdsNew, fixed$signal)
+#'
+#' @export
+forceEqualNames <- function(ranges, signal) {
+    # check which chromosomes do not fit
+    rngChrs = sort(as.character(unique(seqnames(ranges))))
+    check = lapply(signal, function(currStrand){
+        lapply(currStrand, function(currSample){
+            currChrs = sort(names(currSample))
+            currChrs
+        })
+    })
+    l = append(list(), c(check$signalPlus, check$signalMinus,
+                         list('rngChr' = rngChrs)))
+    chrsToUse = Reduce(intersect, l)
+    # fix ranges
+    rngChrsNew = rngChrs[match(chrsToUse, rngChrs)]
+    ranges = subset(ranges, match(seqnames(ranges), rngChrsNew))
+    # fix siganl
+    signal = lapply(signal, function(currStrand) {
+        lapply(currStrand, function(currSample) {
+            currSample[match(chrsToUse, names(currSample))]
+        })
+    })
+    # clean seqlevels
+    ranges = GenomeInfoDb::dropSeqlevels(ranges,
+                                         value = seqlevels(ranges)[
+                                             !match(seqlevels(ranges),
+                                                    unique(seqnames(ranges)),
+                                                    nomatch = 0) > 0])
+
+    fixed = list(ranges = ranges, signal = signal)
+    return(fixed)
+}
