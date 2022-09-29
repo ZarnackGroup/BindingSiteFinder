@@ -30,7 +30,7 @@
 #' sites are covered with at least one crosslink event. This threshold has to
 #' be defined in conjunction with the binding site width. A default value of 3
 #' with a binding site width of 9 means that 1/3 of all positions in the final
-#' binding site must be covered by a crosslink event. Setting this filter to 1
+#' binding site must be covered by a crosslink event. Setting this filter to 0
 #' deactivates it.
 #'
 #' The \code{minClSites} argument defines how many positions of the binding site
@@ -38,7 +38,7 @@
 #' based on the single nucleotide crosslink positions computed by PureCLIP than
 #' this filter checks for the number of positions originally identified by
 #' PureCLIP in the computed binding sites. The default of \code{minClSites} = 1
-#' essentially deactivates this filter. Setting this filter to 1 deactivates it.
+#' essentially deactivates this filter. Setting this filter to 0 deactivates it.
 #'
 #' The options \code{centerIsClSite} and \code{centerIsSummit} ensure that the
 #' center of each binding site is covered by an initial crosslink site and
@@ -68,6 +68,7 @@
 #' @return an object of type BSFDataSet with modified ranges
 #'
 #' @import GenomicRanges methods
+#' @importFrom GenomeInfoDb seqlevels
 #'
 #' @examples
 #'
@@ -94,6 +95,7 @@ makeBindingSites <- function(object,
                              sub.chr = NA) {
     stopifnot(is(object, "BSFDataSet"))
 
+    #---------------------------------------------------------------------------
     # check integrity of input values
     if (missing(bsSize)) {
         stop("bsSize not set. Please provide a desired binding site width.")
@@ -118,6 +120,14 @@ makeBindingSites <- function(object,
         stop("Number of forced crosslink sites is larger than
              desired binding site size. ")
     }
+
+    #---------------------------------------------------------------------------
+    # logical errors
+    if (minWidth >= bsSize) {
+        warning("Desired binding site size is smaller than the minimum merging
+                width. Be sure to check the minWidth and bsSize parameters")
+    }
+
 
     #---------------------------------------------------------------------------
     # subsetting options
@@ -188,6 +198,7 @@ makeBindingSites <- function(object,
              to be summit filter. ")
     }
 
+    #---------------------------------------------------------------------------
     # summarize number of ranges after each step
     reportDf = data.frame(
         Option = c(
@@ -210,6 +221,20 @@ makeBindingSites <- function(object,
         )
     )
 
+    #---------------------------------------------------------------------------
+    # check output
+    if (!all(match(seqlevels(rngS5),unique(seqnames(rngS5)), nomatch = 0) > 0)) {
+        msgWarningin = paste0("Current definition does not result in binding
+                              sites on all chromosomes where signal was present.
+                              No binding sites on: ",
+                              paste(seqlevels(rngS5)[
+                                  !match(seqlevels(rngS5),
+                                         unique(seqnames(rngS5)),
+                                         nomatch = 0) > 0], collapse = " "))
+        warning(msgWarningin)
+    }
+
+    #---------------------------------------------------------------------------
     # update BSFDataSet with new ranges information
     objectNew = setRanges(object, rngS5)
     objectNew = setSignal(objectNew, sgn)
@@ -309,38 +334,49 @@ makeBindingSites <- function(object,
 .filterMinCrosslinks <- function(rng,
                                  sgn,
                                  minCrosslinks) {
-    sgnMergePlus = sgn$signalPlus
-    sgnMergeMinus = sgn$signalMinus
+    # filter option disabled
+    if (minCrosslinks == 0) {
+        rngCurr = rng
+        return(rngCurr)
+    }
+    # filter option should be used
+    if (minCrosslinks != 0) {
+        sgnMergePlus = sgn$signalPlus
+        sgnMergeMinus = sgn$signalMinus
 
-    # check if both strands exists
-    if ("+" %in% unique(strand(rng))) {
-        # split by strand plus
-        rngCurrPlus = rng[strand(rng) == "+"]
-        rngCurrPlusMat = as.matrix(sgnMergePlus[rngCurrPlus])
-        rngCurrPlus = rngCurrPlus[apply((rngCurrPlusMat > 0), 1, sum) >
-                                      minCrosslinks]
-    }
-    if (!"+" %in% unique(strand(rng))) {
-        rngCurrPlus = NULL
+        # check if both strands exists
+        if ("+" %in% unique(strand(rng))) {
+            # split by strand plus
+            rngCurrPlus = rng[strand(rng) == "+"]
+            rngCurrPlusMat = as.matrix(sgnMergePlus[rngCurrPlus])
+            rngCurrPlus = rngCurrPlus[apply((rngCurrPlusMat > 0), 1, sum) >
+                                          minCrosslinks]
+        }
+        if (!"+" %in% unique(strand(rng))) {
+            rngCurrPlus = NULL
+        }
+
+        if ("-" %in% unique(strand(rng))) {
+            # split by strand minus
+            rngCurrMinus = rng[strand(rng) == "-"]
+            rngCurrMinusMat = as.matrix(sgnMergeMinus[rngCurrMinus])
+            rngCurrMinus = rngCurrMinus[apply((rngCurrMinusMat > 0), 1, sum) >
+                                            minCrosslinks]
+        }
+        if (!"-" %in% unique(strand(rng))) {
+            rngCurrMinus = NULL
+        }
+
+        # combine sort return
+        rngCurr = c(rngCurrPlus, rngCurrMinus)
+        rngCurr = .sortRanges(rngCurr)
+        # rngCurr = GenomeInfoDb::sortSeqlevels(rngCurr)
+        # rngCurr = sort(rngCurr)
+        return(rngCurr)
     }
 
-    if ("-" %in% unique(strand(rng))) {
-        # split by strand minus
-        rngCurrMinus = rng[strand(rng) == "-"]
-        rngCurrMinusMat = as.matrix(sgnMergeMinus[rngCurrMinus])
-        rngCurrMinus = rngCurrMinus[apply((rngCurrMinusMat > 0), 1, sum) >
-                                        minCrosslinks]
-    }
-    if (!"-" %in% unique(strand(rng))) {
-        rngCurrMinus = NULL
-    }
 
-    # combine sort return
-    rngCurr = c(rngCurrPlus, rngCurrMinus)
-    rngCurr = .sortRanges(rngCurr)
-    # rngCurr = GenomeInfoDb::sortSeqlevels(rngCurr)
-    # rngCurr = sort(rngCurr)
-    return(rngCurr)
+
 }
 
 #' @importFrom S4Vectors queryHits
@@ -349,8 +385,6 @@ makeBindingSites <- function(object,
     rngCurr = rng[queryHits(findOverlaps(rngCurr, rng0))]
     # combine sort return
     rngCurr = .sortRanges(rngCurr)
-    # rngCurr = GenomeInfoDb::sortSeqlevels(rngCurr)
-    # rngCurr = sort(rngCurr)
     return(rngCurr)
 }
 
@@ -383,20 +417,24 @@ makeBindingSites <- function(object,
     # combine sort return
     rngCurr = c(rngCurrPlus, rngCurrMinus)
     rngCurr = .sortRanges(rngCurr)
-    # rngCurr = GenomeInfoDb::sortSeqlevels(rngCurr)
-    # rngCurr = sort(rngCurr)
     return(rngCurr)
 }
 
 .filterMinClSites <- function(rng, rng0, minClSites) {
-    overlaps = findOverlaps(rng, rng0)
-    freq = table(queryHits(overlaps))
-    idx = as.numeric(names(freq[freq >= minClSites]))
-    rngCurr = rng[idx]
-
-    # combine sort return
-    # rngCurr = GenomeInfoDb::sortSeqlevels(rngCurr)
-    # rngCurr = sort(rngCurr)
-    rngCurr = .sortRanges(rngCurr)
-    return(rngCurr)
+    # filter option disabled
+    if (minClSites == 0) {
+        rngCurr = rng
+        return(rngCurr)
+    }
+    # filter option is used
+    if (minClSites != 0) {
+        overlaps = findOverlaps(rng, rng0)
+        freq = table(queryHits(overlaps))
+        idx = as.numeric(names(freq[freq >= minClSites]))
+        rngCurr = rng[idx]
+        # combine sort return
+        rngCurr = .sortRanges(rngCurr)
+        return(rngCurr)
+    }
 }
+
