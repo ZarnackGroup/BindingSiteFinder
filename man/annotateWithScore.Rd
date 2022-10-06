@@ -22,9 +22,11 @@ merged binding sites with scores from the initial ranges
 \examples{
 if (.Platform$OS.type != "windows") {
     # load data
-    csFile <- system.file("extdata", "PureCLIP_crosslink_sites_example.bed",
+    csFile <- system.file("extdata", "PureCLIP_crosslink_sites_examples.bed",
                         package="BindingSiteFinder")
-    cs = rtracklayer::import(con = csFile, format = "BED")
+    cs = rtracklayer::import(con = csFile, format = "BED",
+    extraCols=c("additionalScores" = "character"))
+    cs$additionalScores = NULL
     clipFiles <- system.file("extdata", package="BindingSiteFinder")
     # two experimental conditions
     meta = data.frame(

@@ -1,9 +1,11 @@
 if (.Platform$OS.type != "windows") {
     test_that("Test that score annotation function works", {
 
-        csFile <- system.file("extdata", "PureCLIP_crosslink_sites_example.bed",
+        csFile <- system.file("extdata", "PureCLIP_crosslink_sites_examples.bed",
                               package="BindingSiteFinder")
-        cs = rtracklayer::import(con = csFile, format = "BED")
+        cs = rtracklayer::import(con = csFile, format = "BED",
+                                 extraCols=c("additionalScores" = "character"))
+        cs$additionalScores = NULL
         clipFiles <- system.file("extdata", package="BindingSiteFinder")
 
         # use only if not windows
@@ -15,8 +17,8 @@ if (.Platform$OS.type != "windows") {
                                 pattern = "plus.bw$", full.names = TRUE),
             clMinus = list.files(clipFiles,
                                  pattern = "minus.bw$", full.names = TRUE))
-        bdsOriginal = BSFDataSetFromBigWig(
-            ranges = cs, meta = meta, silent = TRUE)
+
+        bdsOriginal = expect_warning(BSFDataSetFromBigWig(ranges = cs, meta = meta))
 
         # merge binding sites
         bdsMerge <- makeBindingSites(object = bdsOriginal, bsSize = 9,
@@ -27,3 +29,4 @@ if (.Platform$OS.type != "windows") {
         expect_is(annotateWithScore(bdsMerge, cs), "BSFDataSet")
     })
 }
+

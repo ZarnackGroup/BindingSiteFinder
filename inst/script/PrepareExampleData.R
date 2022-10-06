@@ -5,7 +5,8 @@ library(GenomicFeatures)
 # prepare crosslink sites
 ################################################################################
 # import crosslinks
-# csFile = "/Users/mirko/Projects/clip_methods/04_pureclip/PureCLIP.crosslink_sites.bed"
+csFile = "/Users/mirko/Projects/clip_methods/04_pureclip/PureCLIP.crosslink_sites.bed"
+
 cs = import(con = csFile, format = "BED")
 # pureclip score filter
 quants = quantile(cs$score, probs = seq(0,1, by = 0.05))
