@@ -99,6 +99,9 @@ setMethod(
 #'
 #' @param object a \code{BSFDataSet} object
 #' @param newRanges an object of type \code{GRanges}
+#' @param dropSeqlevels enforce seqnames to be the same in ranges and signal,
+#' by dropping unused seqlevels which is required for most downstream functions
+#' such as \code{coverageOverRanges}
 #' @param ... additional arguments
 #'
 #' @return object of type \code{\link{BSFDataSet}} with updated ranges
@@ -119,8 +122,17 @@ setMethod(
 setMethod(
     f = "setRanges",
     signature(object = "BSFDataSet"),
-    definition = function(object, newRanges) {
-        object@ranges <- newRanges
+    definition = function(object, newRanges, dropSeqlevels = TRUE) {
+        msg = NULL
+        # check for ranges and signal integrity
+        fixed = .checkForDropSeqlevels(ranges = newRanges, signal = object@signal,
+                                    dropSeqlevels = dropSeqlevels)
+
+        object@ranges <- fixed$ranges
+        object@signal <- fixed$signal
+        if (!is.null(fixed$msg)) {
+            message(fixed$msg)
+        }
         validObject(object)
         return(object)
     }
@@ -210,6 +222,9 @@ setMethod(
 #'
 #' @param object a BSFDataSet object
 #' @param newSignal list of RLE lists
+#' @param dropSeqlevels enforce seqnames to be the same in ranges and signal,
+#' by dropping unused seqlevels which is required for most downstream functions
+#' such as \code{coverageOverRanges}
 #' @param ... additional arguments
 #'
 #' @return an object of type \code{\link{BSFDataSet}} with updated signal
@@ -234,8 +249,17 @@ setMethod(
 setMethod(
     f = "setSignal",
     signature(object = "BSFDataSet"),
-    definition = function(object, newSignal) {
-        object@signal <- newSignal
+    definition = function(object, newSignal, dropSeqlevels = TRUE) {
+        msg = NULL
+        # check for ranges and signal integrity
+        fixed = .checkForDropSeqlevels(ranges = object@ranges, signal = newSignal,
+                                       dropSeqlevels = dropSeqlevels)
+
+        object@ranges <- fixed$ranges
+        object@signal <- fixed$signal
+        if (!is.null(fixed$msg)) {
+            message(fixed$msg)
+        }
         validObject(object)
         return(object)
     }
@@ -333,18 +357,19 @@ setMethod(
 #' Subset a BSFDataSet object
 #'
 #' You can subset \link{BSFDataSet} by identifier or by position using the
-#' \code{`[`} operator.
+#' \code{`[`} operator. Empty seqlevels are being droppend after the subset.
 #'
 #' @param x A \link{BSFDataSet} object.
 #' @param i Position of the identifier or the name of the identifier itself.
 #' @param j Not used.
 #' @param ... Additional arguments not used here.
-#' @param drop Not used.
+#' @param drop if the signal not covered by the subsetted ranges should be
+#' dropped or not
 #'
 #' @return A \link{BSFDataSet} object.
 #'
 #' @importFrom GenomeInfoDb seqlevels
-#' @importFrom GenomeInfoDb dropSeqlevels
+#' @importFrom GenomeInfoDb keepSeqlevels
 #'
 #' @examples
 #' # load data
@@ -358,31 +383,42 @@ NULL
 
 #' @rdname subset-BSFDataSet
 #' @export
-setMethod("[", signature(x = "BSFDataSet", i = "ANY", j = "ANY"),
-          function(x, i, j, ..., drop=TRUE)
+setMethod("[", signature(x = "BSFDataSet", i = "ANY", j = "ANY", drop = "ANY"),
+          function(x, i, j, ..., drop=FALSE)
           {
               rng = x@ranges
               sgn = x@signal
               rngSub = rng[i]
 
-              # Subset signal
+              # drop empty seqlevels from ranges
+              rngSub = GenomeInfoDb::keepSeqlevels(rngSub,
+                                                   value = unique(seqnames(rngSub)))
+
+              # reduce signal to only those seqlevels that are still present in
+              # the ranges after subsetting
               sgnSub = lapply(sgn, function(currStrand){
                   lapply(currStrand, function(currSample){
                       currSample = currSample[match(names(currSample), seqnames(rngSub), nomatch = 0) > 0]
-                      as(lapply(currSample, function(currChr){
-                          rngCov = coverage(ranges(rngSub), width = length(currChr))
-                          currChr[rngCov == 0] = 0
-                          currChr
-                      }), "SimpleRleList")
                   })
               })
+
               # drop unused seqlevels
-              rngSub = GenomeInfoDb::dropSeqlevels(rngSub,
-                                     value = seqlevels(rngSub)[
-                                         !match(seqlevels(rngSub),
-                                                unique(seqnames(rngSub)),
-                                                nomatch = 0) > 0])
+              if (isTRUE(drop)) {
+                  # drop signal on all regions not covered by binding sites
+                  sgnSub = lapply(sgn, function(currStrand){
+                      lapply(currStrand, function(currSample){
+                          currSample = currSample[match(names(currSample), seqnames(rngSub), nomatch = 0) > 0]
+                          as(lapply(currSample, function(currChr){
+                              rngCov = coverage(ranges(rngSub), width = length(currChr))
+                              currChr[rngCov == 0] = 0
+                              currChr
+                          }), "SimpleRleList")
+                      })
+                  })
+              }
               initialize(x, ranges = rngSub, signal = sgnSub)
           }
 )
+
+
 

@@ -5,7 +5,7 @@
 \alias{[,BSFDataSet,ANY,ANY,ANY-method}
 \title{Subset a BSFDataSet object}
 \usage{
-\S4method{[}{BSFDataSet,ANY,ANY,ANY}(x, i, j, ..., drop = TRUE)
+\S4method{[}{BSFDataSet,ANY,ANY,ANY}(x, i, j, ..., drop = FALSE)
 }
 \arguments{
 \item{x}{A \link{BSFDataSet} object.}
@@ -16,14 +16,15 @@
 
 \item{...}{Additional arguments not used here.}
 
-\item{drop}{Not used.}
+\item{drop}{if the signal not covered by the subsetted ranges should be
+dropped or not}
 }
 \value{
 A \link{BSFDataSet} object.
 }
 \description{
 You can subset \link{BSFDataSet} by identifier or by position using the
-\code{`[`} operator.
+\code{`[`} operator. Empty seqlevels are being droppend after the subset.
 }
 \examples{
 # load data

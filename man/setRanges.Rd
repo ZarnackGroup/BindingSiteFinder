@@ -9,7 +9,7 @@ The GRanges object that holds the genomic ranges information can be replaced.}
 \usage{
 setRanges(object, ...)
 
-\S4method{setRanges}{BSFDataSet}(object, newRanges)
+\S4method{setRanges}{BSFDataSet}(object, newRanges, dropSeqlevels = TRUE)
 }
 \arguments{
 \item{object}{a \code{BSFDataSet} object}
@@ -17,6 +17,10 @@ setRanges(object, ...)
 \item{...}{additional arguments}
 
 \item{newRanges}{an object of type \code{GRanges}}
+
+\item{dropSeqlevels}{enforce seqnames to be the same in ranges and signal,
+by dropping unused seqlevels which is required for most downstream functions
+such as \code{coverageOverRanges}}
 }
 \value{
 object of type \code{\link{BSFDataSet}} with updated ranges

@@ -8,11 +8,11 @@
 \alias{BSFDataSetFromBigWig}
 \title{BSFDataSet object and constructors}
 \usage{
-BSFDataSet(ranges, meta, signal)
+BSFDataSet(ranges, meta, signal, dropSeqlevels = TRUE, silent = FALSE)
 
-BSFDataSet(ranges, meta, signal)
+BSFDataSet(ranges, meta, signal, dropSeqlevels = TRUE, silent = FALSE)
 
-BSFDataSetFromBigWig(ranges, meta, silent = FALSE)
+BSFDataSetFromBigWig(ranges, meta, silent = FALSE, dropSeqlevels = TRUE)
 }
 \arguments{
 \item{ranges}{a \code{GenomicRanges} with the desired ranges to process. The
@@ -26,7 +26,11 @@ information, such as the condition.}
 'signalMinus', following a special representation of \code{SimpleRleList}
 for counts per replicates (see details for more information).}
 
-\item{silent}{suppress loading message (TRUE/ FALSE)}
+\item{dropSeqlevels}{enforce seqnames to be the same in ranges and signal,
+by dropping unused seqlevels which is required for most downstream functions
+such as \code{coverageOverRanges}}
+
+\item{silent}{suppress messages but not warnings (TRUE/ FALSE)}
 }
 \value{
 A BSFDataSet object.
@@ -63,10 +67,12 @@ initially seperated from each other this list must be given twice, once
 for each strand. The strand specific entries must be named 'signalPlus' and
 'signalMinus'.
 
-The constructor enforces the seqnames of the ranges and the signal to be
-the same. If for a specific chromosome in the ranges no respective entry
-in the signal list can be found, then entries with that chromosome are removed.
-This behaviour is needed to keep the \link{BSFDataSet} object in sync.
+The option \code{dropSeqlevels} forces the seqnames of the ranges and
+the signal to be the same. If for a specific chromosome in the ranges
+no respective entry in the signal list can be found, then entries with
+that chromosome are dropped This behavior is needed to keep the
+\link{BSFDataSet} object in sync, which is required for downstream functions
+such as \code{coverageOverRanges}
 }
 \examples{
 

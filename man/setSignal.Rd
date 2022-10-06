@@ -8,7 +8,7 @@
 \usage{
 setSignal(object, ...)
 
-\S4method{setSignal}{BSFDataSet}(object, newSignal)
+\S4method{setSignal}{BSFDataSet}(object, newSignal, dropSeqlevels = TRUE)
 }
 \arguments{
 \item{object}{a BSFDataSet object}
@@ -16,6 +16,10 @@ setSignal(object, ...)
 \item{...}{additional arguments}
 
 \item{newSignal}{list of RLE lists}
+
+\item{dropSeqlevels}{enforce seqnames to be the same in ranges and signal,
+by dropping unused seqlevels which is required for most downstream functions
+such as \code{coverageOverRanges}}
 }
 \value{
 an object of type \code{\link{BSFDataSet}} with updated signal

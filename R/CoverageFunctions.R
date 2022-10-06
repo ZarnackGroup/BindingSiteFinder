@@ -125,7 +125,9 @@ coverageOverRanges <- function(
     }
     return(covRet)
 }
-
+# TODO
+# output ranges are not sorted properly
+# -> remove silent option -> warnings should always be shown
 
 
 .coverageOverRanges.merge_positions_keep_replicates <- function(sgn, rng, method) {
@@ -184,8 +186,8 @@ coverageOverRanges <- function(
     }
     # sort ranges
     rngCov = c(retCov)
+    rngCov = GenomeInfoDb::sortSeqlevels(rngCov)
     rngCov = .sortRanges(rngCov)
-    # rngCov = GenomeInfoDb::sortSeqlevels(rngCov)
     # rngCov = sort(rngCov)
 
     return(rngCov)

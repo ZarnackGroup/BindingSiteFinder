@@ -40,41 +40,24 @@ setValidity("BSFDataSet", function(object) {
         msg = c(msg, "Incorrect name in signal list. ")
     }
     # check signal list structure
+    if(length((match(c("signalPlus", "signalMinus"), names(object@signal), nomatch = 0) > 0)) != 2){
+        msg = c(msg, "Signal must contain exactly two sublists. ")
+    }
+    if(!all(match(c("signalPlus", "signalMinus"), names(object@signal), nomatch = 0) > 0)) {
+        # check if signal list contains plus/ minus sublists
+        msg = c(msg, "Signal must contain lists named 'signalPlus' and 'signalMinus'. ")
+    }
     if (!is.null(object@signal$signalPlus)) {
-        if (!all(names(object@signal$signalPlus) ==
-                 paste0(object@meta$id, "_", object@meta$condition))) {
-            msg = c(msg, "Signal plus list structure corrupt, names cannot be
-                constructed from meta columns 'id' and 'condition'. ")
-        }
         if (!all(unlist(lapply(object@signal$signalPlus,
                                function(x){is(x, "SimpleRleList")})))) {
             msg = c(msg, "Signal plus elements are not of type RleList")
         }
     }
     if (!is.null(object@signal$signalMinus)) {
-        if (!all(names(object@signal$signalMinus) ==
-                 paste0(object@meta$id, "_", object@meta$condition))) {
-            msg = c(msg, "Signal minus list structure corrupt, names cannot be
-                constructed from meta columns 'id' and 'condition'. ")
-        }
         if (!all(unlist(lapply(object@signal$signalMinus,
                                function(x){is(x, "SimpleRleList")})))) {
             msg = c(msg, "Signal minus elements are not of type RleList")
         }
-    }
-    # check signal and ranges integrity
-    rngChrs = sort(as.character(unique(seqnames(object@ranges))))
-    check = lapply(object@signal, function(currStrand){
-        lapply(currStrand, function(currSample){
-            currChrs = sort(names(currSample))
-            identical(currChrs, rngChrs)
-        })
-    })
-    if(!all(unlist(check))) {
-        # not all samples have the same seqlevels
-        msg = c(msg,
-                "Seqlevels in ranges and signal do not match. Check chromosome
-                names in input ranges and signal")
     }
     if (is.null(msg)) {
         TRUE
@@ -115,10 +98,12 @@ setValidity("BSFDataSet", function(object) {
 #' for each strand. The strand specific entries must be named 'signalPlus' and
 #' 'signalMinus'.
 #'
-#' The constructor enforces the seqnames of the ranges and the signal to be
-#' the same. If for a specific chromosome in the ranges no respective entry
-#' in the signal list can be found, then entries with that chromosome are removed.
-#' This behaviour is needed to keep the \link{BSFDataSet} object in sync.
+#' The option \code{dropSeqlevels} forces the seqnames of the ranges and
+#' the signal to be the same. If for a specific chromosome in the ranges
+#' no respective entry in the signal list can be found, then entries with
+#' that chromosome are dropped This behavior is needed to keep the
+#' \link{BSFDataSet} object in sync, which is required for downstream functions
+#' such as \code{coverageOverRanges}
 #'
 #' @param ranges a \code{GenomicRanges} with the desired ranges to process. The
 #' strand slot must be either + or -.
@@ -128,7 +113,10 @@ setValidity("BSFDataSet", function(object) {
 #' @param signal a \code{list} with the two entries 'signalPlus' and
 #' 'signalMinus', following a special representation of \code{SimpleRleList}
 #' for counts per replicates (see details for more information).
-#' @param silent suppress loading message (TRUE/ FALSE)
+#' @param silent suppress messages but not warnings (TRUE/ FALSE)
+#' @param dropSeqlevels enforce seqnames to be the same in ranges and signal,
+#' by dropping unused seqlevels which is required for most downstream functions
+#' such as \code{coverageOverRanges}
 #'
 #' @return A BSFDataSet object.
 #'
@@ -151,34 +139,57 @@ setValidity("BSFDataSet", function(object) {
 #'
 #' @rdname BSFDataSet
 #' @export
-BSFDataSet <- function(ranges, meta, signal) {
+BSFDataSet <- function(ranges, meta, signal, dropSeqlevels = TRUE, silent = FALSE) {
+    msg = NULL
     # check input ranges
     if (!all(c(any(strand(ranges) == "-"), any(strand(ranges) == "+")))) {
-        warning("Input ranges are only on one strand. ")
+        warning("Input ranges are only on one strand. \n")
     }
     if (length(unique(width(ranges))) > 1) {
-        warning("Ranges are of differnt width. ")
+        msg = c(msg, "Ranges are of different width. \n")
+        # warning("Ranges are of differnt width. ")
     }
     if (any(width(ranges) > 1)) {
-        message("Input ranges are larger than 1 nt. ")
+        msg = c(msg, "Input ranges are larger than 1 nt. \n")
+        # message("Input ranges are larger than 1 nt. ")
     }
     # check input metadata
     if(!all(c(any(colnames(meta) == "id"),
               any(colnames(meta) == "condition")))){
-        stop("Meta data columns must contain 'id' and 'condition'. ")
+        msg = c(msg, "Meta data columns must contain 'id' and 'condition'. \n")
+        # stop("Meta data columns must contain 'id' and 'condition'. ")
     }
     if (!is.factor(meta$condition)) {
-        message("Condition column is not factor, converting to factor. ")
+        msg = c(msg, "Condition column is not a factor, converting to factor. \n")
+        # message("Condition column is not factor, converting to factor. ")
         meta$condition = factor(meta$condition)
     }
     if (any(duplicated(meta$clPlus)) |
         any(duplicated(meta$clMinus))) {
-        message("Given path are duplicated. Please check your input.")
+        msg = c(msg, "Given paths are duplicated. Please check your input. \n")
+        # message("Given path are duplicated. Please check your input.")
     }
     if (! identical(.sortRanges(ranges), ranges)){
-        message('Input ranges are not sorted, sorting for you.')
+        msg = c(msg, "Input ranges are not sorted, sorting for you. \n")
+        # message('Input ranges are not sorted, sorting for you.')
         ranges = .sortRanges(ranges)
     }
+
+    # check for signal and ranges integrity
+    fixed = .checkForDropSeqlevels(ranges = ranges, signal = signal,
+                                dropSeqlevels = dropSeqlevels)
+    ranges = fixed$ranges
+    signal = fixed$signal
+    if (!is.null(fixed$msg)) {
+        msg = c(msg, fixed$msg)
+    }
+
+    if (!isTRUE(silent)) {
+        if(!is.null(msg)) {
+            message(msg)
+        }
+    }
+
     # set placeholder for summary slot
     summary = data.frame()
 
@@ -195,7 +206,8 @@ BSFDataSet <- function(ranges, meta, signal) {
 
 #' @rdname BSFDataSet
 #' @export
-BSFDataSetFromBigWig <- function(ranges, meta, silent = FALSE) {
+BSFDataSetFromBigWig <- function(ranges, meta, silent = FALSE,
+                                 dropSeqlevels = TRUE) {
     # check the meta data dataframe for additional info where to find
     # the big wig files
     if(!all(c(
@@ -215,12 +227,6 @@ BSFDataSetFromBigWig <- function(ranges, meta, silent = FALSE) {
         any(duplicated(meta$clMinus))) {
         warning("Given path are duplicated. Please check your input.")
     }
-
-    # load the bigwig files and construct list
-    # Loading message
-    if (!isTRUE(silent)){
-        message("Importing ranges. ")
-    }
     # build colSignal by importing files as RLE
     signalPlus = unlist(lapply(meta$clPlus, function(x) {
         rtracklayer::import(con = x, as = "RleList")
@@ -233,7 +239,8 @@ BSFDataSetFromBigWig <- function(ranges, meta, silent = FALSE) {
     signal = list(signalPlus = signalPlus, signalMinus = signalMinus)
 
     # construct BindingSiteFinder data set
-    object = BSFDataSet(ranges = ranges, meta = meta, signal = signal)
+    object = BSFDataSet(ranges = ranges, meta = meta, signal = signal,
+                        dropSeqlevels = dropSeqlevels, silent = silent)
     return(object)
 }
 
