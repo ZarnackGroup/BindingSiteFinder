@@ -9,7 +9,9 @@ test_that("Binding site merging works", {
     expect_error(supportRatio(bds, bsWidths = c(3,5), bsFlank = c(5,5,5)))
     expect_error(supportRatio(bds, bsWidths = c(3,5), bsFlank = c(5)))
     expect_error(supportRatio(bds, bsWidths = c(3,5), bsFlank = c(5,5.1)))
-    # testing output
-    expect_identical(supportRatio(bds, bsWidths = c(3,5)), supportRatio(bds, bsWidths = c(3,5), bsFlank = c(3,5)))
 
+    # testing output
+    expect_warning(supportRatio(bds, bsWidths = c(3,5)))
+    expect_silent(supportRatio(bds, bsWidths = c(5,7)))
+    expect_identical(supportRatio(bds, bsWidths = c(5,7)), supportRatio(bds, bsWidths = c(5,7), bsFlank = c(5,7)))
 })

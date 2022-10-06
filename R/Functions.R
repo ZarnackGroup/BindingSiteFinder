@@ -61,8 +61,8 @@
 #'
 #' @export
 reproducibilityFilter <- function(object,
-                                  cutoff = 0.05,
-                                  n.reps = 1,
+                                  cutoff,
+                                  n.reps,
                                   min.crosslinks = 1,
                                   returnType = c("BSFDataSet", "data.frame")) {
     stopifnot(is(object, "BSFDataSet"))
@@ -157,7 +157,6 @@ reproducibilityFilter <- function(object,
 
     return(retObj)
 }
-
 
 
 #' Annotation function for BSFDataSet object

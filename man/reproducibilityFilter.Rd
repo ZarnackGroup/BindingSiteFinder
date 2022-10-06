@@ -6,8 +6,8 @@
 \usage{
 reproducibilityFilter(
   object,
-  cutoff = 0.05,
-  n.reps = 1,
+  cutoff,
+  n.reps,
   min.crosslinks = 1,
   returnType = c("BSFDataSet", "data.frame")
 )
