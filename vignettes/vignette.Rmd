@@ -39,8 +39,20 @@ suppressPackageStartupMessages({
 })
 ```
 
+# Preface
 
-# Installation
+## Motivation
+
+Most cellular processes are regulated by RNA-binding proteins (RBPs). Knowledge on their exact positioning can be obtained from individual-nucleotide resolution UV crosslinking and immunoprecipitation (iCLIP) experiments. In a recent publication we described a complete analysis workflow to detect RBP binding sites from iCLIP data. The workflow covers all essential steps, from quality control of sequencing reads, different peak calling options, to the downstream analysis and definition of binding sites. Pre-processing and peak calling steps relies on publicly available software, whereas the definition of the final binding sites follows a custom procedure implemented in R. This vignette explains how equally sized binding sites can be defined from a genome-wide iCLIP coverage.
+
+
+## Pre-requisite
+
+The workflow described herein is based on our recently published complete iCLIP analysis pipeline [@busch2020]. Thus, we expect the user to have preprocessed their iCLIP sequencing reads up to the point of the peak calling step. In brief, this includes basic processing of the sequencing reads, such as quality filtering, barcode handling, mapping and the generation of a single nucleotide crosslink file for all replicates under consideration. As we describe in our manuscript replicate .bam files may or may not be merged prior to peak calling, for which we suggest PureCLIP [@Krakau2017]. For simplicity we address only the case where peak calling was based on the merge of all replicates.
+
+![**Overview of the preprocessing workflow**. ](images/preprocessing.png){#preprocessing}
+
+## Installation
 
 The `r Biocpkg("BindingSiteFinder")` package is available at [https://bioconductor.org](https://bioconductor.org) and can be installed via `BiocManager::install`:
 
@@ -50,39 +62,29 @@ if (!require("BiocManager"))
 BiocManager::install("BindingSiteFinder")
 ```
 
-
-# Motivation
-
-Most cellular processes are regulated by RNA-binding proteins (RBPs). Knowledge on their exact positioning can be obtained from individual-nucleotide resolution UV crosslinking and immunoprecipitation (iCLIP) experiments. In a recent publication we described a complete analysis workflow to detect RBP binding sites from iCLIP data. The workflow covers all essential steps, from quality control of sequencing reads, different peak calling options, to the downstream analysis and definition of binding sites. Pre-processing and peak calling steps relies on publicly available software, whereas the definition of the final binding sites follows a custom procedure implemented in R. This vignette explains how equally sized binding sites can be defined from a genome-wide iCLIP coverage.
-
-
-# Pre-requisite
-
-The workflow described herein is based on our recently published complete iCLIP analysis pipeline [@busch2020]. Thus, we expect the user to have preprocessed their iCLIP sequencing reads up to the point of the peak calling step. In brief, this includes basic processing of the sequencing reads, such as quality filtering, barcode handling, mapping and the generation of a single nucleotide crosslink file for all replicates under consideration. As we describe in our manuscript replicate .bam files may or may not be merged prior to peak calling, for which we suggest PureCLIP [@Krakau2017]. For simplicity we address only the case where peak calling was based on the merge of all replicates.
-
-![**Overview of the preprocessing workflow**. ](images/preprocessing.png){#preprocessing}
-
 **Note:** If you use BindingSiteFinder in published research, please cite:
 
 > Busch, A., Brüggemann, M., Ebersberger, S., & Zarnack, K. (2020) iCLIP data analysis: A complete pipeline from sequencing reads to RBP binding sites. *Methods*, 178, 49-62. <https://doi.org/10.1016/j.ymeth.2019.11.008>
 
 
-# Pre-filtering of crosslink sites
+# Standard workflow
 
-An optional step prior to the actual merging of crosslink sites into binding sites, is pre-filtering. Depending on the experiment type or sequencing depth it might be useful to retain only the most informative crosslink sites. In the case of PureCLIP called peaks are associated with a binding affinity strength score which can be used as a metric for pre-filtering.
+## Pre-filtering of crosslink sites
 
-The following example is based on four replicates of the RNA-binding protein U2AF65. Reads (as .bam files) from all four replicates were merged and subjected to PureCLIP for peak calling. The output comes in the form of .bed files which can be imported as a GRanges Object using the rtracklayer package. Here the PureCLIP socre is used to remove the 5% peaks with the lowest affinity scores.
+An optional step prior to the actual merging of crosslink sites into binding sites, is pre-filtering. Depending on the experiment type or sequencing depth it might be useful to retain only the most informative crosslink sites. In the case of *PureCLIP* called peaks are associated with a binding affinity strength score which can be used as a metric for the pre-filtering step.
+
+The following example is based on four replicates of the RNA-binding protein U2AF65. Reads (as .bam files) from all four replicates were merged and subjected to *PureCLIP* for peak calling. The output comes in the form of .bed files which can be imported as a `GRanges Object` using the [rtracklayer](https://www.bioconductor.org/packages/release/bioc/html/rtracklayer.html) package. Here the *PureCLIP score* is used to remove the 5% peaks with the lowest affinity scores.
 
 
 ```{r}
 library(rtracklayer)
-csFile <- system.file("extdata", "PureCLIP_crosslink_sites_example.bed", 
+csFile <- system.file("extdata", "PureCLIP_crosslink_sites_examples.bed", 
                       package="BindingSiteFinder")
-cs = import(con = csFile, format = "BED")
+cs = import(con = csFile, format = "BED", extraCols=c("additionalScores" = "character"))
+cs$additionalScores = NULL
+
 cs
 ```
-
-
 
 ```{r, fig.retina = 1, dpi = 100}
 library(ggplot2)
@@ -97,11 +99,11 @@ ggplot(data = data.frame(score = cs$score), aes(x = log2(score))) +
     ylab("Count")
 ```
 
-# Merge Peaks into binding sites
+## Merge Peaks into binding sites
 
-## Construction of the the BindingSiteFinder dataset
+### Construction of the the BindingSiteFinder dataset
 
-As input the BindingSiteFinder package expects two types of data. First, a GRanges object of all ranges that should be merged into binding sites. In our example this was the created by PureCLIP and we just have to import the file. The second information is the per replicate coverage information in form of a table, which is created below.
+As input the `BindingSiteFinder` package expects two types of data. First, a `GRanges object` of all ranges that should be merged into binding sites. In our example this was the created by *PureCLIP* and we just have to import the file. The second information is the per replicate coverage information in form of a `data.frame`, which is created below.
 
 ```{r}
 # Load clip signal files and define meta data object
@@ -110,79 +112,92 @@ clipFilesP <- list.files(files, pattern = "plus.bw$", full.names = TRUE)
 clipFilesM <- list.files(files, pattern = "minus.bw$", full.names = TRUE)
 
 meta = data.frame(
-  id = c(1,2,3,4),
-  condition = factor(c("WT", "WT", "KD", "KD"), 
-                     levels = c("KD", "WT")), 
+  id = c(1:4),
+  condition = factor(rep("WT", 4)), 
   clPlus = clipFilesP, clMinus = clipFilesM)
 meta
 ```
 
-This table has to have at minimum three columns, which must be named *condition*, *clPlus* and *clMinus*. The *condition* column holds information about for example treatment or KD/ KO experiments[^1]. Specifying this column as a factor is important, since any downstream filtering options, which might differ between condition types, are match to the levels of the *condition* column. the *clPlus* and *clMinus* columns point towards the strand specific coverage for each replicate. This information will be imported as RLE objects upon object initialization. The number of ranges and crosslinks imported in the object can be shown once it has been constructed[^2].
+This `data.frame` has to have at minimum three columns, which must be named `condition`, `clPlus` and `clMinus`. The `condition` column specifies the different conditions of the replicates (see [Work with different conditions](# Work with different conditions) for more examples). The `clPlus` and `clMinus` columns point towards the strand specific coverage for each replicate. This information will be imported as `RLE objects` upon object initialization. The number of ranges and crosslinks imported in the object can be shown once it has been constructed[^1].
 
-[^1]: All four replicates are in fact of the same condition (WT), but two were assigned a different condition for demonstration purposes.
-
-[^2]: Here we load a previously compiled BindingSiteFinder DataSet to save disc space.
+[^1]: Here we load a previously compiled `BindingSiteFinder DataSet` to save disc space.
 
 ```{r, eval=FALSE}
 library(BindingSiteFinder)
 bds = BSFDataSetFromBigWig(ranges = csFilter, meta = meta, silent = TRUE)
 ```
 
-```{r}
+```{r, eval=TRUE, echo=FALSE}
+exampleFile <- list.files(files, pattern = ".rda$", full.names = TRUE)
+load(exampleFile)
+meta = data.frame(
+  id = c(1:4),
+  condition = factor(rep("WT", 4)), 
+  clPlus = clipFilesP, clMinus = clipFilesM)
+bds@meta = meta
+names(bds@signal$signalPlus) = c("1_WT", "2_WT", "3_WT", "4_WT")
+names(bds@signal$signalMinus) = c("1_WT", "2_WT", "3_WT", "4_WT")
+```
+
+```{r, eval=FALSE}
 exampleFile <- list.files(files, pattern = ".rda$", full.names = TRUE)
 load(exampleFile)
 bds
 ```
 
-## Choosing the binding site width
+### Choosing the binding site width
 
-Choosing how wide the final binding sites is not an easy choice and depends on various different factors. For that reason different filter options alongside with diagnostic plots were implemented to guide the decision. 
-At first, a ratio between the crosslink events within binding sites and the crosslink events in adjacent windows to the binding sites can be computed. The higher the ratio, the better the associated binding site width captures the distribution of the underlying crosslink events. The *supportRatioPlot* function offers a quick screen for different width choices[^3].
+Choosing how wide the final binding sites should be is not an easy choice and depends on various different factors. For that reason different filter options alongside with diagnostic plots were implemented to guide the decision. At first one must decide on a desired binding site width which can be done via the `bsSize` parameter. Alongside, one must also choose `minWidth`, which removes all ranges smaller than `minWidth` during the merging routine. More specifically, only ranges larger than `minWidth` are allowed to be extended into the final binding sites[^2].
 
-[^3]: Note that given the little difference between 7nt and 9nt both options seem to be reasonable 
+As a first diagnostic, a ratio between the crosslink events within binding sites and the crosslink events in adjacent windows to the binding sites can be computed. The higher the ratio, the better the associated binding site width captures the distribution of the underlying crosslink events. The `supportRatioPlot()` function offers a quick screen for different width choices[^3].
+
+[^2]: Keep this option at default or higher to prevent unwanted mapping artifact reads to blur binding site definition
+
+[^3]: Note that given the little difference between 5nt, 7nt and 9nt both options seem to be reasonable 
 
 ```{r, fig.retina = 1, dpi = 100}
-supportRatioPlot(bds, bsWidths = seq(from = 3, to = 19, by = 2))
+supportRatioPlot(bds, bsWidths = seq(from = 3, to = 29, by = 2), minWidth = 2) 
 ```
-To further guide the choice, a selection of potential width can be computed explicitly, here for width 3, 9, 19 and 29 while holding all other parameters constant. 
+
+To further guide the choice, a selection of potential width can be computed explicitly, here for widths 3, 9, 19 and 29 while holding all other parameters constant.
 
 ```{r}
-bds1 <- makeBindingSites(object = bds, bsSize = 3, minWidth = 3,
+bds1 <- makeBindingSites(object = bds, bsSize = 3, minWidth = 2,
                          minCrosslinks = 2, minClSites = 1)
 
-bds2 <- makeBindingSites(object = bds, bsSize = 9, minWidth = 3,
+bds2 <- makeBindingSites(object = bds, bsSize = 9, minWidth = 2,
                          minCrosslinks = 2, minClSites = 1)
 
-bds3 <- makeBindingSites(object = bds, bsSize = 19, minWidth = 3,
+bds3 <- makeBindingSites(object = bds, bsSize = 19, minWidth = 2,
                          minCrosslinks = 2, minClSites = 1)
 
-bds4 <- makeBindingSites(object = bds, bsSize = 29, minWidth = 3,
+bds4 <- makeBindingSites(object = bds, bsSize = 29, minWidth = 2,
                          minCrosslinks = 2, minClSites = 1)
 l = list(`1. bsSize = 3` = bds1, `2. bsSize = 9` = bds2, 
          `3. bsSize = 19` = bds3, `4. bsSize = 29` = bds4)
 ```
 
-The effect of the binding site size choice can be visualized by looking at the total iCLIP coverage. Here each plot is centered around the binding site`s midpoint and the computed width is indicated by the gray frame. In our example size = 3 appears too small, since not all of the relevant peak signal seems to be captured. On the contrary size = 29 appears extremely large. Here we decided for size = 9 because it seems to capture the central coverage peak best. 
+The effect of the binding site size choice can be visualized by looking at the total *iCLIP coverage*. Here each plot is centered around the binding site`s midpoint and the computed width is indicated by the gray frame. In our example size = 3 appears too small, since not all of the relevant peak signal seems to be captured. On the contrary size = 29 appears extremely large. Here we decided for size = 9 because it seems to capture the central coverage peak best. 
 
 ```{r, fig.retina = 1, dpi = 100}
 rangeCoveragePlot(l, width = 20) 
 ```
 
-## Applying additional constraints
+### Applying additional constraints
 
-Once a decision on a binding site width has been made additional filtering options can be used to force more/ less stringent binding sites. Essentially an initially computed set of binding sites is filtered by a certain parameter. The *minClSites* parameter for instance allows the user to define how many of the initially computed crosslink sites should fall within the range of the computed binding site.
+Once a decision on a binding site width has been made additional filtering options can be used to force more/ less stringent binding sites. Essentially an initially computed set of binding sites is filtered by a certain parameter. The `minClSites` parameter for instance allows the user to define how many of the initially computed crosslink sites should fall within the range of the computed binding site.
 
 ```{r}
-bds1 <- makeBindingSites(object = bds, bsSize = 9, minWidth = 3,
+bds1 <- makeBindingSites(object = bds, bsSize = 9, minWidth = 2,
                          minCrosslinks = 2, minClSites = 1)
 
-bds2 <- makeBindingSites(object = bds, bsSize = 9, minWidth = 3,
+bds2 <- makeBindingSites(object = bds, bsSize = 9, minWidth = 2,
                          minCrosslinks = 2, minClSites = 2)
 
-bds3 <- makeBindingSites(object = bds, bsSize = 9, minWidth = 3,
+bds3 <- makeBindingSites(object = bds, bsSize = 9, minWidth = 2,
                          minCrosslinks = 2, minClSites = 3)
 
-bds4 <- makeBindingSites(object = bds, bsSize = 9, minWidth = 3,
+bds4 <- makeBindingSites(object = bds, bsSize = 9, minWidth = 2,
                          minCrosslinks = 2, minClSites = 4)
 ```
 
@@ -200,75 +215,64 @@ l = list(`1. minClSites = 1` = bds1, `2. minClSites = 2` = bds2,
 rangeCoveragePlot(l, width = 20)
 ```
 
-A further point to consider is the number of position within the binding site that are actually covered by iCLIP signal (crosslink events). The *minCrosslinks* parameter can be used to filter for that. In principal this parameter represents a 'weaker' version of the *minClSites* filter. It should be set in conjunction with the binding site width. Here for example we aim to have about one third of all position to be covered by a crosslink event.  
+A further point to consider is the number of position within the binding site that are actually covered by *iCLIP signal* (crosslink events). The `minCrosslinks` parameter can be used to filter for that. In principal this parameter represents a 'weaker' version of the `minClSites` filter. It should be set in conjunction with the binding site width. Here for example we aim to have about one third of all position to be covered by a crosslink event.  
 
 ```{r}
-bds10 <- makeBindingSites(object = bds, bsSize = 3, minWidth = 3,
+bds10 <- makeBindingSites(object = bds, bsSize = 3, minWidth = 2,
                          minCrosslinks = 1, minClSites = 1)
 
-bds20 <- makeBindingSites(object = bds, bsSize = 9, minWidth = 3,
+bds20 <- makeBindingSites(object = bds, bsSize = 9, minWidth = 2,
                          minCrosslinks = 3, minClSites = 1)
 
-bds30 <- makeBindingSites(object = bds, bsSize = 19, minWidth = 3,
+bds30 <- makeBindingSites(object = bds, bsSize = 19, minWidth = 2,
                          minCrosslinks = 6, minClSites = 1)
 
-bds40 <- makeBindingSites(object = bds, bsSize = 29, minWidth = 3,
+bds40 <- makeBindingSites(object = bds, bsSize = 29, minWidth = 2,
                          minCrosslinks = 10, minClSites = 1)
 ```
 
+After all diagnostics we decide for the following parameter set to derive our binding sites.
+
+```{r}
+bds1 <- makeBindingSites(object = bds, bsSize = 7, minWidth = 2,
+                         minCrosslinks = 2, minClSites = 1)
+```
 
 
-# Reproducibility filter
+## Reproducibility filter
 
-## Choosing a replicate specific cutoff
+### Choosing a replicate specific cutoff
 
-Since the initial PureCLIP run was based on the merged summary of all four replicates, an additional reproducibility filter must be employed. Based on the merged binding sites from the previous step we can now ask which of these sites are reproducible/ supported by the individual replicates. To do this we first have do decide on a replicates specific threshold. In the present case we decided for the 5% quantile for both conditions[^4].
+Since the initial *PureCLIP* run was based on the merged signal of all four replicates, an additional reproducibility filter must be used. More specifically, we ask which of the previously computed binding sites are reproducible by the individual replicates. Since replicates might differ in library size, we will decide on a replicates specific threshold based on the binding site support distribution. The `reproducibiliyCutoffPlot()` function visualizes this distribution for each replicate. Here we decided for the 5% quantile[^4], which results in the crosslink thresholds 1, 2, 3 and 1 for the respective replicates WT1-4. This means that for replicate WT3 a minimum of 3 crosslinks must be seen in a binding site to call this binding site reproducible by replicate WT3. 
 
 [^4]: A lower boundary of 1 nucleotide is set as default minimum support.
 
 ```{r, fig.retina = 1, dpi = 100}
-reproducibiliyCutoffPlot(bds1, max.range = 20, cutoff = c(0.05))
-reproducibiliyCutoffPlot(bds1, max.range = 20, cutoff = c(0.2))
+reproducibiliyCutoffPlot(bds1, max.range = 20, cutoff = 0.05)
 ```
 
-If replicates from multiple different conditions are used in the binding site definition, also condition specific thresholds can be applied. For instance the KD condition might be more error prone than the WT, therefore we define a slightly more stringent threshold[^5] to account for that fact.
+### Defining the overall support level
 
-[^5]: Note that the order of how multiple thresholds are applied is defined based on the order of the factor levels of *condition*.
+After deciding which quantile cutoff to use the number of replicates that must meet the selected threshold must be specified. This includes another level of regulation and allows for some variation, since not always all replicates are forced to agree on every binding sites. For instance we could implement the rule that 3 out of 4 replicates should agree for each binding site while setting the quantile cutoff to 5% for all 4 replicates. This can be achieved with the `reproducibilityFilter()` function. 
 
-```{r, fig.retina = 1, dpi = 100}
-reproducibiliyCutoffPlot(bds1, max.range = 20, cutoff = c(0.05, 0.1))
-reproducibiliyCutoffPlot(bds1, max.range = 20, cutoff = c(0.1, 0.05))
-```
-
-## Defining the overall support level
-
-After one has decided which quantile cutoff to use for the replicates the number of replicates that must meet the selected threshold must be specified. This includes another level of regulation and allows for some variation, since not always all replicates are forced to agree on every binding sites. For instance we could implement the rule that 3 out of 4 replicates should agree for each binding site while setting the quantile cutoff to 5% for all 4 replicates. This can be achieved with the *reproducibilityFilter* function. When setting the returnType = "data.frame", the function returns a plottable object instead of a final filtered GRanges object. The overlap among the four replicates after the filtering can be easily visualized as an upset plot, using the *complexHeatmaps* package.
+When setting the `returnType = "data.frame"`, the function returns a plottable object instead of a final filtered `GRanges object`. The overlap among the four replicates after the filtering can be easily visualized as an upset plot, using the [complexHeatmaps](https://www.bioconductor.org/packages/release/bioc/html/ComplexHeatmap.html) package.
 
 ```{r, fig.retina = 1, dpi = 100}
-s1 = reproducibilityFilter(bds1, cutoff = c(0.05), n.reps = c(3), 
+s1 = reproducibilityFilter(bds1, cutoff = 0.05, n.reps = 3, 
                            returnType = "data.frame")
 library(ComplexHeatmap)
 m1 = make_comb_mat(s1)
 UpSet(m1)
 ```
 
-Another more complex example could make use of both conditions. For instance we could implement the rule that a binding site should pass the filter if it is supported by 2 WT replicates, while for the KD only one replicate is sufficient. As quantile cutoffs we use 5% for the WT and 10% for the KD.
-
-```{r, fig.retina = 1, dpi = 100}
-s2 = reproducibilityFilter(bds1, cutoff = c(0.1, 0.05), n.reps = c(1, 2),
-                           returnType = "data.frame")
-m2 = make_comb_mat(s2)
-UpSet(m2)
-```
-
-Once all decisions on filtering parameters have been made the *reproducibilityFilter* function can be run. The final binding site object can be retrieved through the *getRanges* successor function. If for the reproducibility filtering different thresholds were used per condition, a range is reported if any of the two conditions yielded TRUE. The filter output per condition is written to the meta columns of the GRanges object which allows additional post-processing.
+Once all decisions on filtering parameters have been made the `reproducibilityFilter()` function is used again. The final binding site object can be retrieved through the `getRanges()` accessor function. 
 
 ```{r}
-bdsFinal = reproducibilityFilter(bds1, cutoff = c(0.1, 0.05), n.reps = c(1, 2))
+bdsFinal = reproducibilityFilter(bds1, cutoff = 0.05, n.reps = 3)
 getRanges(bdsFinal)
 ```
 
-In case the initial peak calling was performed with PureCLIP we offer the *annotateWithScore* function to re-annotate computed binding sites with the PureCLIP score from each crosslink site.
+In case the initial peak calling was performed with *PureCLIP* we offer the `annotateWithScore()` function to re-annotate computed binding sites with the *PureCLIP* score from each crosslink site.
 
 ```{r}
 bdsFinal = annotateWithScore(bdsFinal, getRanges(bds))
@@ -276,17 +280,23 @@ bindingSites = getRanges(bdsFinal)
 bindingSites
 ```
 
+Lastly we make use of the [rtracklayer](https://www.bioconductor.org/packages/release/bioc/html/rtracklayer.html) package once more to export the `GRanges` of our final binding sites as a .bed file for visual inspection eg. in IGV.
+
+```{r, eval=FALSE}
+library(rtracklayer)
+export(object = bindingSites, con = "./bindingSites.bed", format = "BED")
+```
 
 
 # Definition of the binding site profile
 
-After the definition of binding sites one is usually interested in the binding profile of the RBP. General question are: Which gene type does my RBP bind? If it binds to protein coding genes, to which part of the transcripts does it bind to? Answering these types of questions involves using an additional gene annotation resource to overlap the binding sites with. In the following we demonstrate how this could be achieved using GenomicRanges objects. 
+After the definition of binding sites one is usually interested in the binding profile of the RBP. General questions are: Which gene types does my RBP bind? If it binds to protein coding genes, to which part of the transcripts does it bind to? Answering these types of questions require using an additional gene annotation resource to overlap the binding sites with. In the following we demonstrate how this could be achieved using the binding sites defined in the [standard workflow](# Standard workflow).
 
 ## Target gene profile
 
-As gene annotation any desired source can be used, as long as it can be converted into a TxDb object. In the present example we use gencode gene annotations (hg38) from chromosome 22 imported from GFF3 format. We extract the ranges from the TxDb object and match them with additional information from the GFF3 file[^6].
+As gene annotation any desired source can be used. Here we use [GENCODE](https://www.gencodegenes.org/) gene annotations (hg38) from chromosome 22 imported from GFF3 format as an example[^6]. First, we make use of the [GenomicFeatures](https://bioconductor.org/packages/release/bioc/html/GenomicFeatures.html) package and import our annotation as a `TxDB` database object. This database can be queried using the `genes()` function to retrieve the positions of all genes from our resources as `GRanges` objects. 
 
-[^6]: Note that we prepared this file beforehand and only load the final object (see /inst/scripts/PrepareExampleData.R) 
+[^6]: Note that this file is a subset of the respective annotation that we prepared beforehand. Here we only load the final object (see /inst/scripts/PrepareExampleData.R) 
 
 ```{r, eval=FALSE}
 library(GenomicFeatures)
@@ -308,56 +318,80 @@ load(geneFile)
 gns
 ```
 
-Depending on the annotation source and organism type gene annotation overlap each other to some degree. This complicates assiging binding sites to their host genes.
+## Dealing with annotation overlaps
+
+Depending on the source and organism type gene annotations overlap each other to some degree. This complicates assigning binding sites to their respective host genes. The following plot illustrates the degree of overlaps of gene annotations in the specific annotation set that we use. We observe that the vast majority of binding sites reside in exactly one gene annotation. However a set of 322 binding sites overlap with two different gene annotations and 81 binding sites are even completely outside of any annotation.
 
 ```{r, fig.retina = 1, dpi = 100}
 # count the number of annotation overlaps
 mcols(bindingSites)$geneOl = factor(countOverlaps(bindingSites, gns))
 df = as.data.frame(mcols(bindingSites))
-# 
+
 ggplot(df, aes(x = geneOl)) +
     geom_bar() +
     scale_y_log10() +
     geom_text(stat='count', aes(label=..count..), vjust=-0.3) +
     labs(
         title = "Overlapping gene annotation problem",
-        caption = "Bar plot that show how many times a binding site
-    overlaps with an annotation of a different gene.",
+        subtitle = "Bar plot shows how many times a binding site overlaps with the annotation an annotated gene.",
     x = "Number of overlaps", 
     y = "Count (log10)"
     ) + theme_bw()
 ```
 
-In the present case most overlaps seemed to be cause by lncRNA annotations probably residing within introns of protein coding genes. Since we are interested in the binding of our RBP on protein coding genes, we simply remove all binding sites on spurious annotations[^7].
+For the sake of simplicity we directly remove the 81 binding sites that reside in regions outside of any gene annotation. Removing binding site should be done carefully and only after detailed inspection in IGV ect.. (see [Export binding sites to IGV](## Export binding sites to IGV) for more details). For all other binding sites we can analyze the gene type of the duplicated annotations by couting the annotation type split by overlap frequency. In the present case we observe that most overlaps seemed to be cause by lncRNA annotations probably residing within introns of protein coding genes. Since we are interested in the binding of our RBP on protein coding genes, we simply remove all binding sites on spurious annotations[^7] (see [iCLIP data analysis workflow](https://doi.org/10.1016/j.ymeth.2019.11.008) for more details).
 
-[^7] Note: This is a simplified scheme and might be adapted for more complex research questions.
+[^7] Note: This is a simplified scheme which one might need to adapt for more complex research questions 
 
 ```{r, fig.retina = 1, dpi = 100}
-# show which gene types cause the most annoation overlaps. Split binding sites
+# show which gene types cause the most annotation overlaps. Split binding sites
 # by the number of overlaps and remove those binding sites that do not overlap
 # with any annotation (intergenic)
 library(forcats)
-splitSites = split(bindingSites, bindingSites$geneOl)
-df = as(lapply(splitSites, function(x){subsetByOverlaps(gns,x)}), "GRangesList")
-df = df[2:length(df)]
-df = lapply(1:length(df), function(x) {
-    data.frame(olClass = names(df[x]),
-               geneType = factor(df[[x]]$gene_type))})
-df = do.call(rbind,df)
-df = df %>% mutate(geneType = fct_lump_n(geneType, 4)) 
-# 
-ggplot(df, aes(x = olClass, fill = geneType)) +
-    geom_bar(position = "fill") + 
+idx = findOverlaps(gns, bindingSites)
+df = data.frame(geneType = gns$gene_type[queryHits(idx)], 
+                overlapType = bindingSites$geneOl[subjectHits(idx)]) %>%
+    mutate(geneType = as.factor(geneType)) %>% 
+    mutate(geneType = fct_lump_n(geneType, 4)) %>%
+    group_by(overlapType, geneType) %>%
+    tally() 
+
+ggplot(df, aes(x = overlapType, y = n, fill = geneType)) +
+    geom_col(position = "fill") +
     scale_fill_brewer(palette = "Set2") +
     scale_y_continuous(labels = scales::percent) +
     labs(
         title = "Overlapping gene annotation causes",
-        caption = "Percentage bar plot that show the fraction
-    for each gene type and overlap number.",
-    fill = "Gene type",
-    x = "Number of overlaps", 
-    y = "Percent"
-    ) + theme_bw()
+        subtitle = "Percentage bar plot that show the fraction for each gene type and overlap number.",
+        fill = "Gene type",
+        x = "Number of overlaps", 
+        y = "Percent"
+    ) + 
+    theme_bw()
+```
+
+```{r, fig.retina = 1, dpi = 100}
+df = data.frame(geneType = gns$gene_type[queryHits(idx)], 
+                overlapType = bindingSites$geneOl[subjectHits(idx)]) %>%
+    filter(overlapType == 1) %>%
+    group_by(geneType) %>%
+    tally() %>% 
+    arrange(n) %>%
+    mutate(geneType = factor(geneType, levels = geneType))
+
+ggplot(df, aes(x = geneType, y = n, fill = geneType, label = n)) +
+    geom_col(color = "black") +
+    scale_y_log10() +
+    coord_flip() +
+    scale_fill_brewer(palette = "Greys", direction = -1) +
+    theme_bw() +
+    theme(legend.position = "none") +
+    geom_text(color = "blue") +
+    labs(
+        title = "Clean RBP target spectrum",
+        x = "",
+        y = "#N (log10)"
+    )
 ```
 
 ```{r}
@@ -371,9 +405,9 @@ targetGenes = subset(targetGenes, gene_type == "protein_coding")
 
 ## Transcript level profile
 
-Now that we know our RBP targets mainly protein coding genes, we will have a closer look at positioning within transcript regions of protein coding genes. Again we use a TxDB compiled from gencode annotations to extract the relevant genomic regions[^8].
+Now that we know our RBP targets mainly protein coding genes, we will have a closer look at positioning within transcript regions of protein coding genes. For this we again make use of the `TxDB` compiled from our *GENCODE* annotation file[^8]. As one would expect, the problem of overlapping annotations is increase manifold on the level of transcript annotations compared to entire genes.
 
-[^8]: Note that we prepared this file beforehand and only load the final object (see /inst/scripts/PrepareExampleData.R) 
+[^8]: Note that we prepared this file beforehand and only load the final object (`see /inst/scripts/PrepareExampleData.R`) 
 
 ```{r, eval=FALSE}
 # Count the overlaps of each binding site fore each part of the transcript. 
@@ -389,8 +423,6 @@ regions = list(CDS = cdseq, Intron = intrns, UTR3 = utrs3, UTR5 = utrs5)
 regionFile <- list.files(files, pattern = "regions.rds$", full.names = TRUE)
 load(regionFile)
 ```
-
-As one would expect a lot of multiple different transcript type annotations overlap with single binding sites. These numbers usually rise with more complex annotation sources used. Here most binding sites (3.716) overlap with a single distinct transcript region already, but a substantially amount does not.
 
 ```{r, fig.retina = 1, dpi = 100}
 # Count the overlaps of each binding site fore each part of the transcript. 
@@ -408,14 +440,17 @@ ggplot(df, aes(x = type, y = count)) +
     geom_text(aes(label = count), vjust=-0.3) +
     labs(
         title = "Overlapping transcript annotation crashes",
-        caption = "Bar plot that show how many times a binding site 
-        overlaps with an annotation of a different transcript part",
+        subtitle = "Bar plot shows how many times a binding site overlaps with an annotation of a different \ntranscript part.",
         x = "Number of overlaps", 
         y = "Count (log10)"
     ) + theme_bw()
 ```
 
-Before assigning binding sites to distinct transcript regions, it is worth to look at the unresolved profile[^9]. Here we observe a predominance for binding sites within intronic regions. 
+Again the most simple approach would be to remove all 395 binding sites that do not overlap with one distinct annotation. This could however lead to many binding sites getting lost, depending on the complexity of the annotation/ organism ect. Here we felt that removing 395 binding sites would be too much, so we decided to implement a majority vote system followed by a simple priority list to resolve ties (see [iCLIP data analysis workflow](https://doi.org/10.1016/j.ymeth.2019.11.008) for more details). In any case we recommend carefull visual inspection in eg. IGV to complement the presented workflow. 
+
+### Majority vote based assignment
+
+Before assigning binding sites to distinct transcript regions, it is worth to first plot the unresolved binding profile[^9]. This allows us to later compare to the resolved binding profile and identify potential unexpected behaviors. In our example, we would at this point deduce a predominance of intronic binding over 3'UTRs, CDS and 5'UTRs. 
 
 [^9]: Note: Binding sites are essentially counted multiple times here.
 
@@ -426,27 +461,30 @@ plotCountDf = countDf
 plotCountDf[plotCountDf > 1] = 1
 df = plotCountDf %>% 
     pivot_longer(everything()) %>% 
-    group_by(name) %>% 
+    group_by(name) %>%
     summarize(count = sum(value), .groups = "drop") %>%
-    mutate(name = as.factor(name)) %>%
-    mutate(name = fct_relevel(name, "Intron", "UTR3", "CDS", "UTR5"))
+    arrange(count) %>%
+    mutate(name = factor(name, levels = name))
 
-ggplot(df, aes(x = name, y = count)) + 
-    geom_col() +
+ggplot(df, aes(x = name, y = count, fill = name)) + 
+    geom_col(color = "black") +
     scale_y_log10() +
+    coord_flip() +
+    scale_fill_brewer(palette = "Greys", direction = -1) +
     xlab("Number of overlaps") +
     ylab("Count") +
-    geom_text(aes(label = count), vjust=-0.3) +
+    geom_text(aes(label = count), color = "blue") +
     labs(
-        title = "Binding sites per genomic region",
-        caption = "Bar plot that shows the number of
-    binding sites per genomic region.",
-    x = "Genomic region", 
-    y = "Count (log10)"
-    ) + theme_bw()
+        title = "Binding sites per genomic region - unresolved annotation overlaps",
+        subtitle = "Bar plot that shows the number of binding sites per genomic region.",
+        x = "Genomic region", 
+        y = "#N (log10)"
+    ) + 
+    theme_bw() +
+    theme(legend.position = "none") 
 ```
 
-The complexity of the problem can also be showcased using an UpSet plot representation. From this plot it becomes very clear that most binding sites reside within introns and that the most annotation conflicts are between introns and 3'UTRs. 
+We now further visualize the exact overlap conflicts using an `UpSet plot` representation from the [ComplextHeatmap](https://www.bioconductor.org/packages/release/bioc/html/ComplexHeatmap.html) package. From this plot it becomes again clear that most binding sites are located within as intron annotated parts. But we also observe that most annotation conflicts are between introns and 3'UTRs. 
 
 ```{r, fig.retina = 1, dpi = 100}
 # Show how many annotation overlaps are caused by what transcript types.
@@ -454,7 +492,7 @@ m = make_comb_mat(plotCountDf)
 UpSet(m)
 ```
 
-Resolving these types of conflicts is not straight forward and always involves setting up rules that define when to choose which annotation over the other. In our case we went for a majority vote based system, while resolving ties in the vote based on a hierarchical rule prefering introns over 3'UTRs over CDS over 5'UTRs[^10].
+To resolve these conflicts we are using a majority based system followed by a hierarchical rule. The majority vote assigns a binding site to a transcript region based on which region is most frequently overlapping. In case of ties we apply the rule introns > 3'UTR > CDS > 5'UTR which we deduced from the unresolved binding profile[^10].
 
 [^10]: Note: In rear cases additional intergenic binding sites can be found even though we removed these in a previous step. This is because some binding sites overlap with the annotation of a gene, but not with any of the transcript isoforms associated with the gene.
 
@@ -470,64 +508,90 @@ countDf = countDf[, rule] %>%
 regionName = colnames(countDf)
 region = apply(countDf, 1, function(x){regionName[which.max(x)]})
 mcols(bindingSites)$region = region
-df = data.frame(Region = region)
-# 
-ggplot(df, aes(x = fct_infreq(Region))) +
-    geom_bar() +
+df = data.frame(Region = region) %>%
+    group_by(Region) %>%
+    tally() %>%
+    arrange(n) %>%
+    mutate(Region = factor(Region, levels = Region))
+
+
+ggplot(df, aes(x = Region, y = n, fill = Region)) + 
+    geom_col(color = "black") +
     scale_y_log10() +
-    geom_text(stat='count', aes(label=..count..), vjust=-0.3) +
+    coord_flip() +
+    scale_fill_brewer(palette = "Greys", direction = -1) +
+    xlab("Number of overlaps") +
+    ylab("Count") +
+    geom_text(aes(label = n), color = "blue") +
     labs(
-        title = "Binding sites per genomic region",
-        caption = "Bar plot that shows the number of binding sites per
-    genomic region.",
-    x = "Genomic region", 
-    y = "Count (log10)"
-    ) + theme_bw()
+        title = "Binding sites per genomic region - resolved annotation overlaps",
+        subtitle = "Bar plot that shows the number of binding sites per genomic region.",
+        x = "Genomic region", 
+        y = "#N (log10)"
+    ) + 
+    theme_bw() +
+    theme(legend.position = "none") 
 ```
 
 For a splicing regulator protein such as U2AF65 binding to introns is expected. However, due to the sheer size difference in introns one might also expect to observe more binding in introns just by chance. For that reason one could divide the number of binding sites by the summed up region length to compute a relative enrichment score[^11].
 
-[^11]: Note: Such a relative enrichment heavily favours smaller regions such as 5'UTRs. Therefore absolute numbers and relative enrichment should both be considered. 
+[^11]: Note: Such a relative enrichment heavily favors smaller regions such as 5'UTRs. Therefore absolute numbers and relative enrichment should both be considered. 
+
+### Relative region enrichment
+
+To calculate the relative binding enrichment per region, we summed up the length of each transcript region that is hosting a binding site. In case a binding sites does overlap with multiple regions of the same type (which happens quite frequently) we selected the first matching region as representative. 
+
+[^12]: This is an arbitrary decision which one could improve by having additional/ different constraints or rules, such as taking only the longest transcript for each gene, ect. 
 
 ```{r}
-# Sum up the length of each transcript region with overlapping binding sites.
-cdsLen = regions$CDS %>% 
-    subsetByOverlaps(., bindingSites) %>% 
-    width() %>% 
-    sum()
-intrnsLen = regions$Intron %>% 
-    subsetByOverlaps(., bindingSites) %>%
-    width() %>% 
-    sum()
-utrs3Len = regions$UTR3 %>% 
-    subsetByOverlaps(., bindingSites) %>% 
-    width() %>% 
-    sum()
-utrs5Len = regions$UTR5 %>% 
-    subsetByOverlaps(., bindingSites) %>% 
-    width() %>%
-    sum()
-lenSum = c(cdsLen, intrnsLen, utrs3Len, utrs5Len)
+# function that selectes the first hosting region of each binding site and then
+# sums up the length from all of them
+getRegionLengthByFirstMatch <- function(region, bindingsites) {
+    # region = regions$Intron
+    # bindingsites = bindingSites
+    idx = findOverlaps(region, bindingsites) %>% 
+        as.data.frame() %>% 
+        group_by(subjectHits) %>% 
+        arrange(queryHits) %>% 
+        filter(row_number() == 1)
+    len = region[idx$queryHits] %>%
+        width() %>%
+        sum()
+    return(len)
+}
+regionLength = lapply(regions, function(x){
+    getRegionLengthByFirstMatch(x, bindingSites)
+}) %>% unlist() %>% as.data.frame()
 ```
+
 
 ```{r, fig.retina = 1, dpi = 100}
 # Compute the relative enrichment per transcript region.
 bindingSites = subset(bindingSites, region != "Intergenic")
-df = data.frame(region = names(table(bindingSites$region)),
-                count = as.vector(table(bindingSites$region)))
-df$regionLength = lenSum
-df$normalizedCount = df$count / df$regionLength
+df = as.data.frame(mcols(bindingSites)) %>%
+    select(region) %>%
+    group_by(region) %>%
+    tally() %>%
+    mutate(regionLength = regionLength[,1]) %>%
+    mutate(normalizedCount = n / regionLength) %>%
+    arrange(normalizedCount) %>%
+    mutate(region = factor(region, levels = region)) 
 # 
-ggplot(df, aes(x = region, y = normalizedCount)) +
-    geom_col(width = 0.5) +
+ggplot(df, aes(x = region, y = normalizedCount, fill = region)) +
+    geom_col(color = "black") +
+    coord_flip() +
+    scale_fill_brewer(palette = "Greys", direction = -1) +
     labs(
         title = "Relative enrichment per genomic region ",
-        caption = "Bar plot of region count, divided by the summed length.",
+        subtitle = "Bar plot of region count, divided by the summed length.",
         x = "Genomic region", 
         y = "Relative enrichment",
         fill = "Genomic region"
-    ) + theme_bw()
+    ) + 
+    theme_bw() +
+    theme(legend.position = "none") 
 ```
+
 
 # Session info
 
