@@ -151,7 +151,7 @@ makeBindingSites <- function(object,
 
     #---------------------------------------------------------------------------
     # prepare data for merging
-    sgnMerge = .collapesReplicates(sgn)
+    sgnMerge = .collapseSamples(sgn)
 
     # execute filter and merging routines
     rngS1 = .mergeCrosslinkSites(

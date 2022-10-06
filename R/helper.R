@@ -4,8 +4,110 @@
     return(rngSort)
 }
 
-# not exported functions that are for internal use only
-.collapesReplicates <- function(signal) {
+#' Collapse signal from replicates
+#'
+#' Collapses all replicates merges all samples from a \link{BSFDataSet} object
+#' into a single signal stream, only split by minus and plus strand.
+#'
+#' @param object a \code{BSFDataSet} object
+#' @param collapseAll TRUE/FALSE, if all samples should be collapsed (TRUE), or
+#' if samples should be kept separate by condition (FALSE)
+#' @return object of type \code{\link{BSFDataSet}} with updated signal
+#'
+#' @seealso \code{\link{BSFDataSet}}
+#'
+#' @examples
+#'
+#' # load data
+#' files <- system.file("extdata", package="BindingSiteFinder")
+#' load(list.files(files, pattern = ".rda$", full.names = TRUE))
+#'
+#' bdsNew = collapseReplicates(bds)
+#'
+#' @export
+collapseReplicates <- function(object, collapseAll = FALSE) {
+    # stop if object is not of class BSF
+    stopifnot(is(object, "BSFDataSet"))
+    # stop if collapseAll parameter is not logical
+    if (!is.logical(collapseAll)) {
+        stop("Option collapseAll not logical, set to TRUE/FALSE")
+    }
+
+    sgn = getSignal(object)
+    mta = getMeta(object)
+
+    # collapse per condition in meta table
+    if (!isTRUE(collapseAll)) {
+        # get conditions to split by
+        cond = levels(mta$condition)
+        # handle plus strand
+        plus = sgn$signalPlus
+        idx = lapply(cond, function(currCond){
+            grep(currCond, names(plus))
+        })
+        plusSum = lapply(seq_along(idx), function(x){
+            currSampleIdx = idx[[x]]
+            p = sgn$signalPlus[currSampleIdx]
+            pSum = 0
+            for (i in seq_along(p)) {
+                pSum = pSum + p[[i]]
+            }
+            names(pSum) = names(p[[1]])
+            return(pSum)
+        })
+        names(plusSum) = cond
+        # handle minus strand
+        minus = sgn$signalMinus
+        idx = lapply(cond, function(currCond){
+            grep(currCond, names(minus))
+        })
+        minusSum = lapply(seq_along(idx), function(x){
+            currSampleIdx = idx[[x]]
+            m = sgn$signalMinus[currSampleIdx]
+            mSum = 0
+            for (i in seq_along(m)) {
+                mSum = mSum + m[[i]]
+            }
+            names(mSum) = names(m[[1]])
+            return(mSum)
+        })
+        names(minusSum) = cond
+        mrgSgn = list(signalPlus = (plusSum), signalMinus = (minusSum))
+        newObj = setSignal(object, mrgSgn)
+    }
+
+    # collapse all replicates regardless of the conditions
+    if (isTRUE(collapseAll)) {
+
+        p = sgn$signalPlus
+        m = sgn$signalMinus
+
+        pSum = 0
+        for (i in seq_along(p)) {
+            pSum = pSum + p[[i]]
+        }
+        names(pSum) = names(p[[1]])
+        mSum = 0
+        for (i in seq_along(m)) {
+            mSum = mSum + m[[i]]
+        }
+        names(mSum) = names(m[[1]])
+
+        # set condition name
+        lp = list(pSum)
+        names(lp) = "All"
+        lm = list(mSum)
+        names(lm) = "All"
+
+        mrgSgn = list(signalPlus = (lp), signalMinus = (lm))
+        newObj = setSignal(object, mrgSgn)
+    }
+
+    return(newObj)
+}
+
+# for internal use only
+.collapseSamples <- function(signal) {
     p = signal$signalPlus
     m = signal$signalMinus
 
@@ -136,70 +238,74 @@
     return(score)
 }
 
-
-#' Helper function that fixes seqnames errors in ranges and signal
-#'
-#' Ranges and signal list must be in the same structure as it is used by
-#' the \link{BSFDataSet}. The function removes all ranges and signal entries
-#' where the seqlevels are not part of both signal and ranges.
-#'
-#' If only ranges are problematic, keepStandardChromosomes might solve the
-#' problem too.
-#'
-#' @param ranges GRanges object as it is used to build a \link{BSFDataSet}
-#' @param signal SignalList object as it is used to build a \link{BSFDataSet}
-#'
-#' @return GRanges list for ranges and SignalList for signal
-#'
-#' @importFrom GenomeInfoDb seqlevels
-#' @importFrom GenomeInfoDb dropSeqlevels
-#'
-#' @examples
-#' # load data
-#' files <- system.file("extdata", package="BindingSiteFinder")
-#' load(list.files(files, pattern = ".rda$", full.names = TRUE))
-#'
-#' rng = getRanges(bds)
-#' sgn = getSignal(bds)
-#'
-#' r = as.data.frame(granges(rng))
-#' d = data.frame(seqnames = "chr6", start = 1, end = 1, width = 1, strand = "+")
-#' rngNew = makeGRangesFromDataFrame(rbind(d, r), keep.extra.columns = TRUE)
-#'
-#' fixed = forceEqualNames(rngNew, sgn)
-#'
-#' bdsNew = setRanges(bds, fixed$ranges)
-#' bdsNew = setSignal(bdsNew, fixed$signal)
-#'
-#' @export
-forceEqualNames <- function(ranges, signal) {
-    # check which chromosomes do not fit
-    rngChrs = sort(as.character(unique(seqnames(ranges))))
-    check = lapply(signal, function(currStrand){
-        lapply(currStrand, function(currSample){
-            currChrs = sort(names(currSample))
-            currChrs
+.checkForDropSeqlevels <- function(ranges, signal, dropSeqlevels) {
+    msg = NULL
+    # check input signal
+    if (isTRUE(dropSeqlevels)) {
+        # check which chromosomes do not fit
+        rngChrs = sort(as.character(unique(seqnames(ranges))))
+        check = lapply(signal, function(currStrand){
+            lapply(currStrand, function(currSample){
+                currChrs = sort(names(currSample))
+                currChrs
+            })
         })
-    })
-    l = append(list(), c(check$signalPlus, check$signalMinus,
-                         list('rngChr' = rngChrs)))
-    chrsToUse = Reduce(intersect, l)
-    # fix ranges
-    rngChrsNew = rngChrs[match(chrsToUse, rngChrs)]
-    ranges = subset(ranges, match(seqnames(ranges), rngChrsNew))
-    # fix siganl
-    signal = lapply(signal, function(currStrand) {
-        lapply(currStrand, function(currSample) {
-            currSample[match(chrsToUse, names(currSample))]
+        l = append(list(), c(check$signalPlus, check$signalMinus,
+                             list('rngChr' = rngChrs)))
+        chrsToUse = Reduce(intersect, l)
+        # fix ranges
+        rngChrsNew = rngChrs[match(chrsToUse, rngChrs)]
+        rangesNew = subset(ranges, match(seqnames(ranges), rngChrsNew))
+        # fix signal
+        signalNew = lapply(signal, function(currStrand) {
+            lapply(currStrand, function(currSample) {
+                currSample[match(chrsToUse, names(currSample))]
+            })
         })
-    })
-    # clean seqlevels
-    ranges = GenomeInfoDb::dropSeqlevels(ranges,
-                                         value = seqlevels(ranges)[
-                                             !match(seqlevels(ranges),
-                                                    unique(seqnames(ranges)),
-                                                    nomatch = 0) > 0])
+        # logg which chromosome was removed
+        removedChr = setdiff(unique(as.character(unlist(l))), chrsToUse)
 
-    fixed = list(ranges = ranges, signal = signal)
+        # check if signal was modified
+        if (!identical(signal, signalNew)) {
+            msg = paste0("Fixed signal input, removing chr: ",
+                         paste(removedChr, collapse = " "))
+        }
+        if (!identical(ranges, rangesNew)) {
+            msg = paste0("Fixed ranges input, removing chr: ",
+                         paste(removedChr, collapse = " "))
+        }
+    }
+    if (!isTRUE(dropSeqlevels)) {
+        rngChrs = sort(as.character(unique(seqnames(ranges))))
+        check = lapply(signal, function(currStrand){
+            lapply(currStrand, function(currSample){
+                currChrs = sort(names(currSample))
+                identical(currChrs, rngChrs)
+            })
+        })
+        if(!all(unlist(check))) {
+            check = lapply(signal, function(currStrand){
+                lapply(currStrand, function(currSample){
+                    currChrs = sort(names(currSample))
+                    currChrs
+                })
+            })
+            l = append(list(), c(check$signalPlus, check$signalMinus,
+                                 list('rngChr' = rngChrs)))
+            chrsToUse = Reduce(intersect, l)
+            # logg which chromosome was removed
+            removedChr = setdiff(unique(as.character(unlist(l))), chrsToUse)
+            # not all identical
+            msg = paste0("dropSeqlevels is FALSE and chromosome found in ",
+                           "ranges and singal do not match on chr: ",
+                         removedChr)
+            warning(msg)
+        }
+        rangesNew = ranges
+        signalNew = signal
+    }
+    fixed = list(ranges = rangesNew, signal = signalNew, msg = msg)
     return(fixed)
 }
+
+
