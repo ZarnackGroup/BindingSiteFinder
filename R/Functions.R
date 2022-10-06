@@ -49,9 +49,6 @@
 #' bds <- makeBindingSites(object = bds, bsSize = 9, minWidth = 2,
 #' minCrosslinks = 2, minClSites = 1)
 #'
-#' # use default return with single threshold
-#' s = reproducibilityFilter(bds, cutoff = c(0.05), n.reps = c(3))
-#'
 #' # use default return with condition specific threshold
 #' s = reproducibilityFilter(bds, cutoff = c(0.1, 0.05), n.reps = c(1, 2))
 #'
@@ -70,12 +67,20 @@ reproducibilityFilter <- function(object,
                                   returnType = c("BSFDataSet", "data.frame")) {
     stopifnot(is(object, "BSFDataSet"))
 
+    if (length(cutoff) != length(n.reps)) {
+        stop("Number of values for 'cutoff' does not match the number of values
+             for 'n.reps'. ")
+    }
+
     cond = getMeta(object)$condition
     df = as.data.frame(mcols(coverageOverRanges(
         object, returnOptions = "merge_positions_keep_replicates",
         silent = TRUE)))
 
     if (length(cutoff) == 1) {
+        if(length(levels(cond)) > 1) {
+            stop("Only one cutoff is given for multiple conditions.")
+        }
         # calculate sample specific thresholds
         qSel = .selectQuantilesSingleCondtion(
             covDf = df,
@@ -153,6 +158,8 @@ reproducibilityFilter <- function(object,
     return(retObj)
 }
 
+
+
 #' Annotation function for BSFDataSet object
 #'
 #' This function can be used to annotate a \code{BSFDataSet} object with
@@ -169,9 +176,11 @@ reproducibilityFilter <- function(object,
 #' @examples
 #' if (.Platform$OS.type != "windows") {
 #'     # load data
-#'     csFile <- system.file("extdata", "PureCLIP_crosslink_sites_example.bed",
+#'     csFile <- system.file("extdata", "PureCLIP_crosslink_sites_examples.bed",
 #'                         package="BindingSiteFinder")
-#'     cs = rtracklayer::import(con = csFile, format = "BED")
+#'     cs = rtracklayer::import(con = csFile, format = "BED",
+#'     extraCols=c("additionalScores" = "character"))
+#'     cs$additionalScores = NULL
 #'     clipFiles <- system.file("extdata", package="BindingSiteFinder")
 #'     # two experimental conditions
 #'     meta = data.frame(

@@ -67,9 +67,6 @@ load(list.files(files, pattern = ".rda$", full.names = TRUE))
 bds <- makeBindingSites(object = bds, bsSize = 9, minWidth = 2,
 minCrosslinks = 2, minClSites = 1)
 
-# use default return with single threshold
-s = reproducibilityFilter(bds, cutoff = c(0.05), n.reps = c(3))
-
 # use default return with condition specific threshold
 s = reproducibilityFilter(bds, cutoff = c(0.1, 0.05), n.reps = c(1, 2))
 

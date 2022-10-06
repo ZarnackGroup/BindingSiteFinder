@@ -44,10 +44,10 @@ load(list.files(files, pattern = ".rda$", full.names = TRUE))
 bds <- makeBindingSites(object = bds, bsSize = 9, minWidth = 2,
 minCrosslinks = 2, minClSites = 1)
 
-# use a single quantile cutoff
-reproducibiliyCutoffPlot(bds, max.range = 20, cutoff = c(0.05))
+# use the same cutoff for both conditions
+reproducibiliyCutoffPlot(bds, max.range = 20, cutoff = c(0.05, 0.05))
 
-# use condition specific quantile cutoffs
+# use different cutoffs for each condition
 reproducibiliyCutoffPlot(bds, max.range = 20, cutoff = c(0.1, 0.05))
 
 

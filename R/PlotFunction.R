@@ -366,10 +366,10 @@ mergeSummaryPlot <- function(object,
 #' bds <- makeBindingSites(object = bds, bsSize = 9, minWidth = 2,
 #' minCrosslinks = 2, minClSites = 1)
 #'
-#' # use a single quantile cutoff
-#' reproducibiliyCutoffPlot(bds, max.range = 20, cutoff = c(0.05))
+#' # use the same cutoff for both conditions
+#' reproducibiliyCutoffPlot(bds, max.range = 20, cutoff = c(0.05, 0.05))
 #'
-#' # use condition specific quantile cutoffs
+#' # use different cutoffs for each condition
 #' reproducibiliyCutoffPlot(bds, max.range = 20, cutoff = c(0.1, 0.05))
 #'
 #'
@@ -392,6 +392,9 @@ reproducibiliyCutoffPlot <-
         df = as.data.frame(mcols(df))
 
         if (length(cutoff) == 1) {
+            if(length(levels(cond)) > 1) {
+                stop("Only one cutoff is given for multiple conditions.")
+            }
             # calculate sample specific thresholds
             qSel = .selectQuantilesSingleCondtion(
                 covDf = df,
@@ -409,45 +412,32 @@ reproducibiliyCutoffPlot <-
             df$condition = vapply(strsplit(df$name, "_"), `[`, 2,
                                   FUN.VALUE = character(1))
 
-            rectDf = data.frame(
-                condition = cond,
-                name = unique(df$name),
-                value = 1
-            )
-
             qSel$lower = ifelse(qSel$value == min.crosslinks, TRUE, FALSE)
 
             p = ggplot(df,
-                       aes(x = value, group = name, fill = condition), ...) +
-                geom_rect(data = rectDf,
-                          aes(xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf,
-                              color = condition), alpha = 0.3) +
+                       aes(x = value, group = name)) +
                 scale_fill_brewer(palette = "Set1") +
                 scale_color_brewer(palette = "Set1") +
                 geom_bar(fill = "#2d5986", color = "#2d5986") +
-                facet_wrap( ~ name, scales = "free_x") +
+                facet_wrap( ~name, scales = "free_x") +
                 geom_vline(data = qSel,
                            aes(xintercept = value, group = name),
                            color = "darkgrey", size = 1.5) +
                 theme_classic() +
-                ggforce::geom_mark_rect(data = qSel, aes(x = value, y = Inf,
-                                                label = value, group = name),
-                               radius = unit(1, "mm"), expand = unit(1, "mm"),
-                               label.fill = "white") +
-                ggtitle(
-                    paste0(paste(paste0("Cutoff: ", unique(qSel$per), " ",
-                                        unique(qSel$sel)), collapse = "; "),
-                           "; min.crosslinks = ", min.crosslinks)
-                    ) +
-                xlab("Crosslinks per site") +
-                ylab("Number of sites")
-
+                geom_label(data = qSel, aes(x = value, y = 1, label = value)) +
+                labs(
+                    title = paste0(paste(paste0("Cutoff: ", unique(qSel$per), " ",
+                                                unique(qSel$sel)), collapse = "; "),
+                                   "; min.crosslinks = ", min.crosslinks),
+                    x = "Crosslinks per site",
+                    y = "Number of sites",
+                    fill = "condition"
+                )
 
         }
-
         if (length(cutoff) > 1) {
             if (length(levels(cond)) == 1) {
-                stop("multiple cutoffs are given but only one condition exists")
+                stop("Multiple cutoffs are given but only one condition exists")
             }
             # calculate sample specific thresholds
             qSel = .selectQuantilesMultipleConditions(
@@ -475,33 +465,31 @@ reproducibiliyCutoffPlot <-
             qSel$lower = ifelse(qSel$value == min.crosslinks, TRUE, FALSE)
 
             p = ggplot(df,
-                       aes(x = value, group = name, fill = condition), ...) +
+                       aes(x = value, group = name)) +
                 geom_rect(data = rectDf,
                           aes(xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf,
-                              color = condition), alpha = 0.3) +
+                              fill = condition), alpha = 0.3) +
                 scale_fill_brewer(palette = "Set1") +
-                scale_color_brewer(palette = "Set1") +
+                # scale_color_brewer(palette = "Set1") +
                 geom_bar(fill = "#2d5986", color = "#2d5986") +
-                facet_wrap( ~ name, scales = "free_x") +
+                facet_wrap( ~name, scales = "free_x") +
                 geom_vline(data = qSel,
                            aes(xintercept = value, group = name,
                                color = applyTo), size = 1.5) +
                 theme_classic() +
-                ggforce::geom_mark_rect(data = qSel, aes(x = value, y = Inf,
-                                                         label = value, group = name),
-                                        radius = unit(1, "mm"), expand = unit(1, "mm"),
-                                        label.fill = "white") +
-                ggtitle(
-                    paste0(paste(paste0("Cutoff: ", unique(qSel$per), " ",
-                                        unique(qSel$sel)), collapse = "; "),
-                           "; min.crosslinks = ", min.crosslinks)
+                geom_label(data = qSel, aes(x = value, y = 1, label = value)) +
+                labs(
+                    title = paste0(paste(paste0("Cutoff: ", unique(qSel$per), " ",
+                                                unique(qSel$sel)), collapse = "; "),
+                                   "; min.crosslinks = ", min.crosslinks),
+                    x = "Crosslinks per site",
+                    y = "Number of sites",
+                    fill = "condition"
                 ) +
-                xlab("Crosslinks per site") +
-                ylab("Number of sites")
+                scale_color_discrete(guide="none")
         }
         return(p)
     }
-
 
 
 #' Plot that shows the binding site support ratio
