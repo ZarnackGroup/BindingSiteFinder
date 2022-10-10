@@ -339,7 +339,7 @@ ggplot(df, aes(x = geneOl)) +
     ) + theme_bw()
 ```
 
-For the sake of simplicity we directly remove the 81 binding sites that reside in regions outside of any gene annotation. Removing binding site should be done carefully and only after detailed inspection in IGV ect.. (see [Export binding sites to IGV](## Export binding sites to IGV) for more details). For all other binding sites we can analyze the gene type of the duplicated annotations by couting the annotation type split by overlap frequency. In the present case we observe that most overlaps seemed to be cause by lncRNA annotations probably residing within introns of protein coding genes. Since we are interested in the binding of our RBP on protein coding genes, we simply remove all binding sites on spurious annotations[^7] (see [iCLIP data analysis workflow](https://doi.org/10.1016/j.ymeth.2019.11.008) for more details).
+For the sake of simplicity we directly remove the 81 binding sites that reside in regions outside of any gene annotation. Removing binding site should be done carefully and only after detailed inspection in IGV ect.. (see [Export binding sites to IGV](## Export binding sites to IGV) for more details). For all other binding sites we can analyze the gene type of the duplicated annotations by counting the annotation type split by overlap frequency. In the present case we observe that most overlaps seemed to be cause by lncRNA annotations probably residing within introns of protein coding genes. Since we are interested in the binding of our RBP on protein coding genes, we simply remove all binding sites on spurious annotations[^7] (see [iCLIP data analysis workflow](https://doi.org/10.1016/j.ymeth.2019.11.008) for more details).
 
 [^7] Note: This is a simplified scheme which one might need to adapt for more complex research questions 
 
@@ -446,7 +446,7 @@ ggplot(df, aes(x = type, y = count)) +
     ) + theme_bw()
 ```
 
-Again the most simple approach would be to remove all 395 binding sites that do not overlap with one distinct annotation. This could however lead to many binding sites getting lost, depending on the complexity of the annotation/ organism ect. Here we felt that removing 395 binding sites would be too much, so we decided to implement a majority vote system followed by a simple priority list to resolve ties (see [iCLIP data analysis workflow](https://doi.org/10.1016/j.ymeth.2019.11.008) for more details). In any case we recommend carefull visual inspection in eg. IGV to complement the presented workflow. 
+Again the most simple approach would be to remove all 395 binding sites that do not overlap with one distinct annotation. This could however lead to many binding sites getting lost, depending on the complexity of the annotation/ organism ect. Here we felt that removing 395 binding sites would be too much, so we decided to implement a majority vote system followed by a simple priority list to resolve ties (see [iCLIP data analysis workflow](https://doi.org/10.1016/j.ymeth.2019.11.008) for more details). In any case we recommend careful visual inspection in eg. IGV to complement the presented workflow. 
 
 ### Majority vote based assignment
 
@@ -494,7 +494,7 @@ UpSet(m)
 
 To resolve these conflicts we are using a majority based system followed by a hierarchical rule. The majority vote assigns a binding site to a transcript region based on which region is most frequently overlapping. In case of ties we apply the rule introns > 3'UTR > CDS > 5'UTR which we deduced from the unresolved binding profile[^10].
 
-[^10]: Note: In rear cases additional intergenic binding sites can be found even though we removed these in a previous step. This is because some binding sites overlap with the annotation of a gene, but not with any of the transcript isoforms associated with the gene.
+[^10]: Note: In rare cases additional intergenic binding sites can be found even though we removed these in a previous step. This is because some binding sites overlap with the annotation of a gene, but not with any of the transcript isoforms associated with the gene.
 
 ```{r, fig.retina = 1, dpi = 100}
 # Solve the overlapping transcript types problem with majority votes and 
@@ -564,7 +564,6 @@ regionLength = lapply(regions, function(x){
 }) %>% unlist() %>% as.data.frame()
 ```
 
-
 ```{r, fig.retina = 1, dpi = 100}
 # Compute the relative enrichment per transcript region.
 bindingSites = subset(bindingSites, region != "Intergenic")
@@ -591,6 +590,159 @@ ggplot(df, aes(x = region, y = normalizedCount, fill = region)) +
     theme_bw() +
     theme(legend.position = "none") 
 ```
+
+
+# Additional functions
+
+## Subset data for faster iterations 
+
+Subsetting a `BSFinderData` can be useful in a variatey of cases, eg. reducing the object size for faster parameter testing, limiting the analysis to some candidate genes ect.. Here we subset the object by a random set of 100 binding sites and plot their count distribution.
+
+```{r, fig.retina = 1, dpi = 100}
+set.seed(1234)
+bdsSub = bds[sample(seq_along(getRanges(bds)), 100, replace = FALSE)]
+
+cov = coverageOverRanges(bdsSub, returnOptions = "merge_positions_keep_replicates")
+df = mcols(cov) %>%
+    as.data.frame() %>%
+    pivot_longer(everything())
+
+ggplot(df, aes(x = name, y = log2(value+1), fill = name)) +
+    geom_violin() +
+    geom_boxplot(width = 0.1, fill = "white") +
+    scale_fill_brewer(palette = "Greys") +
+    theme_bw() +
+    theme(legend.position = "none") +
+    labs(x = "Samples", y = "#Crosslinks (log2)")
+```
+
+As another example, we here compare the crosslink distribution between binding sites on protein coding and on lncRNA hosting genes.
+
+```{r, fig.retina = 1, dpi = 100}
+# candidateGenes = gns[sample(seq_along(gns), 10, replace = FALSE)]
+protGenes = gns[gns$gene_type == "protein_coding"]
+lncGenes = gns[gns$gene_type == "lncRNA"]
+
+calcCoverageForGeneSet <- function(geneSet, bsfObj) {
+    idx = findOverlaps(geneSet, getRanges(bsfObj))
+    currBsfObj = bsfObj[subjectHits(idx)]
+    cov = coverageOverRanges(currBsfObj, returnOptions = "merge_positions_keep_replicates")
+    df = mcols(cov) %>%
+        as.data.frame() %>%
+        pivot_longer(everything())
+    return(df)
+}
+
+dfProtGenes = calcCoverageForGeneSet(geneSet = protGenes, bsfObj = bds) %>% 
+    cbind.data.frame(geneType = "protein coding")
+dfLncGenes = calcCoverageForGeneSet(geneSet = lncGenes, bsfObj = bds) %>% 
+    cbind.data.frame(geneType = "lncRNA")
+df = rbind(dfProtGenes, dfLncGenes)
+
+ggplot(df, aes(x = name, y = log2(value+1), fill = geneType)) +
+    geom_boxplot() +
+    scale_fill_brewer(palette = "Greys") +
+    theme_bw() +
+    labs(x = "Samples", y = "#Crosslinks (log2)")
+```
+
+## Merge replicate signal 
+
+Depending on the task at hand one either wants to keep the iCLIP signal separated by replicates or merge the signal among replicates (eg. of the same condition). Merging signal can be done using the `collapseReplicates()` function. Doing so allows us for example to identify the count proportion each sample has of the total per binding site. Here we did this for the first 50 binding sites.
+
+```{r, fig.retina = 1, dpi = 100}
+bdsMerge = collapseReplicates(bds)[1:50]
+covTotal = coverageOverRanges(bdsMerge, returnOptions = "merge_positions_keep_replicates")
+
+covRep = coverageOverRanges(bds[1:50], returnOptions = "merge_positions_keep_replicates")
+
+df = cbind.data.frame(mcols(covTotal), mcols(covRep)) %>%
+    mutate(d1 = round(`1_WT`/ WT, digits = 2) * 100,
+           d2 = round(`2_WT`/ WT, digits = 2) * 100,
+           d3 = round(`3_WT`/ WT, digits = 2) * 100,
+           d4 = round(`4_WT`/ WT, digits = 2) * 100) %>%
+    tibble::rowid_to_column("BsID") %>%
+    select(BsID, d1,d2,d3,d4) %>%
+    pivot_longer(-BsID) %>%
+    group_by(BsID) %>%
+    arrange(desc(value), .by_group = TRUE) %>%
+    mutate(name = factor(name, levels = name)) %>%
+    group_by(name) %>%
+    arrange(desc(value), .by_group = TRUE) %>%
+    mutate(BsID = factor(BsID, levels = BsID)) 
+
+
+ggplot(df, aes(x = BsID, y = value, fill = name)) +
+    geom_col(position = "fill") +
+    theme_bw() +
+    scale_fill_brewer(palette = "Set3") +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 7)) +
+    labs(x = "Binding site ID",
+         y = "Percentage",
+         fill = "Replicate"
+         ) +
+    scale_y_continuous(labels = scales::percent)
+```
+
+## Make diagnostic coverage plots
+
+It can also be useful to examine the exact coverage on some example binding sites. A simple function for this is the `bindingSiteDetailsPlot`, which plots the coverage as bars in a defined range around a selected binding site. The function is based on the [Gviz](http://bioconductor.org/packages/release/bioc/html/Gviz.html) package. The `plotIdx` indicates which range should be used as center, the `flankPos` parameter allows you to basically zoom in and out. In addition to the selected range also all other ranges which fall into the selected window will be shown. Here we plot the coverage of a random binding site from the final object, once per replicate and once merged per condition. 
+
+```{r, fig.retina = 1, dpi = 100}
+bindingSiteDetailsPlot(bdsFinal, plotIdx = 8, flankPos = 100, autoscale = TRUE)
+bindingSiteDetailsPlot(bdsFinal, plotIdx = 8, flankPos = 100, mergeReplicates = TRUE)
+```
+
+A common case that makes use of this function is when one wants to see why a particular binding site is lost after a certain filtering step. Here we look at a binding site that was filtered out from the final object by the reproducibility filter. Doing so we can visually confirm that binding sites 5 and 6 were correctly removed from by the reproducibility filter function.
+
+```{r, fig.retina = 1, dpi = 100}
+rangesBeforeRepFilter = getRanges(bds1)
+rangesAfterRepFilter = getRanges(bdsFinal)
+idx = which(!match(rangesBeforeRepFilter, rangesAfterRepFilter, nomatch = 0) > 0)
+rangesRemovedByFilter = rangesBeforeRepFilter[idx]
+bdsRemovedRanges = setRanges(bds1, rangesRemovedByFilter)
+
+bindingSiteDetailsPlot(bdsRemovedRanges, plotIdx = 2, flankPos = 50)
+bindingSiteDetailsPlot(bdsRemovedRanges, plotIdx = 2, flankPos = 50, mergeReplicates = TRUE)
+```
+
+Another use case for example would be to check the coverage on some example genes, or as we do here on the binding site with the highest number of crosslinks. 
+
+```{r, fig.retina = 1, dpi = 100}
+bindingSiteCoverage = coverageOverRanges(bdsFinal, returnOptions = "merge_positions_keep_replicates")
+idxMaxCountsBs = which.max(rowSums(as.data.frame(mcols(bindingSiteCoverage))))
+bindingSiteDetailsPlot(bdsFinal, plotIdx = idxMaxCountsBs, flankPos = 100, mergeReplicates = FALSE, shiftPos = 50)
+```
+
+## Export binding sites to IGV
+
+For further diagnostics in third party tools, such as IGV, it might be useful to export binding sites into the commonly used *BED* file format. This task can directly be performed using the [rtracklayer](https://www.bioconductor.org/packages/release/bioc/html/rtracklayer.html) package. Here we again export binding site before and after reproducibility filtering.
+
+```{r, eval=FALSE}
+library(rtracklayer)
+rangesBeforeRepFilter = getRanges(bds1)
+rangesAfterRepFilter = getRanges(bdsFinal)
+export(object = rangesBeforeRepFilter, con = "./rangesBeforeRepFilter.bed", format = "BED")
+export(object = rangesAfterRepFilter, con = "./rangesAfterRepFilter.bed", format = "BED")
+```
+
+## Merge replicate signal 
+
+Similar to exporting the binding sites as *BED* file for external visualization one can do the same with the iCLIP signal itself. We again use the [rtracklayer](https://www.bioconductor.org/packages/release/bioc/html/rtracklayer.html) `export` function. Here we first export a the signal from a single replicate. Next we first merge the signal by replicates and then export the combined signal. 
+
+```{r, eval=FALSE}
+sgn = getSignal(bds)
+export(sgn$signalPlus$`1_WT`, con = "./WT_1_plus.bw", format = "bigwig")
+export(sgn$signalMinus$`1_WT`, con = "./WT_1_minus.bw", format = "bigwig")
+```
+
+```{r, eval=FALSE}
+bdsMerge = collapseReplicates(bds)
+sgn = getSignal(bdsMerge)
+export(sgn$signalPlus$WT, con = "./sgn_plus.bw", format = "bigwig")
+export(sgn$signalPlus$WT, con = "./sgn_minus.bw", format = "bigwig")
+```
+
 
 
 # Session info
