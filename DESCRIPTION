@@ -21,7 +21,7 @@ License: Artistic-2.0
 Encoding: UTF-8
 VignetteBuilder: knitr
 Imports: tidyr, plyr, matrixStats, stats, ggplot2, methods, rtracklayer,
-    S4Vectors, ggforce, GenomeInfoDb
+    S4Vectors, ggforce, GenomeInfoDb, Gviz
 Depends: GenomicRanges, R (>= 4.2)
 Suggests: testthat, BiocStyle, knitr, rmarkdown, dplyr, GenomicAlignments, 
     ComplexHeatmap, forcats, scales

@@ -123,3 +123,30 @@ utrs3 = unlist(threeUTRsByTranscript(annoDb))
 utrs5 = unlist(fiveUTRsByTranscript(annoDb))
 regions = list(CDS = cdseq, Intron = intrns, UTR3 = utrs3, UTR5 = utrs5)
 save(regions, file = "./regions.rds")
+
+
+
+# make additional subset to the test object
+# -> keep only signal in the a frame of 100nt around each binding site
+files <- system.file("extdata", package="BindingSiteFinder")
+load(list.files(files, pattern = ".rda$", full.names = TRUE))
+
+rngExtended = getRanges(bds) + 100
+bdsSub = setRanges(bds, rngExtended)
+bdsSub = bdsSub[1:length(rngExtended), drop = TRUE]
+
+rngNormal = getRanges(bdsSub) - 100
+bds = setRanges(bdsSub, rngNormal)
+
+save(bds, file = "./bds.rda")
+
+
+
+
+
+
+
+
+
+
+
