@@ -569,6 +569,8 @@ supportRatioPlot <- function(object, bsWidths, bsFlank = NA, ...){
 bindingSiteDetailsPlot <- function(object, plotIdx, flankPos, shiftPos = NULL,
                                    mergeReplicates = FALSE, autoscale = FALSE) {
     stopifnot(is(object, "BSFDataSet"))
+    # bind locally used variables
+    `.` <- name <- value <- condition <- NULL
 
     # replicates should be merged
     if(isTRUE(mergeReplicates)) {
@@ -630,8 +632,8 @@ bindingSiteDetailsPlot <- function(object, plotIdx, flankPos, shiftPos = NULL,
         max = rep(max, nrow(mta))
     } else {
         max = mcols(sgnRng) %>% as.data.frame() %>%
-            pivot_longer(everything()) %>% group_by(name) %>%
-            summarize(max = max(value)) %>% pull(max)
+            tidyr::pivot_longer(dplyr::everything()) %>% dplyr::group_by(name) %>%
+            dplyr::summarize(max = max(value)) %>% dplyr::pull(max)
     }
 
     colorPalette = c("#A7D2CB", "#F2D388", "#C98474", "#874C62")
@@ -642,8 +644,10 @@ bindingSiteDetailsPlot <- function(object, plotIdx, flankPos, shiftPos = NULL,
             return(col)
         })
         names(replicatColors) = levels(mta$condition)
-        replicatColors = unlist(replicatColors, use.names = TRUE) %>% as.data.frame() %>% tibble::rownames_to_column("condition") %>%
-            mutate(condition = substring(condition, 1, nchar(condition)-1)) %>% rename('col' = '.')
+        replicatColors = unlist(replicatColors, use.names = TRUE) %>% as.data.frame() %>%
+            tibble::rownames_to_column("condition") %>%
+            dplyr::mutate(condition = substring(condition, 1, nchar(condition)-1)) %>%
+            dplyr::rename('col' = '.')
         mta$color = replicatColors$col[match(mta$condition, replicatColors$condition)]
     } else {
         mta$color = "#808080"
