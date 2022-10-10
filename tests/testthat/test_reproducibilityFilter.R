@@ -15,4 +15,3 @@ test_that("Reproducibility filter function works", {
     expect_silent(reproducibilityFilter(bds, cutoff = c(0.1, 0.1), n.reps = c(1,1)))
 
 })
-

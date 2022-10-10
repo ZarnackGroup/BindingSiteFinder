@@ -419,6 +419,3 @@ setMethod("[", signature(x = "BSFDataSet", i = "ANY", j = "ANY", drop = "ANY"),
               initialize(x, ranges = rngSub, signal = sgnSub)
           }
 )
-
-
-
