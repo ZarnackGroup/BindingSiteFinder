@@ -547,10 +547,20 @@ supportRatioPlot <- function(object, bsWidths, bsFlank = NA, ...){
 #' symmetrically extended
 #' @param shiftPos numeric, nucleotide positions by which the current plotting
 #' range should be shifted
-#' @param mergeReplicates boolean, if replicates should be merge per
-#' condition (TRUE) or if every replicates should be shown seperately (FALSE)
-#' @param autoscale boolean, if y-axis should be scaled to the maximum for all
+#' @param mergeReplicates logical, if replicates should be merge per
+#' condition (TRUE) or if every replicates should be shown separately (FALSE)
+#' @param autoscale logical, if y-axis should be scaled to the maximum for all
 #' replicates (TRUE), or not (FALSE)
+#' @param highlight logical, if the central range should be highlighted (TRUE),
+#' or not (FALSE)
+#' @param showCentralRange logical, if the central range should be shown (TRUE),
+#' or not (FALSE)
+#' @param customRange \code{GenomicRanges}, a custom range object to be shown
+#' underneath the coverage tracks
+#' @param customRange.name character, the name of the customRange track
+#' @param customAnnotation \code{GenomicRanges} or \code{TxDb}, a custom annotation
+#' for eg. gene, exons, etc. to be shown underneath the coverage tracks
+#' @param customAnnotation.name character, the name of the customAnnotation track
 #'
 #' @return an object of class \code{GVIZ}
 #'
@@ -562,13 +572,33 @@ supportRatioPlot <- function(object, bsWidths, bsFlank = NA, ...){
 #' files <- system.file("extdata", package="BindingSiteFinder")
 #' load(list.files(files, pattern = ".rda$", full.names = TRUE))
 #'
-#' bindingSiteDetailsPlot(bds, plotIdx = 3, flankPos = 10)
-#'
+#' bindingSiteCoveragePlot(bds, plotIdx = 3, flankPos = 10)
 #'
 #' @export
-bindingSiteDetailsPlot <- function(object, plotIdx, flankPos, shiftPos = NULL,
-                                   mergeReplicates = FALSE, autoscale = FALSE) {
+bindingSiteCoveragePlot <- function(object, plotIdx, flankPos, shiftPos = NULL,
+                                   mergeReplicates = FALSE, autoscale = FALSE,
+                                   highlight = TRUE, showCentralRange = TRUE,
+                                   customRange = NULL, customRange.name = "custom",
+                                   customAnnotation = NULL, customAnnotation.name = "anno"
+                                   ) {
+
+    # test parameter input validity
     stopifnot(is(object, "BSFDataSet"))
+    stopifnot(is(mergeReplicates, "logical"))
+    stopifnot(is(autoscale, "logical"))
+    stopifnot(is(highlight, "logical"))
+    stopifnot(is(showCentralRange, "logical"))
+
+    if (!all(is.null(customRange) | is(customRange, "GenomicRanges"))) {
+        stop("customRange not of the right type. Must be GenomicRanges or NULL")
+    }
+
+    if (!all(is.null(customAnnotation) |
+             is(customAnnotation, "GenomicRanges") |
+             is(customAnnotation, "TxDb"))) {
+        stop("customAnnotation not of the right type. Must be GenomicRanges, TxDb or NULL")
+    }
+
     # bind locally used variables
     `.` <- name <- value <- condition <- NULL
 
@@ -600,13 +630,20 @@ bindingSiteDetailsPlot <- function(object, plotIdx, flankPos, shiftPos = NULL,
     }
 
     # setting frame for plot
-    currChr = unique(as.character(seqnames(rng)))
+    currChr = unique(as.character(seqnames(rngToPlot)))
     currStart = start(rngToPlotExtended)
     currEnd = end(rngToPlotExtended)
     currStrand = as.character(strand(rngToPlotExtended))
 
     centerStart = start(rngToPlot)
     centerWidth = width(rngToPlot)-1
+
+    # determine if window is too large for histogram boarder
+    if (width(rngToPlotExtended) < 300) {
+        plotRangeSmall = TRUE
+    } else {
+        plotRangeSmall = FALSE
+    }
 
     # make tracks to plot
     axisTrack = GenomeAxisTrack(fontcolor = "black")
@@ -621,8 +658,14 @@ bindingSiteDetailsPlot <- function(object, plotIdx, flankPos, shiftPos = NULL,
                                      col.title = "black", background.title="white")
 
     # compute coverage over all replicates
-    sgnCov = coverageOverRanges(setRanges(object, rngToPlotExtended),
-                                returnOptions = "merge_ranges_keep_positions")
+    sgnCov = suppressMessages(suppressWarnings(coverageOverRanges(setRanges(object, rngToPlotExtended),
+                                returnOptions = "merge_ranges_keep_positions")))
+
+    # reverse signal if it is on the minus strand
+    if (as.character(strand(rngToPlot)) == "-") {
+        sgnCov = t(apply(sgnCov, 1, rev))
+    }
+
     sgnRng = GenomicRanges::tile(rngToPlotExtended, width = 1) %>%
         unlist(., use.names = F)
     values(sgnRng) = t(sgnCov)
@@ -649,14 +692,20 @@ bindingSiteDetailsPlot <- function(object, plotIdx, flankPos, shiftPos = NULL,
             dplyr::mutate(condition = substring(condition, 1, nchar(condition)-1)) %>%
             dplyr::rename('col' = '.')
         mta$color = replicatColors$col[match(mta$condition, replicatColors$condition)]
-    } else {
+    }
+    if (length(levels(mta$condition)) == 1) {
+        mta$color = "#A7D2CB"
+    }
+    if (length(levels(mta$condition)) > length(colorPalette)) {
+        warning("The color palette supports only up to 4 different conditions at the moment. Setting all colors to grey.")
         mta$color = "#808080"
     }
 
     sgnTracks = lapply(seq_along(mcols(sgnRng)), function(x){
         currSample = sgnRng[,x]
+        histOutlineColor = ifelse(plotRangeSmall, "black", mta$color[x])
         dTrack = DataTrack(currSample, type = 'hist', ylim = c(0,max[x]),
-                           col.histogram="black", fill.histogram = mta$color[x],
+                           col.histogram=histOutlineColor, fill.histogram = mta$color[x],
                            name = names(mcols(currSample)),
                            col = "black", col.line = "black",
                            col.frame = "black", col.axis="black",
@@ -665,9 +714,46 @@ bindingSiteDetailsPlot <- function(object, plotIdx, flankPos, shiftPos = NULL,
         return(dTrack)
     })
 
+    # all main tracks are created at this point
+    if (!isTRUE(showCentralRange)) {
+        # remove central range from plotting if wanted
+        allTracks = c(axisTrack, sgnTracks)
+    } else {
+        # all main tracks are added -> this is the default look of the plot
+        allTracks = c(axisTrack, sgnTracks, rngTrackOthers)
+    }
 
-    totalTrack = HighlightTrack(trackList = c(sgnTracks,list(rngTrackOthers)),
-                                start = centerStart, width = centerWidth, chromosome = currChr)
+    # add additional custom range to be shown under the binding sites
+    if (!is.null(customRange)) {
+        # find overlapping custom ranges
+        idx = findOverlaps(customRange, rngToPlotExtended)
+        customRangeSub = customRange[queryHits(idx)]
+        rngCustom = GeneRegionTrack(customRangeSub, chromosome = currChr,
+                                    start = currStart, end = currEnd,
+                                    name = customRange.name, fontsize = 6,
+                                    fill = "#B7C4CF", col = "black", col.line = "black",
+                                    col.frame = "black", col.axis="black",
+                                    col.border.title=NULL, frame = TRUE,
+                                    col.title = "black", background.title="white")
+        allTracks = c(allTracks, rngCustom)
+    }
+    # add additional gene annotation to be shown underneath
+    if (!is.null(customAnnotation)) {
+        rngGene = GeneRegionTrack(customAnnotation, chromosome = currChr,
+                                  start = currStart, end = currEnd,
+                                  name = customAnnotation.name, fontsize = 6,
+                                  fill = "#D7C0AE", col = "black", col.line = "black",
+                                  col.frame = "black", col.axis="black",
+                                  col.border.title=NULL, frame = TRUE,
+                                  col.title = "black", background.title="white")
+        allTracks = c(allTracks, rngGene)
+    }
+    # add highlighting option to the central range
+    if(isTRUE(highlight)) {
+        allTracks = HighlightTrack(trackList = allTracks,
+                                    start = centerStart, width = centerWidth, chromosome = currChr)
+    }
+
 
     if (is.null(names(rngToPlot))) {
         title = paste0("BS:", as.character(plotIdx), "/ ",
@@ -677,106 +763,8 @@ bindingSiteDetailsPlot <- function(object, plotIdx, flankPos, shiftPos = NULL,
                        currChr, ": ", currStart, "-", currEnd, " ", currStrand)
     }
 
-    plotTracks(trackList = list(axisTrack, totalTrack),
+    plotTracks(trackList = allTracks,
                from = currStart, to = currEnd, main = title, cex.main = 1, col = "black")
 }
 
-# TODO
-# -> add option to include a track for the gene annotation
-# ---> make example with txdb, ect
-# -> add option to include a custom track, comes in as GRanges
-# ---> show example where plot is centered at a specific gene and the binding sites go in as custom
-# -> add option to turn on/off the highlighting of the central range
 
-# TODO
-# add a function that makes meta profiles
-# -> make new version of rangeCoveragePlot
-
-
-# bindingSiteDetailsPlot <- function(object, plotIdx, flankPos, shiftPos = NULL,
-#                                    mergeReplicates = FALSE) {
-#     stopifnot(is(object, "BSFDataSet"))
-#
-#     # replicates should be merged
-#     if(isTRUE(mergeReplicates)) {
-#         object = collapseReplicates(object, collapseAll = FALSE)
-#     }
-#
-#     # get initial objects for plotting
-#     rng = getRanges(object)
-#     sgn = getSignal(object)
-#     rngToPlot = rng[plotIdx]
-#     rngToPlotExtended = rng[plotIdx] + flankPos
-#
-#     # shift window if needed
-#     if(!is.null(shiftPos)) {
-#         rngToPlotExtended = shift(rngToPlotExtended, shiftPos)
-#     }
-#
-#     # find overlapping additional ranges
-#     idx = findOverlaps(rng, rngToPlotExtended)
-#     rngSub = rng[queryHits(idx)]
-#
-#     if (is.null(names(rngSub))) {
-#         rngSub$symbol = paste0("BS:", seq_along(rngSub))
-#     } else {
-#         rngSub$symbol = names(rngSub)
-#     }
-#
-#     rngToPlot$symbol = "X"
-#
-#     # setting frame for plot
-#     currChr = unique(as.character(seqnames(rng)))
-#     currStart = start(rngToPlotExtended)
-#     currEnd = end(rngToPlotExtended)
-#     currStrand = as.character(strand(rngToPlotExtended))
-#
-#     # make tracks to plot
-#     axisTrack = GenomeAxisTrack(fontcolor = "black")
-#     rngTrackMain = GeneRegionTrack(rngToPlot, chromosome = currChr,
-#                                    start = currStart, end = currEnd,
-#                                    name = "BS Main", fontsize = 6,
-#                                    exonAnnotation = "symbol", fontcolor.item="black",
-#                                    fill = "salmon", col = "black", col.line = "black",
-#                                    col.frame = "black", col.axis="black",
-#                                    col.border.title="black", frame = TRUE,
-#                                    col.title = "black", background.title="white")
-#     rngTrackOthers = GeneRegionTrack(rngSub, chromosome = currChr,
-#                                      start = currStart, end = currEnd,
-#                                      name = "BS Other", fontsize = 6,
-#                                      exonAnnotation = "symbol", fontcolor.item="black",
-#                                      fill = "salmon", col = "black", col.line = "black",
-#                                      col.frame = "black", col.axis="black",
-#                                      col.border.title="black", frame = TRUE,
-#                                      col.title = "black", background.title="white")
-#
-#     # compute coverage over all replicates
-#     sgnCov = coverageOverRanges(setRanges(object, rngToPlotExtended),
-#                                 returnOptions = "merge_ranges_keep_positions")
-#     sgnRng = GenomicRanges::tile(rngToPlotExtended, width = 1) %>%
-#         unlist(., use.names = F)
-#     values(sgnRng) = t(sgnCov)
-#
-#     sgnTracks = lapply(seq_along(mcols(sgnRng)), function(x){
-#         currSample = sgnRng[,x]
-#         dTrack = DataTrack(currSample, type = 'hist',
-#                            col.histogram="black", fill.histogram = "#808080",
-#                            name = names(mcols(currSample)),
-#                            col = "black", col.line = "black",
-#                            col.frame = "black", col.axis="black",
-#                            col.border.title="black", frame = TRUE,
-#                            col.title = "black", background.title="white")
-#         return(dTrack)
-#     })
-#
-#     if (is.null(names(rngToPlot))) {
-#         title = paste0("BS:", as.character(plotIdx), "/ ",
-#                        currChr, ": ", currStart, "-", currEnd, " ", currStrand)
-#     } else {
-#         title = paste0("BS:", as.character(names(rngToPlot)), "/ ",
-#                        currChr, ": ", currStart, "-", currEnd, " ", currStrand)
-#     }
-#
-#     plotTracks(trackList = c(axisTrack, sgnTracks, rngTrackMain, rngTrackOthers),
-#                from = currStart, to = currEnd, main = title, cex.main = 1, col = "black")
-# }

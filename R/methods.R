@@ -175,6 +175,45 @@ setMethod(
 )
 
 
+#' Setter method for the meta data of the BSFDataSet object
+#'
+#' Meta data is stored as a \code{data.frame} and must contain the columns
+#' "condition", "clPlus" and "clMinus".
+#'
+#' @docType methods
+#' @name setMeta
+#' @rdname setMeta
+#' @aliases setMeta setMeta,BSFDataSet-method
+#'
+#' @param object a BSFDataSet object
+#' @param ... additional arguments
+#'
+#' @return an object of type \code{\link{BSFDataSet}} with updated meta data
+#'
+#' @seealso \code{\link{BSFDataSet}}
+#'
+#' @examples
+#'
+#' # load data
+#' files <- system.file("extdata", package="BindingSiteFinder")
+#' load(list.files(files, pattern = ".rda$", full.names = TRUE))
+#'
+#' getMeta(bds)
+#'
+#' @export
+setMethod(
+    f = "setMeta",
+    signature(object = "BSFDataSet"),
+    definition = function(object, newMeta) {
+        object@meta = newMeta
+
+        validObject(object)
+        return(object)
+    }
+)
+
+
+
 #' Accessor method for the signal data of the BSFDataSet object
 #'
 #' Signal data is loaded from the path specified in \code{\link{getMeta}}

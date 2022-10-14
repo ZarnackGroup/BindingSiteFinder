@@ -10,6 +10,12 @@ setGeneric("getMeta", function(object) {
     standardGeneric("getMeta")
 })
 
+#' @rdname setMeta
+#' @export
+setGeneric("setMeta", function(object, ...) {
+    standardGeneric("setMeta")
+})
+
 #' @rdname getSignal
 #' @export
 setGeneric("getSignal", function(object) {
