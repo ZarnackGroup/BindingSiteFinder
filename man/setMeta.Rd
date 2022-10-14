@@ -14,6 +14,8 @@ setMeta(object, ...)
 \item{object}{a BSFDataSet object}
 
 \item{...}{additional arguments}
+
+\item{newMeta}{the replacement meta data table}
 }
 \value{
 an object of type \code{\link{BSFDataSet}} with updated meta data
@@ -28,7 +30,8 @@ Meta data is stored as a \code{data.frame} and must contain the columns
 files <- system.file("extdata", package="BindingSiteFinder")
 load(list.files(files, pattern = ".rda$", full.names = TRUE))
 
-getMeta(bds)
+nMeta = getMeta(bds)
+setMeta(bds, nMeta)
 
 }
 \seealso{

@@ -186,6 +186,7 @@ setMethod(
 #' @aliases setMeta setMeta,BSFDataSet-method
 #'
 #' @param object a BSFDataSet object
+#' @param newMeta the replacement meta data table
 #' @param ... additional arguments
 #'
 #' @return an object of type \code{\link{BSFDataSet}} with updated meta data
@@ -198,7 +199,8 @@ setMethod(
 #' files <- system.file("extdata", package="BindingSiteFinder")
 #' load(list.files(files, pattern = ".rda$", full.names = TRUE))
 #'
-#' getMeta(bds)
+#' nMeta = getMeta(bds)
+#' setMeta(bds, nMeta)
 #'
 #' @export
 setMethod(
