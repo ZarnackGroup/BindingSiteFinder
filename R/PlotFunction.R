@@ -691,7 +691,6 @@ bindingSiteCoveragePlot <- function(object, plotIdx, flankPos, shiftPos = NULL,
             return(col)
         })
         names(replicatColors) = levels(mta$condition)
-
         if (!isTRUE(mergeReplicates)) {
             replicatColors = unlist(replicatColors, use.names = TRUE) %>% as.data.frame() %>%
                 tibble::rownames_to_column("condition") %>%
