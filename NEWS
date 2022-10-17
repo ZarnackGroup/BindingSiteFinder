@@ -1,3 +1,13 @@
+CHANGES IN VERSION 1.4
++ major re-work of the vignette
++ implemented bindingSiteCoveragePlot() function
++ added subsetting by index functionalities
++ parameters minCrosslinks and minClSites can be deactivated when set to 0
++ coverageOverRanges() function fails with error message on subscript out of
+bounds
++ fixed bug in ReproducibilityFilter() function
++ fix silent option in BSFDataSet constructor
+
 CHANGES IN VERSION 1.1.2
 + coverageOverRanges() can be allowed to produce NAs for uneven ranges in the
 output
