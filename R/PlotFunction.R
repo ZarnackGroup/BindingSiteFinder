@@ -561,6 +561,8 @@ supportRatioPlot <- function(object, bsWidths, bsFlank = NA, ...){
 #' @param customAnnotation \code{GenomicRanges} or \code{TxDb}, a custom annotation
 #' for eg. gene, exons, etc. to be shown underneath the coverage tracks
 #' @param customAnnotation.name character, the name of the customAnnotation track
+#' @param title character, set plotting title
+#' @param colorPalette vector, hex colors used for the conditions
 #'
 #' @return an object of class \code{GVIZ}
 #'
@@ -579,7 +581,8 @@ bindingSiteCoveragePlot <- function(object, plotIdx, flankPos, shiftPos = NULL,
                                    mergeReplicates = FALSE, autoscale = FALSE,
                                    highlight = TRUE, showCentralRange = TRUE,
                                    customRange = NULL, customRange.name = "custom",
-                                   customAnnotation = NULL, customAnnotation.name = "anno"
+                                   customAnnotation = NULL, customAnnotation.name = "anno",
+                                   title = NULL, colorPalette = NULL
                                    ) {
 
     # test parameter input validity
@@ -679,7 +682,11 @@ bindingSiteCoveragePlot <- function(object, plotIdx, flankPos, shiftPos = NULL,
             dplyr::summarize(max = max(value)) %>% dplyr::pull(max)
     }
 
-    colorPalette = c("#A7D2CB", "#F2D388", "#C98474", "#874C62")
+    # set color palette
+    if (is.null(colorPalette)) {
+        colorPalette = c("#A7D2CB", "#F2D388", "#C98474", "#874C62")
+    }
+
     if (isTRUE(mergeReplicates)) {
         mta = data.frame(condition = as.factor(levels(mta$condition)))
     }
@@ -765,14 +772,17 @@ bindingSiteCoveragePlot <- function(object, plotIdx, flankPos, shiftPos = NULL,
                                     start = centerStart, width = centerWidth, chromosome = currChr)
     }
 
-
-    if (is.null(names(rngToPlot))) {
-        title = paste0("BS:", as.character(plotIdx), "/ ",
-                       currChr, ": ", currStart, "-", currEnd, " ", currStrand)
-    } else {
-        title = paste0("BS:", as.character(names(rngToPlot)), "/ ",
-                       currChr, ": ", currStart, "-", currEnd, " ", currStrand)
+    # manage plot title
+    if (is.null(title)) {
+        if (is.null(names(rngToPlot))) {
+            title = paste0("BS:", as.character(plotIdx), "/ ",
+                           currChr, ": ", currStart, "-", currEnd, " ", currStrand)
+        } else {
+            title = paste0("BS:", as.character(names(rngToPlot)), "/ ",
+                           currChr, ": ", currStart, "-", currEnd, " ", currStrand)
+        }
     }
+
 
     plotTracks(trackList = allTracks,
                from = currStart, to = currEnd, main = title, cex.main = 1, col = "black")

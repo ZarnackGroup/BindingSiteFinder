@@ -16,7 +16,9 @@ bindingSiteCoveragePlot(
   customRange = NULL,
   customRange.name = "custom",
   customAnnotation = NULL,
-  customAnnotation.name = "anno"
+  customAnnotation.name = "anno",
+  title = NULL,
+  colorPalette = NULL
 )
 }
 \arguments{
@@ -51,6 +53,10 @@ underneath the coverage tracks}
 for eg. gene, exons, etc. to be shown underneath the coverage tracks}
 
 \item{customAnnotation.name}{character, the name of the customAnnotation track}
+
+\item{title}{character, set plotting title}
+
+\item{colorPalette}{vector, hex colors used for the conditions}
 }
 \value{
 an object of class \code{GVIZ}
