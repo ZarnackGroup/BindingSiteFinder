@@ -680,6 +680,10 @@ bindingSiteCoveragePlot <- function(object, plotIdx, flankPos, shiftPos = NULL,
     }
 
     colorPalette = c("#A7D2CB", "#F2D388", "#C98474", "#874C62")
+    if (isTRUE(mergeReplicates)) {
+        mta = data.frame(condition = as.factor(levels(mta$condition)))
+    }
+
     if (length(levels(mta$condition)) <= length(colorPalette)) {
         replicatColors = lapply(seq_along(levels(mta$condition)), function(x){
             idx = which(levels(mta$condition)[x] == mta$condition)
@@ -687,10 +691,18 @@ bindingSiteCoveragePlot <- function(object, plotIdx, flankPos, shiftPos = NULL,
             return(col)
         })
         names(replicatColors) = levels(mta$condition)
-        replicatColors = unlist(replicatColors, use.names = TRUE) %>% as.data.frame() %>%
-            tibble::rownames_to_column("condition") %>%
-            dplyr::mutate(condition = substring(condition, 1, nchar(condition)-1)) %>%
-            dplyr::rename('col' = '.')
+
+        if (!isTRUE(mergeReplicates)) {
+            replicatColors = unlist(replicatColors, use.names = TRUE) %>% as.data.frame() %>%
+                tibble::rownames_to_column("condition") %>%
+                dplyr::mutate(condition = substring(condition, 1, nchar(condition)-1)) %>%
+                dplyr::rename('col' = '.')
+        }
+        if (isTRUE(mergeReplicates)) {
+            replicatColors = unlist(replicatColors, use.names = TRUE) %>% as.data.frame() %>%
+                tibble::rownames_to_column("condition") %>%
+                dplyr::rename('col' = '.')
+        }
         mta$color = replicatColors$col[match(mta$condition, replicatColors$condition)]
     }
     if (length(levels(mta$condition)) == 1) {
