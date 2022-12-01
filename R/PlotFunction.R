@@ -507,6 +507,8 @@ reproducibiliyCutoffPlot <-
 #' width to compute the ratio for
 #' @param bsFlank optional; a numeric vector of the same length as
 #' \code{bsWidth} used to specify the width of the flanking regions
+#' @param approximate logical; if binding sites should be approxiamted by their
+#' center position instead of running \code{makeBindingSites} on every iteration
 #' @param ... further arguments passed to \code{makeBindingSites}
 #'
 #' @return an object of class \code{ggplot2}
@@ -520,8 +522,8 @@ reproducibiliyCutoffPlot <-
 #' minWidth = 1, minClSites = 1, minCrosslinks = 2)
 #'
 #' @export
-supportRatioPlot <- function(object, bsWidths, bsFlank = NA, ...){
-    df = supportRatio(object, bsWidths, bsFlank, ...)
+supportRatioPlot <- function(object, bsWidths, bsFlank = NA, approximate = FALSE, ...){
+    df = supportRatio(object, bsWidths, bsFlank, approximate, ...)
 
     p = ggplot(df, aes(x = bsWidths, y = supportRatio, group = 1)) +
         geom_point() +

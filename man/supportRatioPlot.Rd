@@ -4,7 +4,7 @@
 \alias{supportRatioPlot}
 \title{Plot that shows the binding site support ratio}
 \usage{
-supportRatioPlot(object, bsWidths, bsFlank = NA, ...)
+supportRatioPlot(object, bsWidths, bsFlank = NA, approximate = FALSE, ...)
 }
 \arguments{
 \item{object}{a BSFDataSet object}
@@ -14,6 +14,9 @@ width to compute the ratio for}
 
 \item{bsFlank}{optional; a numeric vector of the same length as
 \code{bsWidth} used to specify the width of the flanking regions}
+
+\item{approximate}{logical; if binding sites should be approxiamted by their
+center position instead of running \code{makeBindingSites} on every iteration}
 
 \item{...}{further arguments passed to \code{makeBindingSites}}
 }

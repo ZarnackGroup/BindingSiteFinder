@@ -272,6 +272,10 @@ annotateWithScore <- function(object,
 #' width to compute the ratio for
 #' @param bsFlank optional; a numeric vector of the same length as
 #' \code{bsWidth} used to specify the width of the flanking regions
+#' @param sub.chr chromosome identifier (eg, chr1, chr2) used for subsetting the
+#' BSFDataSet object.
+#' @param approximate logical; if binding sites should be approxiamted by their
+#' center position instead of running \code{makeBindingSites} on every iteration
 #' @param ... further arguments passed to \code{makeBindingSites}
 #'
 #' @return an object of class \code{data.frame}
@@ -284,7 +288,7 @@ annotateWithScore <- function(object,
 #' supportRatio(bds, bsWidths = c(3,7))
 #'
 #' @export
-supportRatio <- function(object, bsWidths, bsFlank = NA, ...) {
+supportRatio <- function(object, bsWidths, bsFlank = NA, sub.chr, approximate = FALSE, ...) {
     stopifnot(is(object, "BSFDataSet"))
     if (!any(is.numeric(bsWidths))) {
         stop("bsWidth needs to be numeric. ")
@@ -310,9 +314,16 @@ supportRatio <- function(object, bsWidths, bsFlank = NA, ...) {
         bsFlank = bsWidths
     }
     # calculate ratio
-    objList = lapply(bsWidths, function(x){
-        makeBindingSites(object = object, bsSize = x, ...)
-    })
+    if (isTRUE(approximate)) {
+        objList = lapply(bsWidths, function(x){
+            .approximateBindingSites(object = object, bsSize = x, sub.chr = sub.chr)
+        })
+    } else {
+        objList = lapply(bsWidths, function(x){
+            makeBindingSites(object = object, bsSize = x, sub.chr = sub.chr, ...)
+        })
+    }
+
     objScore = lapply(seq_along(bsWidths), function(x){
         .computeSupportRatio(object = objList[[x]], flankSize = bsFlank[x])
     })

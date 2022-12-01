@@ -4,7 +4,7 @@
 \alias{supportRatio}
 \title{Support ratio function for BSFDataSet objects}
 \usage{
-supportRatio(object, bsWidths, bsFlank = NA, ...)
+supportRatio(object, bsWidths, bsFlank = NA, sub.chr, approximate = FALSE, ...)
 }
 \arguments{
 \item{object}{a BSFDataSet object}
@@ -14,6 +14,12 @@ width to compute the ratio for}
 
 \item{bsFlank}{optional; a numeric vector of the same length as
 \code{bsWidth} used to specify the width of the flanking regions}
+
+\item{sub.chr}{chromosome identifier (eg, chr1, chr2) used for subsetting the
+BSFDataSet object.}
+
+\item{approximate}{logical; if binding sites should be approxiamted by their
+center position instead of running \code{makeBindingSites} on every iteration}
 
 \item{...}{further arguments passed to \code{makeBindingSites}}
 }

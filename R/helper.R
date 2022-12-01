@@ -238,6 +238,36 @@ collapseReplicates <- function(object, collapseAll = FALSE) {
     return(score)
 }
 
+.approximateBindingSites <- function(object, bsSize, sub.chr = NA) {
+    stopifnot(is(object, "BSFDataSet"))
+
+    # subsetting options
+    if (!is.na(sub.chr)) {
+        if (!is.character(sub.chr)) {
+            stop("sub.chr must be of type character")
+        }
+        # subset the signal
+        objectSub = .subsetByChr(object = object, chr = sub.chr)
+        rng = getRanges(objectSub)
+    }
+    # no subsetting
+    if (is.na(sub.chr)) {
+        rng = getRanges(object)
+    }
+
+    ### Merge peaks for given bs size
+    rng = reduce(rng, min.gapwidth = bsSize - 1)
+    ### Remove peaks smaller than min width
+    rng = rng[width(rng) >= 2]
+    names(rng) = seq_along(rng)
+    ### Approximate binding sites by center of merged region
+    rng = resize(rng, fix = "center", width = bsSize)
+    outBds = setRanges(bds, rng)
+    return(outBds)
+}
+
+
+
 .checkForDropSeqlevels <- function(ranges, signal, dropSeqlevels) {
     msg = NULL
     # check input signal
