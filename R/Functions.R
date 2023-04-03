@@ -65,6 +65,8 @@ reproducibilityFilter <- function(object,
                                   n.reps,
                                   min.crosslinks = 1,
                                   returnType = c("BSFDataSet", "data.frame")) {
+    # INPUT CHECKS
+    # --------------------------------------------------------------------------
     stopifnot(is(object, "BSFDataSet"))
 
     if (length(cutoff) != length(n.reps)) {
@@ -72,11 +74,51 @@ reproducibilityFilter <- function(object,
              for 'n.reps'. ")
     }
 
+    metaData = getMeta(object)
+    numberOfConditions = length(levels(metaData$condition))
+    if (numberOfConditions != length(reproducibilityCutoff) && !is.null(reproducibilityCutoff)) {
+        msg = paste0("Reproducibility filter cutoff does not match the number of conditions. You specified: ",
+                     length(reproducibilityCutoff), ", but there are: ", numberOfConditions, "\n")
+        msg2 = paste0("The specified cutoff (",  reproducibilityCutoff, ") ",
+                      "is applied to all conditions (",
+                      paste(as.character(levels(metaData$condition)), collapse = ",") ,") \n")
+        warning(paste0(msg, msg2))
+        defaultReproducibilityCutoff = rep(reproducibilityCutoff, numberOfConditions)
+    }
+    if (is.null(reproducibilityCutoff)) {
+        msg = paste0("Reproducibility cutoff not defined. Defaults to 0.05 for each condition. \n")
+        message(msg)
+        defaultReproducibilityCutoff = rep(0.05, numberOfConditions)
+    } else {
+        defaultReproducibilityCutoff = reproducibilityCutoff
+    }
+    # Manage parameter n.reps
+    if (numberOfConditions != length(n.reps) && !is.null(n.reps)) {
+        msg = paste0("Parameter n.reps does not match the number of conditions. You specified: ",
+                     length(n.reps), ", but there are: ", numberOfConditions, "\n")
+        msg2 = paste0("n.reps defaults to N-1 for each condition. \n")
+        warning(paste0(msg, msg2))
+
+        n.conditions = table(metaData$condition) %>% as.data.frame()
+        defaultNreps = n.conditions$Freq -1
+    }
+    if (is.null(n.reps)) {
+        msg = paste0("Parameter n.reps not defined. Defaults to N-1 for each condition. \n")
+        message(paste0(msg))
+        n.conditions = table(metaData$condition) %>% as.data.frame()
+        defaultNreps = n.conditions$Freq -1
+    } else {
+        defaultNreps = n.reps
+    }
+
+    # MAIN COMPUTE
+    # --------------------------------------------------------------------------
     cond = getMeta(object)$condition
     df = as.data.frame(mcols(coverageOverRanges(
         object, returnOptions = "merge_positions_keep_replicates",
         silent = TRUE)))
 
+    # Manage single cutoff for single condition
     if (length(cutoff) == 1) {
         if(length(levels(cond)) > 1) {
             stop("Only one cutoff is given for multiple conditions.")
@@ -106,6 +148,7 @@ reproducibilityFilter <- function(object,
         newObject = setRanges(object, newRanges)
     }
 
+    # Manage multiple cutoffs for multipe conditions
     if (length(cutoff) > 1) {
         if (length(levels(cond)) == 1) {
             stop("multiple cutoffs are given but only one condition exists")
@@ -146,8 +189,8 @@ reproducibilityFilter <- function(object,
         newObject = setRanges(object, newRanges)
     }
 
+    # Manage return options
     returnType = match.arg(returnType, choices = c("BSFDataSet", "data.frame"))
-
     if (returnType == "BSFDataSet") {
         retObj = newObject
     }
@@ -313,7 +356,8 @@ supportRatio <- function(object, bsWidths, bsFlank = NA, sub.chr, approximate = 
     if (any(is.na(bsFlank))) {
         bsFlank = bsWidths
     }
-    # calculate ratio
+    # compute binding sites
+    print("make bs")
     if (isTRUE(approximate)) {
         objList = lapply(bsWidths, function(x){
             .approximateBindingSites(object = object, bsSize = x, sub.chr = sub.chr)
@@ -323,7 +367,8 @@ supportRatio <- function(object, bsWidths, bsFlank = NA, sub.chr, approximate = 
             makeBindingSites(object = object, bsSize = x, sub.chr = sub.chr, ...)
         })
     }
-
+    # calculate ratio
+    print("calc ratio")
     objScore = lapply(seq_along(bsWidths), function(x){
         .computeSupportRatio(object = objList[[x]], flankSize = bsFlank[x])
     })
