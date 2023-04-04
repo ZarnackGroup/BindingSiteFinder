@@ -243,7 +243,7 @@ reproducibilityFilter <- function(object,
 #' }
 #' @export
 annotateWithScore <- function(object,
-                              scoreRanges) {
+                              scoreRanges, bsMatchScore = "score") {
 
     # bind locally used variables
     qHits <- NULL
@@ -258,8 +258,11 @@ annotateWithScore <- function(object,
 
     stopifnot(is(scoreRanges, "GRanges"))
 
-    if (!any(colnames(mcols(scoreRanges)) == "score")) {
-        stop("Ranges do not have a meta column named score.")
+    scoreColNames = colnames(mcols(scoreRanges))
+    if (!(bsMatchScore %in% scoreColNames)) {
+        msg = paste0("Matching columns (", bsMatchScore,
+                     ") is not present in the provided scoreRanges. \n")
+        stop(msg)
     }
     if (!is.numeric(scoreRanges$score)) {
         stop("Score column must have numeric values.")
