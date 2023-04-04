@@ -61,36 +61,36 @@
 #'
 #' @export
 reproducibilityFilter <- function(object,
-                                  cutoff,
-                                  n.reps,
+                                  cutoff = NULL,
+                                  n.reps = NULL,
                                   min.crosslinks = 1,
                                   returnType = c("BSFDataSet", "data.frame")) {
     # INPUT CHECKS
     # --------------------------------------------------------------------------
     stopifnot(is(object, "BSFDataSet"))
 
-    if (length(cutoff) != length(n.reps)) {
-        stop("Number of values for 'cutoff' does not match the number of values
-             for 'n.reps'. ")
-    }
+    # if (length(cutoff) != length(n.reps)) {
+    #     stop("Number of values for 'cutoff' does not match the number of values
+    #          for 'n.reps'. ")
+    # }
 
     metaData = getMeta(object)
     numberOfConditions = length(levels(metaData$condition))
-    if (numberOfConditions != length(reproducibilityCutoff) && !is.null(reproducibilityCutoff)) {
+    if (numberOfConditions != length(cutoff) && !is.null(cutoff)) {
         msg = paste0("Reproducibility filter cutoff does not match the number of conditions. You specified: ",
-                     length(reproducibilityCutoff), ", but there are: ", numberOfConditions, "\n")
-        msg2 = paste0("The specified cutoff (",  reproducibilityCutoff, ") ",
+                     length(cutoff), ", but there are: ", numberOfConditions, "\n")
+        msg2 = paste0("The specified cutoff (",  cutoff, ") ",
                       "is applied to all conditions (",
                       paste(as.character(levels(metaData$condition)), collapse = ",") ,") \n")
         warning(paste0(msg, msg2))
-        defaultReproducibilityCutoff = rep(reproducibilityCutoff, numberOfConditions)
+        cutoff = rep(cutoff, numberOfConditions)
     }
-    if (is.null(reproducibilityCutoff)) {
+    if (is.null(cutoff)) {
         msg = paste0("Reproducibility cutoff not defined. Defaults to 0.05 for each condition. \n")
         message(msg)
-        defaultReproducibilityCutoff = rep(0.05, numberOfConditions)
+        cutoff = rep(0.05, numberOfConditions)
     } else {
-        defaultReproducibilityCutoff = reproducibilityCutoff
+        cutoff = cutoff
     }
     # Manage parameter n.reps
     if (numberOfConditions != length(n.reps) && !is.null(n.reps)) {
@@ -100,20 +100,20 @@ reproducibilityFilter <- function(object,
         warning(paste0(msg, msg2))
 
         n.conditions = table(metaData$condition) %>% as.data.frame()
-        defaultNreps = n.conditions$Freq -1
+        n.reps = n.conditions$Freq -1
     }
     if (is.null(n.reps)) {
         msg = paste0("Parameter n.reps not defined. Defaults to N-1 for each condition. \n")
         message(paste0(msg))
         n.conditions = table(metaData$condition) %>% as.data.frame()
-        defaultNreps = n.conditions$Freq -1
+        n.reps = n.conditions$Freq -1
     } else {
-        defaultNreps = n.reps
+        n.reps = n.reps
     }
 
     # MAIN COMPUTE
     # --------------------------------------------------------------------------
-    cond = getMeta(object)$condition
+    cond = metaData$condition
     df = as.data.frame(mcols(coverageOverRanges(
         object, returnOptions = "merge_positions_keep_replicates",
         silent = TRUE)))
@@ -177,7 +177,7 @@ reproducibilityFilter <- function(object,
         # idx = match(colnames(sSplit), qSel$applyTo)
         idx = match(colnames(sSplit), qSel$sel)
         support = apply(sSplit, 1, function(x) {
-            x >= qSel$n.reps[idx]
+            x >= qSel$n.reps[idx] #TODO fails here because the .selectQuantilesMultipleConditions() function names a column n.reps
         }) %>%
             t %>% as.data.frame()
 
