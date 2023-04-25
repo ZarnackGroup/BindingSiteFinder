@@ -6,7 +6,9 @@ BSFDataSet <- setClass(
         ranges = "GRanges",
         meta = "data.frame",
         signal = "list",
-        summary = "data.frame"
+        summary = "data.frame",
+        params = "list",
+        plotData = "list"
     )
 )
 setValidity("BSFDataSet", function(object) {
@@ -192,6 +194,8 @@ BSFDataSet <- function(ranges, meta, signal, dropSeqlevels = TRUE, silent = FALS
 
     # set placeholder for summary slot
     summary = data.frame()
+    params = list()
+    plotData = list()
 
     # construct final object
     obj = new(
@@ -199,7 +203,9 @@ BSFDataSet <- function(ranges, meta, signal, dropSeqlevels = TRUE, silent = FALS
         ranges = ranges,
         meta = meta,
         signal = signal,
-        summary = summary
+        summary = summary,
+        params = params,
+        plotData = plotData
     )
     return(obj)
 }
