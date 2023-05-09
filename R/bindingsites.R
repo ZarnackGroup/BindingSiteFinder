@@ -128,7 +128,6 @@ makeBindingSites <- function(object,
                 width. Be sure to check the minWidth and bsSize parameters")
     }
 
-
     #---------------------------------------------------------------------------
     # subsetting options
     if (!is.na(sub.chr)) {
@@ -148,6 +147,15 @@ makeBindingSites <- function(object,
     if (length(rngS0) == 0) {
         stop("0 ranges as input.")
     }
+
+
+    # ---
+    # Store function parameters
+    optstr = list(bsSize = bsSize, minWidth = minWidth,
+                  minCrosslinks = minCrosslinks, minClSites = minClSites,
+                  centerIsClSite = centerIsClSite,
+                  centerIsSummit = centerIsSummit, sub.chr = sub.chr)
+    object@params$makeBindingSites = optstr
 
     #---------------------------------------------------------------------------
     # prepare data for merging
@@ -197,6 +205,9 @@ makeBindingSites <- function(object,
         stop("No ranges left after appying binding site center has
              to be summit filter. ")
     }
+    #---------------------------------------------------------------------------
+    # Add meta information
+    rngS5$bsSize = bsSize
 
     #---------------------------------------------------------------------------
     # summarize number of ranges after each step
@@ -220,7 +231,6 @@ makeBindingSites <- function(object,
                    length(rngS5), NA)
         )
     )
-
     #---------------------------------------------------------------------------
     # check output
     if (!all(match(seqlevels(rngS5),unique(seqnames(rngS5)), nomatch = 0) > 0)) {
@@ -234,9 +244,13 @@ makeBindingSites <- function(object,
         warning(msgWarningin)
     }
 
+    # ---
+    # Store results for plotting
+    object@plotData$makeBindingSites$data = reportDf
+
     #---------------------------------------------------------------------------
     # update BSFDataSet with new ranges information
-    objectNew = setRanges(object, rngS5)
+    objectNew = suppressMessages(setRanges(object, rngS5))
     objectNew = setSignal(objectNew, sgn)
     objectNew = setSummary(objectNew, reportDf)
     ClipDS = objectNew
