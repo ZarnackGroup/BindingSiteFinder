@@ -257,7 +257,7 @@ makeBindingSites <- function(object,
                          "minClSites=", minClSites, "centerIsClSite=", centerIsClSite,
                          "centerIsSummit=", centerIsSummit, "sub.chr=", sub.chr)
     )
-    newObject@results = rbind(newObject@results, resultLine)
+    object@results = rbind(object@results, resultLine)
 
     #---------------------------------------------------------------------------
     # update BSFDataSet with new ranges information
