@@ -247,6 +247,17 @@ makeBindingSites <- function(object,
     # ---
     # Store results for plotting
     object@plotData$makeBindingSites$data = reportDf
+    # ---
+    # Store for results
+    resultLine = data.frame(
+        funName = "makeBindingSites()", class = "binding sites",
+        nIn = length(rngS0), nOut = length(rngS5),
+        per = paste0(round(length(rngS5)/ length(rngS0), digits = 2)*100,"%"),
+        options = paste0("bsSize=", bsSize, "minWidth=", minWidth, "minCrosslinks=", minCrosslinks,
+                         "minClSites=", minClSites, "centerIsClSite=", centerIsClSite,
+                         "centerIsSummit=", centerIsSummit, "sub.chr=", sub.chr)
+    )
+    newObject@results = rbind(newObject@results, resultLine)
 
     #---------------------------------------------------------------------------
     # update BSFDataSet with new ranges information
