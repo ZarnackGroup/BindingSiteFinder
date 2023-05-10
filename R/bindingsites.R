@@ -250,12 +250,12 @@ makeBindingSites <- function(object,
     # ---
     # Store for results
     resultLine = data.frame(
-        funName = "makeBindingSites()", class = "binding sites",
+        funName = "makeBindingSites()", class = "transform",
         nIn = length(rngS0), nOut = length(rngS5),
         per = paste0(round(length(rngS5)/ length(rngS0), digits = 2)*100,"%"),
-        options = paste0("bsSize=", bsSize, "minWidth=", minWidth, "minCrosslinks=", minCrosslinks,
-                         "minClSites=", minClSites, "centerIsClSite=", centerIsClSite,
-                         "centerIsSummit=", centerIsSummit, "sub.chr=", sub.chr)
+        options = paste0("bsSize=", bsSize, ", minWidth=", minWidth, ", minCrosslinks=", minCrosslinks,
+                         ", minClSites=", minClSites, ", centerIsClSite=", centerIsClSite,
+                         ", centerIsSummit=", centerIsSummit, ", sub.chr=", sub.chr)
     )
     object@results = rbind(object@results, resultLine)
 
