@@ -122,7 +122,7 @@ setMethod(
 setMethod(
     f = "setRanges",
     signature(object = "BSFDataSet"),
-    definition = function(object, newRanges, dropSeqlevels = TRUE) {
+    definition = function(object, newRanges, dropSeqlevels = TRUE, quiet = FALSE) {
         msg = NULL
         # check for ranges and signal integrity
         fixed = .checkForDropSeqlevels(ranges = newRanges, signal = object@signal,
@@ -131,7 +131,7 @@ setMethod(
         object@ranges <- fixed$ranges
         object@signal <- fixed$signal
         if (!is.null(fixed$msg)) {
-            message(fixed$msg)
+            if(!quiet) message(fixed$msg)
         }
         validObject(object)
         return(object)
@@ -290,7 +290,7 @@ setMethod(
 setMethod(
     f = "setSignal",
     signature(object = "BSFDataSet"),
-    definition = function(object, newSignal, dropSeqlevels = TRUE) {
+    definition = function(object, newSignal, dropSeqlevels = TRUE, quiet = FALSE) {
         msg = NULL
         # check for ranges and signal integrity
         fixed = .checkForDropSeqlevels(ranges = object@ranges, signal = newSignal,
@@ -299,7 +299,7 @@ setMethod(
         object@ranges <- fixed$ranges
         object@signal <- fixed$signal
         if (!is.null(fixed$msg)) {
-            message(fixed$msg)
+            if(!quiet) message(fixed$msg)
         }
         validObject(object)
         return(object)
