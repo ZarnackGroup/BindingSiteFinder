@@ -4,7 +4,7 @@
 \alias{supportRatio}
 \title{Support ratio function for BSFDataSet objects}
 \usage{
-supportRatio(object, bsWidths, bsFlank = NA, sub.chr, approximate = FALSE, ...)
+supportRatio(object, bsWidths, bsFlank = NA, sub.chr = NA, ...)
 }
 \arguments{
 \item{object}{a BSFDataSet object}
@@ -17,9 +17,6 @@ width to compute the ratio for}
 
 \item{sub.chr}{chromosome identifier (eg, chr1, chr2) used for subsetting the
 BSFDataSet object.}
-
-\item{approximate}{logical; if binding sites should be approxiamted by their
-center position instead of running \code{makeBindingSites} on every iteration}
 
 \item{...}{further arguments passed to \code{makeBindingSites}}
 }
@@ -48,6 +45,6 @@ The median over all ratios is reported as representative value.
 files <- system.file("extdata", package="BindingSiteFinder")
 load(list.files(files, pattern = ".rda$", full.names = TRUE))
 
-supportRatio(bds, bsWidths = c(3,7))
+suppressWarnings(supportRatio(bds, bsWidths = c(3,7)))
 
 }

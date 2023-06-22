@@ -1,0 +1,286 @@
+
+
+#' Wrapper function to export binding sites as BED files
+#'
+#' Function that serves as a wrapper function for \code{rtracklayer::export}.
+#'
+#' @param object a \code{\link{BSFDataSet}} object with stored ranges
+#' @param con A path or URL
+#'
+#' @return a .bed file
+#'
+#' @import rtracklayer
+#' @importFrom utils tail
+#'
+#' @examples
+#' # load data
+#' files <- system.file("extdata", package="BindingSiteFinder")
+#' load(list.files(files, pattern = ".rda$", full.names = TRUE))
+#' \dontrun{
+#' # export
+#' # exportToBED(bds, con = "./myfile.bed")
+#' }
+#'
+#' @export
+exportToBED <- function(object, con) {
+    # initialize locale vairables
+    funName <- NULL
+
+    # INPUT CHECKS
+    # --------------------------------------------------------------------------
+    stopifnot(is(object, "BSFDataSet"))
+
+    # range to export
+    expRng = getRanges(object)
+
+    # do a basic export if nothing was computed
+    if(length(object@params) == 0){
+        mcols(expRng)$name = paste0("IDX", ":", seq_along(expRng))
+        mcols(expRng)$score = NULL
+        rtracklayer::export(object = expRng, con = con, format = "BED",
+                            trackline = new("BasicTrackLine", name = "CLS_unprocessed", description = "Unprocessed", useScore = FALSE))
+    }
+
+    # check for the highest level function that was computed and export accordingly
+    lastFun = tail(object@results, 1) %>% pull(funName)
+    lastFun = substr(lastFun, start = 1, stop = nchar(lastFun)-2)
+    optionStr = tail(object@results, 1) %>% pull(options)
+
+    if(lastFun == "pureClipGlobalFilter") {
+        mcols(expRng)$name = paste0("IDX", ":", seq_along(expRng))
+        mcols(expRng)$score = NULL
+        rtracklayer::export(object = expRng, con = con, format = "BED",
+                            trackLine = new("BasicTrackLine", name = "CLS_pureClipGlobalfilter",
+                                            description = paste0("pureClipGlobalFilter; options: ", optionStr), useScore = FALSE))
+    }
+    if(lastFun == "estimateBsWidth") {
+        mcols(expRng)$name = paste0("IDX", ":", seq_along(expRng))
+        mcols(expRng)$score = NULL
+        rtracklayer::export(object = expRng, con = con, format = "BED",
+                            trackLine = new("BasicTrackLine", name = "CLS_estimateBsWidth",
+                                            description = paste0("estimateBsWidth; options: ", optionStr), useScore = FALSE))
+    }
+    if(lastFun == "pureClipGeneWiseFilter") {
+        mcols(expRng)$name = paste0("IDX", ":", seq_along(expRng), "_", expRng$geneID)
+        mcols(expRng)$score = NULL
+        rtracklayer::export(object = expRng, con = con, format = "BED",
+                            trackLine = new("BasicTrackLine", name = "CLS_pureClipGeneWiseFilter",
+                                            description = paste0("pureClipGeneWiseFilter; options: ", optionStr), useScore = FALSE))
+    }
+    if(lastFun == "makeBindingSites"){
+        mcols(expRng)$name = paste0(expRng$bsID)
+        mcols(expRng)$score = NULL
+        rtracklayer::export(object = expRng, con = con, format = "BED",
+                            trackLine = new("BasicTrackLine", name = "BS_makeBindingsites",
+                                            description = paste0("makeBindingSites; options: ", optionStr), useScore = FALSE))
+    }
+    if(lastFun == "reproducibilityFilter"){
+        mcols(expRng)$name = paste0(expRng$bsID)
+        mcols(expRng)$score = NULL
+        rtracklayer::export(object = expRng, con = con, format = "BED",
+                            trackLine = new("BasicTrackLine", name = "BS_reproducibilityFilter",
+                                            description = paste0("reproducibilityFilter; options: ", optionStr), useScore = FALSE))
+    }
+    if(lastFun == "assignToGenes"){
+        mcols(expRng)$name = paste0(expRng$bsID, "_", expRng$geneID, "_", expRng$geneType)
+        mcols(expRng)$score = NULL
+        rtracklayer::export(object = expRng, con = con, format = "BED",
+                            trackLine = new("BasicTrackLine", name = "BS_assignToGenes",
+                                            description = paste0("assignToGenes; options: ", optionStr), useScore = FALSE))
+    }
+    if(lastFun == "assignToTranscriptRegions"){
+        mcols(expRng)$name = paste0(expRng$bsID, "_", expRng$geneID, "_", expRng$geneType, "_", expRng$transcriptRegion)
+        mcols(expRng)$score = NULL
+        rtracklayer::export(object = expRng, con = con, format = "BED",
+                            trackLine = new("BasicTrackLine", name = "BS_assignToTranscriptRegions",
+                                            description = paste0("assignToTranscriptRegions; options: ", optionStr), useScore = FALSE))
+    }
+    if(lastFun == "annotateWithScore"){
+        mcols(expRng)$name = paste0("BsID", ":", expRng$bsID, "_", expRng$geneID, "_", expRng$geneType, "_", expRng$transcriptRegion, "_score:", expRng$score)
+        mcols(expRng)$score = NULL
+        rtracklayer::export(object = expRng, con = con, format = "BED",
+                            trackLine = new("BasicTrackLine", name = "BS_annotateWithScore",
+                                            description = paste0("annotateWithScore; options: ", optionStr), useScore = FALSE))
+    }
+}
+
+
+#' Create a table of all workflow steps for reporting
+#'
+#' Function that creates a printable table with all steps and numbers for each
+#' of the workflow steps that were carried out.
+#'
+#' If \code{\link{option}} is set to `reduced`, only the most necessary information
+#' are collected. Option `full` contains a full list of all options and parameters
+#' that were set in any of the workflow functions. Option `extended` contains
+#' extra information about the binding site merging step.
+#'
+#' @param object a \code{\link{BSFDataSet}} object with stored ranges
+#' @param option character; how detailed the table should be
+#'
+#' @return a \code{kableExtra} table
+#'
+#' @importFrom kableExtra kable
+#'
+#'
+#' @examples
+#' # load data
+#' files <- system.file("extdata", package="BindingSiteFinder")
+#' load(list.files(files, pattern = ".rda$", full.names = TRUE))
+#' # apply 5% filter
+#' bds = pureClipGlobalFilter(object = bds, cutoff = 0.05)
+#' processingStepsTable(bds)
+#'
+#' @export
+processingStepsTable <- function(object, # bindingSiteFinder
+                                 option = c("reduced", "full", "extended") # option to which level of detail the results should be shown
+) {
+
+    nIn <- nOut <- NULL
+
+    # INPUT CHECKS
+    # --------------------------------------------------------------------------
+    stopifnot(is(object, "BSFDataSet"))
+
+    # handle options
+    option = match.arg(option, choices = c("reduced", "full", "extended"))
+    res = object@results
+
+    res = format(res, big.mark = ",", decimal.mark = ".")
+    colnames(res) = c("Step", "Type", "#N In", "#N Out", "%", "Options")
+    cap = paste0("Processing step overview (", option, " view).")
+
+    if (option == "full") {
+        k = kableExtra::kable(res, caption = cap)
+    }
+    if (option == "reduced") {
+        k = kableExtra::kable(res[c(1,3,4,5)], caption = cap)
+    }
+    if (option == "extended") {
+        s = getSummary(object)
+        ss = data.frame(step = s[[1]][2:6], nIn = s[[2]][1:5], nOut = s[[2]][2:6]) %>%
+            mutate(per = paste0(round(nOut/ nIn, digits = 2)*100, "%")) %>%
+            mutate(options = c(paste0("bsSize=",object@params$makeBindingSites$bsSize,
+                                      ", minWidth=", object@params$makeBindingSites$minWidth,
+                                      ", sub.chr=", object@params$makeBindingSites$sub.chr),
+                               paste0("minCrosslinks=", object@params$makeBindingSites$minCrosslinks),
+                               paste0("minClSites=", object@params$makeBindingSites$minClSites),
+                               paste0("centerIsClSite=", object@params$makeBindingSites$centerIsClSite),
+                               paste0("centerIsSummit=", object@params$makeBindingSites$centerIsSummit)))
+        resDetail = data.frame(Step = paste0("makeBindingSites()-",ss$step),
+                               Type = "binding sites", nIn = ss$nIn, nOut = ss$nOut, per = ss$per,
+                               Options = ss$options)
+        colnames(resDetail) = c("Step", "Type", "#N In", "#N Out", "%", "Options")
+
+        resNewPre = res[c(1:(which(res$Step == "makeBindingSites()"))),]
+        resNewPost = res[c((which(res$Step == "makeBindingSites()")+1):nrow(res)),]
+        resNew = rbind.data.frame(resNewPre, resDetail, resNewPost)
+
+        k = kableExtra::kable(resNew, caption = cap)
+    }
+
+    return(k)
+}
+
+
+#' Collapse signal from replicates
+#'
+#' Collapses all replicates merges all samples from a \link{BSFDataSet} object
+#' into a single signal stream, only split by minus and plus strand.
+#'
+#' @param object a \code{BSFDataSet} object
+#' @param collapseAll TRUE/FALSE, if all samples should be collapsed (TRUE), or
+#' if samples should be kept separate by condition (FALSE)
+#' @return object of type \code{\link{BSFDataSet}} with updated signal
+#'
+#' @seealso \code{\link{BSFDataSet}}
+#'
+#' @examples
+#'
+#' # load data
+#' files <- system.file("extdata", package="BindingSiteFinder")
+#' load(list.files(files, pattern = ".rda$", full.names = TRUE))
+#'
+#' bdsNew = collapseReplicates(bds)
+#'
+#' @export
+collapseReplicates <- function(object, collapseAll = FALSE) {
+    # stop if object is not of class BSF
+    stopifnot(is(object, "BSFDataSet"))
+    # stop if collapseAll parameter is not logical
+    if (!is.logical(collapseAll)) {
+        stop("Option collapseAll not logical, set to TRUE/FALSE")
+    }
+
+    sgn = getSignal(object)
+    mta = getMeta(object)
+
+    # collapse per condition in meta table
+    if (!isTRUE(collapseAll)) {
+        # get conditions to split by
+        cond = levels(mta$condition)
+        # handle plus strand
+        plus = sgn$signalPlus
+        idx = lapply(cond, function(currCond){
+            grep(currCond, names(plus))
+        })
+        plusSum = lapply(seq_along(idx), function(x){
+            currSampleIdx = idx[[x]]
+            p = sgn$signalPlus[currSampleIdx]
+            pSum = 0
+            for (i in seq_along(p)) {
+                pSum = pSum + p[[i]]
+            }
+            names(pSum) = names(p[[1]])
+            return(pSum)
+        })
+        names(plusSum) = cond
+        # handle minus strand
+        minus = sgn$signalMinus
+        idx = lapply(cond, function(currCond){
+            grep(currCond, names(minus))
+        })
+        minusSum = lapply(seq_along(idx), function(x){
+            currSampleIdx = idx[[x]]
+            m = sgn$signalMinus[currSampleIdx]
+            mSum = 0
+            for (i in seq_along(m)) {
+                mSum = mSum + m[[i]]
+            }
+            names(mSum) = names(m[[1]])
+            return(mSum)
+        })
+        names(minusSum) = cond
+        mrgSgn = list(signalPlus = (plusSum), signalMinus = (minusSum))
+        newObj = setSignal(object, mrgSgn)
+    }
+
+    # collapse all replicates regardless of the conditions
+    if (isTRUE(collapseAll)) {
+
+        p = sgn$signalPlus
+        m = sgn$signalMinus
+
+        pSum = 0
+        for (i in seq_along(p)) {
+            pSum = pSum + p[[i]]
+        }
+        names(pSum) = names(p[[1]])
+        mSum = 0
+        for (i in seq_along(m)) {
+            mSum = mSum + m[[i]]
+        }
+        names(mSum) = names(m[[1]])
+
+        # set condition name
+        lp = list(pSum)
+        names(lp) = "All"
+        lm = list(mSum)
+        names(lm) = "All"
+
+        mrgSgn = list(signalPlus = (lp), signalMinus = (lm))
+        newObj = setSignal(object, mrgSgn)
+    }
+
+    return(newObj)
+}

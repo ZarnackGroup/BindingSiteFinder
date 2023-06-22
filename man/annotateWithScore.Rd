@@ -4,12 +4,31 @@
 \alias{annotateWithScore}
 \title{Annotation function for BSFDataSet object}
 \usage{
-annotateWithScore(object, scoreRanges)
+annotateWithScore(
+  object,
+  match.ranges = NULL,
+  match.score = "score",
+  match.option = c("max", "sum", "mean"),
+  scoreRanges = lifecycle::deprecated(),
+  MatchColScore = lifecycle::deprecated(),
+  quiet = FALSE
+)
 }
 \arguments{
 \item{object}{a BSFDataSet object}
 
-\item{scoreRanges}{a GRanges object, with numeric column named 'score'}
+\item{match.ranges}{a GRanges object, with numeric column for the score to match}
+
+\item{match.score}{character; meta column name of the crosslink site
+\code{\link{GenomicRanges}} object that holds the score to match}
+
+\item{match.option}{character; option how score should be matched}
+
+\item{scoreRanges}{deprecated -> use match.ranges instead}
+
+\item{MatchColScore}{deprecated -> use match.score instead}
+
+\item{quiet}{logical; whether to print messages}
 }
 \value{
 an object of class BSFDataSet with updated meta columns of the ranges

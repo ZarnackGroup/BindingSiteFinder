@@ -15,7 +15,7 @@
 #' specific filter is applied, a meta column is added to the GRanges of the
 #' \code{BSFDataSet} object, indicating the support for each condition.
 #'
-#' If \code{n.reps} is a single number then this number is used as treshold for
+#' If \code{nReps} is a single number then this number is used as treshold for
 #' all binding sites. If it is a vector then it is applied to the replicates of
 #' the respective condition (like in \code{cutoff}). This allows the
 #' application of different thresholds for experiments of different
@@ -27,18 +27,22 @@
 #' @param cutoff a vector of length = 1, or of length =
 #' levels(getMeta(object)$conditions) with a single number (between 0-1)
 #' indicating the quantile cutoff
-#' @param n.reps a vector of length = 1, or of length = l
+#' @param nReps a vector of length = 1, or of length = l
 #' evels(getMeta(object)$conditions) indicating how many replicates need to
 #' meet their threshold for a binding site to be called reproducible.
-#' @param min.crosslinks numeric of length = 1, defines the lower boundary for
+#' @param minCrosslinks numeric of length = 1, defines the lower boundary for
 #' the minimum number of crosslinks a binding site has to be supported by all
 #' replicates, regardless of the replicate specific quantile threshold
 #' @param returnType one of "BSFDataSet" or "data.frame". "BSFDataSet" is the
 #' default and "matrix" can be used for easy plotting.
+#' @param n.reps deprecated -> use nReps instead
+#' @param min.crosslinks deprecated -> use minCrosslinks instead
+#' @param quiet logical; whether to print messages
 #'
 #' @return an object of type BSFDataSet
 #'
-#' @import tidyr GenomicRanges
+#' @import tidyr GenomicRanges lifecycle
+#' @importFrom dplyr count select
 #'
 #' @examples
 #' # load data
@@ -50,10 +54,10 @@
 #' minCrosslinks = 2, minClSites = 1)
 #'
 #' # use default return with condition specific threshold
-#' s = reproducibilityFilter(bds, cutoff = c(0.1, 0.05), n.reps = c(1, 2))
+#' s = reproducibilityFilter(bds, cutoff = c(0.1, 0.05), nReps = c(1, 2))
 #'
 #' # use data.frame return type for plotting
-#' s = reproducibilityFilter(bds, cutoff = c(0.1, 0.05), n.reps = c(1, 2),
+#' s = reproducibilityFilter(bds, cutoff = c(0.1, 0.05), nReps = c(1, 2),
 #' returnType = "data.frame")
 #' library(ComplexHeatmap)
 #' m = make_comb_mat(s)
@@ -62,19 +66,40 @@
 #' @export
 reproducibilityFilter <- function(object,
                                   cutoff = NULL,
-                                  n.reps = NULL,
-                                  min.crosslinks = 1,
-                                  returnType = c("BSFDataSet", "data.frame")) {
+                                  nReps = NULL,
+                                  minCrosslinks = 1,
+                                  returnType = c("BSFDataSet", "data.frame"),
+                                  n.reps = lifecycle::deprecated(),
+                                  min.crosslinks = lifecycle::deprecated(),
+                                  quiet = FALSE) {
+    # initialize local vairables
+    name <- value <- NULL
+
+    # Argument deprecation warnings
+    # --------------------------------------------------------------------------
+
+    if (lifecycle::is_present(n.reps)) {
+        lifecycle::deprecate_warn("2.0.0", "reproducibilityFilter(n.reps = )", "reproducibilityFilter(nReps = )")
+        nReps = n.reps
+    }
+
+    if (lifecycle::is_present(min.crosslinks)) {
+        lifecycle::deprecate_warn("2.0.0", "reproducibilityFilter(min.crosslinks = )", "reproducibilityFilter(minCrosslinks = )")
+        minCrosslinks = min.crosslinks
+    }
+
     # INPUT CHECKS
     # --------------------------------------------------------------------------
     stopifnot(is(object, "BSFDataSet"))
+    stopifnot(is.logical(quiet))
 
-    # if (length(cutoff) != length(n.reps)) {
-    #     stop("Number of values for 'cutoff' does not match the number of values
-    #          for 'n.reps'. ")
-    # }
+    if (length(cutoff) != length(nReps)) {
+        stop("Number of values for 'cutoff' does not match the number of values
+             for 'nReps'. ")
+    }
 
     metaData = getMeta(object)
+
     numberOfConditions = length(levels(metaData$condition))
     if (numberOfConditions != length(cutoff) && !is.null(cutoff)) {
         msg = paste0("Reproducibility filter cutoff does not match the number of conditions. You specified: ",
@@ -83,43 +108,52 @@ reproducibilityFilter <- function(object,
                       "is applied to all conditions (",
                       paste(as.character(levels(metaData$condition)), collapse = ",") ,") \n")
         warning(paste0(msg, msg2))
-        cutoff = rep(cutoff, numberOfConditions)
+        defaultCutoff = rep(cutoff, numberOfConditions)
     }
     if (is.null(cutoff)) {
         msg = paste0("Reproducibility cutoff not defined. Defaults to 0.05 for each condition. \n")
-        message(msg)
-        cutoff = rep(0.05, numberOfConditions)
-    } else {
-        cutoff = cutoff
+        if(!quiet) message(msg)
+        defaultCutoff = rep(0.05, numberOfConditions)
     }
-    # Manage parameter n.reps
-    if (numberOfConditions != length(n.reps) && !is.null(n.reps)) {
-        msg = paste0("Parameter n.reps does not match the number of conditions. You specified: ",
-                     length(n.reps), ", but there are: ", numberOfConditions, "\n")
-        msg2 = paste0("n.reps defaults to N-1 for each condition. \n")
+    if (numberOfConditions == length(cutoff) && !is.null(cutoff)) {
+        defaultCutoff = cutoff
+    }
+    # Manage parameter nReps
+    if (numberOfConditions != length(nReps) && !is.null(nReps)) {
+        msg = paste0("Parameter nReps does not match the number of conditions. You specified: ",
+                     length(nReps), ", but there are: ", numberOfConditions, "\n")
+        msg2 = paste0("nReps defaults to N-1 for each condition. \n")
         warning(paste0(msg, msg2))
 
         n.conditions = table(metaData$condition) %>% as.data.frame()
-        n.reps = n.conditions$Freq -1
+        defaultNreps = n.conditions$Freq -1
     }
-    if (is.null(n.reps)) {
-        msg = paste0("Parameter n.reps not defined. Defaults to N-1 for each condition. \n")
-        message(paste0(msg))
+    if (is.null(nReps)) {
+        msg = paste0("Parameter nReps not defined. Defaults to N-1 for each condition. \n")
+        if(!quiet) message(paste0(msg))
         n.conditions = table(metaData$condition) %>% as.data.frame()
-        n.reps = n.conditions$Freq -1
-    } else {
-        n.reps = n.reps
+        defaultNreps = n.conditions$Freq -1
     }
+    if (numberOfConditions == length(nReps) && !is.null(nReps)) {
+        defaultNreps = nReps
+    }
+
+    # ---
+    # Store function parameters in list
+    optstr = list(cutoff = defaultCutoff, nReps = defaultNreps, minCrosslinks = minCrosslinks)
+    object@params$reproducibilityFilter = optstr
 
     # MAIN COMPUTE
     # --------------------------------------------------------------------------
+    rngInitial = getRanges(object)
     cond = metaData$condition
+    # get number of crosslinks per binding site and replicate
     df = as.data.frame(mcols(coverageOverRanges(
         object, returnOptions = "merge_positions_keep_replicates",
         silent = TRUE)))
 
     # Manage single cutoff for single condition
-    if (length(cutoff) == 1) {
+    if (length(defaultCutoff) == 1) {
         if(length(levels(cond)) > 1) {
             stop("Only one cutoff is given for multiple conditions.")
         }
@@ -127,29 +161,43 @@ reproducibilityFilter <- function(object,
         qSel = .selectQuantilesSingleCondtion(
             covDf = df,
             userCond = cond,
-            userNreps = n.reps,
-            userCutoff = cutoff
+            userNreps = defaultNreps,
+            userCutoff = defaultCutoff
         )
         # apply minimal crosslink threshold
-        qSel$value = ifelse(qSel$value < min.crosslinks,
-                            qSel$value + min.crosslinks,
+        qSel$value = ifelse(qSel$value < minCrosslinks,
+                            minCrosslinks,
                             qSel$value)
         matchIdx = match(qSel$name, colnames(df))
+
+        # ---
+        # Store data for diagnostic plot in list
+        dfPlot = df %>%
+            pivot_longer(everything()) %>%
+            group_by(name, value) %>% dplyr::count() %>%
+            separate(name, into = c(NA, "condition"), sep = "_", remove = FALSE)
+        object@plotData$reproducibilityFilterPlot$data = dfPlot
+        object@plotData$reproducibilityFilterPlot$cutoffs = qSel
 
         # calculate replicate support based on quantile cutoff
         s = apply(df, 1, function(x) {
             ifelse(x > qSel$value[matchIdx], 1, 0)
         }) %>%
-            t %>% as.data.frame() #TODO use this for plotting the upset plot
-        support = rowSums(s) >= n.reps
-        # store results in output
+            t() %>% as.data.frame()
+
+        # ---
+        # Store results for plotting
+        object@plotData$reproducibilitySamplesPlot$data = s
+
+        # Filter binding sites ranges by replicate support
+        support = rowSums(s) >= defaultNreps
         newRanges = getRanges(object)
         newRanges = newRanges[support]
         newObject = setRanges(object, newRanges)
     }
 
-    # Manage multiple cutoffs for multipe conditions
-    if (length(cutoff) > 1) {
+    # Manage multiple cutoffs for multiple conditions
+    if (length(defaultCutoff) > 1) {
         if (length(levels(cond)) == 1) {
             stop("multiple cutoffs are given but only one condition exists")
         }
@@ -157,27 +205,41 @@ reproducibilityFilter <- function(object,
         qSel = .selectQuantilesMultipleConditions(
             covDf = df,
             userCond = cond,
-            userNreps = n.reps,
-            userCutoff = cutoff
+            userNreps = defaultNreps,
+            userCutoff = defaultCutoff
         )
         # apply minimal crosslink threshold
-        qSel$value = ifelse(qSel$value < min.crosslinks,
-                            qSel$value + min.crosslinks,
+        qSel$value = ifelse(qSel$value < minCrosslinks,
+                            minCrosslinks,
                             qSel$value)
         matchIdx = match(qSel$name, colnames(df))
+
+        # ---
+        # Store data for diagnostic plot in list
+        dfPlot = df %>%
+            pivot_longer(everything()) %>%
+            group_by(name, value) %>% dplyr::count() %>%
+            separate(name, into = c(NA, "condition"), sep = "_", remove = FALSE)
+        object@plotData$reproducibilityFilterPlot$data = dfPlot
+        object@plotData$reproducibilityFilterPlot$cutoffs = qSel
 
         # calculate reproducibility per condition
         s = apply(df, 1, function(x) {
             ifelse(x > qSel$value[matchIdx], 1, 0)
         }) %>%
-            t %>% as.data.frame() #TODO use this for plotting the upset plot
+            t %>% as.data.frame()
+
+        # ---
+        # Store results for plotting
+        object@plotData$reproducibilitySamplesPlot$data = s
+
+        # Filter binding sites ranges by replicate support
         sSplit = vapply(levels(cond), function(x) {
             s %>% dplyr::select(contains(x)) %>% rowSums()
         }, FUN.VALUE = numeric(nrow(s))) %>% as.data.frame()
-        # idx = match(colnames(sSplit), qSel$applyTo)
         idx = match(colnames(sSplit), qSel$sel)
         support = apply(sSplit, 1, function(x) {
-            x >= qSel$n.reps[idx] #TODO fails here because the .selectQuantilesMultipleConditions() function names a column n.reps
+            x >= qSel$defaultNreps[idx]
         }) %>%
             t %>% as.data.frame()
 
@@ -186,8 +248,20 @@ reproducibilityFilter <- function(object,
         newRanges = getRanges(object)
         mcols(newRanges) = support
         newRanges = newRanges[supportAll]
-        newObject = setRanges(object, newRanges)
+        newObject = setRanges(object, newRanges, quiet = quiet)
     }
+
+    # ---
+    # Store for results
+    resultLine = data.frame(
+        funName = "reproducibilityFilter()", class = "binding sites",
+        nIn = length(rngInitial), nOut = length(newRanges),
+        per = paste0(round(length(newRanges)/ length(rngInitial), digits = 2)*100,"%"),
+        options = paste0("Cutoff=", paste(optstr$cutoff, collapse = ", "),
+                         ", nReps=", paste(optstr$nReps, collapse = ", "),
+                         ", minCrosslinks=", paste(optstr$minCrosslinks, collapse = ", "))
+    )
+    newObject@results = rbind(newObject@results, resultLine)
 
     # Manage return options
     returnType = match.arg(returnType, choices = c("BSFDataSet", "data.frame"))
@@ -197,10 +271,8 @@ reproducibilityFilter <- function(object,
     if (returnType == "data.frame") {
         retObj = s
     }
-
     return(retObj)
 }
-
 
 #' Annotation function for BSFDataSet object
 #'
@@ -209,7 +281,13 @@ reproducibilityFilter <- function(object,
 #' (eg. PureCLIP scores).
 #'
 #' @param object a BSFDataSet object
-#' @param scoreRanges a GRanges object, with numeric column named 'score'
+#' @param match.ranges a GRanges object, with numeric column for the score to match
+#' @param match.score character; meta column name of the crosslink site
+#' \code{\link{GenomicRanges}} object that holds the score to match
+#' @param match.option character; option how score should be matched
+#' @param quiet logical; whether to print messages
+#' @param scoreRanges deprecated -> use match.ranges instead
+#' @param MatchColScore deprecated -> use match.score instead
 #'
 #' @return an object of class BSFDataSet with updated meta columns of the ranges
 #' @import GenomicRanges
@@ -242,54 +320,105 @@ reproducibilityFilter <- function(object,
 #'     bdsRe = annotateWithScore(bds, cs)
 #' }
 #' @export
-annotateWithScore <- function(object,
-                              scoreRanges, bsMatchScore = "score") {
+annotateWithScore <- function(object, # bindingSiteFinder
+                              match.ranges = NULL,
+                              match.score = "score",
+                              match.option = c("max", "sum", "mean"),
+                              scoreRanges = lifecycle::deprecated(),
+                              MatchColScore = lifecycle::deprecated(),
+                              quiet = FALSE
+) {
 
     # bind locally used variables
     qHits <- NULL
 
-    stopifnot(is(object, "BSFDataSet"))
+    # Argument deprecation warnings
+    # --------------------------------------------------------------------------
 
-    msg = tryCatch(getSummary(object), error=function(e) e,
-                   warning=function(w) w)
-    if (is(msg, "warning")) {
-        stop("Function makeBindingSites() was not run.")
+    if (lifecycle::is_present(scoreRanges)) {
+        lifecycle::deprecate_warn("2.0.0", "annotateWithScore(scoreRanges = )", "annotateWithScore(match.ranges = )")
+        match.ranges = scoreRanges
     }
 
-    stopifnot(is(scoreRanges, "GRanges"))
+    if (lifecycle::is_present(MatchColScore)) {
+        lifecycle::deprecate_warn("2.0.0", "annotateWithScore(MatchColScore = )", "annotateWithScore(match.score = )")
+        match.score = MatchColScore
+    }
 
-    scoreColNames = colnames(mcols(scoreRanges))
-    if (!(bsMatchScore %in% scoreColNames)) {
-        msg = paste0("Matching columns (", bsMatchScore,
-                     ") is not present in the provided scoreRanges. \n")
+    # INPUT CHECKS
+    # --------------------------------------------------------------------------
+    stopifnot(is(object, "BSFDataSet"))
+    stopifnot(is.logical(quiet))
+
+    # check input ranges
+    if(is.null(match.ranges)) {
+        msg = paste0("No ranges to match the score from. Please provide a GRanges object with a matching score column in the meta data.")
         stop(msg)
     }
-    if (!is.numeric(scoreRanges$score)) {
-        stop("Score column must have numeric values.")
+    stopifnot(is(match.ranges, "GRanges"))
+
+    # handle options
+    match.option = match.arg(match.option, choices = c("max", "sum", "mean"))
+
+    # match score column
+    scoreColNames = colnames(mcols(match.ranges))
+    if (!(match.score %in% scoreColNames)) {
+        msg = paste0("Matching columns (", match.score,
+                     ") is not present in the provided match.ranges. \n")
+        stop(msg)
     }
 
+    # ---
+    # Store function parameters in list
+    optstr = list(match.score = match.score, match.option = match.option)
+    object@params$annotateWithScore = optstr
+
+    # MAIN COMPUTE
+    # --------------------------------------------------------------------------
+    rngInitial = getRanges(object)
     rng = getRanges(object)
-    ol = findOverlaps(rng, scoreRanges)
+    ol = findOverlaps(rng, match.ranges)
 
     if (length(ol) == 0) {
-        stop("Ranges of 'object' and 'scoreRanges' do not overlap.")
+        stop("Ranges of 'object' and 'match.ranges' do not overlap.")
     }
 
     matchDF = data.frame(qHits = queryHits(ol),
                          sHits = subjectHits(ol),
-                         score = scoreRanges$score[subjectHits(ol)])
+                         score = match.ranges$score[subjectHits(ol)])
 
-    scores = dplyr::group_by(matchDF, qHits) %>%
-        dplyr::summarize(pSum = sum(score),
-                         pMax = max(score),
-                         pMean = mean(score), .groups = "drop") %>%
-        as.data.frame()
+    if (match.option == "max") {
+        score = dplyr::group_by(matchDF, qHits) %>%
+            dplyr::summarize(score = max(score), .groups = "drop") %>%
+            as.data.frame()
+    }
+    if (match.option == "sum") {
+        score = dplyr::group_by(matchDF, qHits) %>%
+            dplyr::summarize(score = sum(score), .groups = "drop") %>%
+            as.data.frame()
+    }
+    if (match.option == "mean") {
+        score = dplyr::group_by(matchDF, qHits) %>%
+            dplyr::summarize(score = mean(score), .groups = "drop") %>%
+            as.data.frame()
+    }
 
-    mcols(rng)$scoreSum = scores$pSum
-    mcols(rng)$scoreMean = scores$pMean
-    mcols(rng)$scoreMax = scores$pMax
+    # ---
+    # Store results for plotting
+    object@plotData$annotateWithScore$data = score$score
 
-    newObject = setRanges(object, rng)
+    # ---
+    # Store for results
+    resultLine = data.frame(
+        funName = "annotateWithScore()", class = "binding sites",
+        nIn = length(rngInitial), nOut = length(rng),
+        per = paste0(round(length(rng)/ length(rngInitial), digits = 2)*100,"%"),
+        options = paste0("MatchOption=", optstr$match.option, ", match.score=", match.score)
+    )
+    object@results = rbind(object@results, resultLine)
+
+    mcols(rng)$score = score$score
+    newObject = setRanges(object, rng, quiet = quiet)
     return(newObject)
 }
 
@@ -320,8 +449,6 @@ annotateWithScore <- function(object,
 #' \code{bsWidth} used to specify the width of the flanking regions
 #' @param sub.chr chromosome identifier (eg, chr1, chr2) used for subsetting the
 #' BSFDataSet object.
-#' @param approximate logical; if binding sites should be approxiamted by their
-#' center position instead of running \code{makeBindingSites} on every iteration
 #' @param ... further arguments passed to \code{makeBindingSites}
 #'
 #' @return an object of class \code{data.frame}
@@ -331,10 +458,13 @@ annotateWithScore <- function(object,
 #' files <- system.file("extdata", package="BindingSiteFinder")
 #' load(list.files(files, pattern = ".rda$", full.names = TRUE))
 #'
-#' supportRatio(bds, bsWidths = c(3,7))
+#' suppressWarnings(supportRatio(bds, bsWidths = c(3,7)))
 #'
 #' @export
-supportRatio <- function(object, bsWidths, bsFlank = NA, sub.chr, approximate = FALSE, ...) {
+supportRatio <- function(object, bsWidths, bsFlank = NA, sub.chr = NA, ...) {
+    # deprecation notice
+    .Deprecated("estimateBsWidth")
+
     stopifnot(is(object, "BSFDataSet"))
     if (!any(is.numeric(bsWidths))) {
         stop("bsWidth needs to be numeric. ")
@@ -361,15 +491,9 @@ supportRatio <- function(object, bsWidths, bsFlank = NA, sub.chr, approximate = 
     }
     # compute binding sites
     print("make bs")
-    if (isTRUE(approximate)) {
-        objList = lapply(bsWidths, function(x){
-            .approximateBindingSites(object = object, bsSize = x, sub.chr = sub.chr)
-        })
-    } else {
-        objList = lapply(bsWidths, function(x){
-            makeBindingSites(object = object, bsSize = x, sub.chr = sub.chr, ...)
-        })
-    }
+    objList = lapply(bsWidths, function(x){
+        makeBindingSites(object = object, bsSize = x, sub.chr = sub.chr, ...)
+    })
     # calculate ratio
     print("calc ratio")
     objScore = lapply(seq_along(bsWidths), function(x){

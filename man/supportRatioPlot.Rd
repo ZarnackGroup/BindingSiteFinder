@@ -4,7 +4,7 @@
 \alias{supportRatioPlot}
 \title{Plot that shows the binding site support ratio}
 \usage{
-supportRatioPlot(object, bsWidths, bsFlank = NA, approximate = FALSE, ...)
+supportRatioPlot(object, bsWidths, bsFlank = NA, ...)
 }
 \arguments{
 \item{object}{a BSFDataSet object}
@@ -14,9 +14,6 @@ width to compute the ratio for}
 
 \item{bsFlank}{optional; a numeric vector of the same length as
 \code{bsWidth} used to specify the width of the flanking regions}
-
-\item{approximate}{logical; if binding sites should be approxiamted by their
-center position instead of running \code{makeBindingSites} on every iteration}
 
 \item{...}{further arguments passed to \code{makeBindingSites}}
 }
@@ -38,7 +35,7 @@ equal to 1 would mean no enrichemnt at all.
 files <- system.file("extdata", package="BindingSiteFinder")
 load(list.files(files, pattern = ".rda$", full.names = TRUE))
 
-supportRatioPlot(bds, bsWidths = c(3,7),
-minWidth = 1, minClSites = 1, minCrosslinks = 2)
+suppressWarnings(supportRatioPlot(bds, bsWidths = c(3,7),
+minWidth = 1, minClSites = 1, minCrosslinks = 2))
 
 }

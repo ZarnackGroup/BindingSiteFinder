@@ -7,13 +7,14 @@ crosslink events.}
 \usage{
 makeBindingSites(
   object,
-  bsSize,
+  bsSize = NULL,
   minWidth = 3,
   minCrosslinks = 2,
   minClSites = 1,
   centerIsClSite = TRUE,
   centerIsSummit = TRUE,
-  sub.chr = NA
+  sub.chr = NA,
+  quiet = FALSE
 )
 }
 \arguments{
@@ -40,6 +41,8 @@ site must exhibit the highest number of crosslink events}
 \item{sub.chr}{chromosome identifier (eg, chr1, chr2) used for subsetting the
 BSFDataSet object. This option can be used for testing different
 parameter options}
+
+\item{quiet}{logical, whether to print info messages}
 }
 \value{
 an object of type BSFDataSet with modified ranges

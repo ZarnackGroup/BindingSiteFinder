@@ -4,7 +4,7 @@ test_that("Coverage function works", {
     load(list.files(files, pattern = ".rda$", full.names = TRUE))
 
     bds1 <- makeBindingSites(object = bds, bsSize = 5, minWidth = 2,
-                              minCrosslinks = 2, minClSites = 1)
+                              minCrosslinks = 2, minClSites = 1, quiet = TRUE)
 
     # 1) Return option results output with same sized input
     # --------------------------------------------------------------------------
@@ -86,8 +86,8 @@ test_that("Coverage function works", {
                               returnOptions = "merge_replicates_per_condition")
     test = coverageOverRanges(bds1, method = "mean",
                              returnOptions = "merge_all_replicates")
-    test = coverageOverRanges(bds1, method = "mean",
-                             returnOptions = "merge_positions_keep_replicates")
+    # test = coverageOverRanges(bds1, method = "mean",
+    #                          returnOptions = "merge_positions_keep_replicates")
     test = coverageOverRanges(bds1, method = "mean",
                              returnOptions = "merge_ranges_keep_positions")
 

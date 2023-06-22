@@ -121,7 +121,7 @@ cdseq = cds(annoDb)
 intrns = unlist(intronsByTranscript(annoDb))
 utrs3 = unlist(threeUTRsByTranscript(annoDb))
 utrs5 = unlist(fiveUTRsByTranscript(annoDb))
-regions = list(CDS = cdseq, Intron = intrns, UTR3 = utrs3, UTR5 = utrs5)
+regions = GRangesList(CDS = cdseq, Intron = intrns, UTR3 = utrs3, UTR5 = utrs5)
 save(regions, file = "./regions.rds")
 
 

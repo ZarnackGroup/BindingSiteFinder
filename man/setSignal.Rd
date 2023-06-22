@@ -8,7 +8,7 @@
 \usage{
 setSignal(object, ...)
 
-\S4method{setSignal}{BSFDataSet}(object, newSignal, dropSeqlevels = TRUE)
+\S4method{setSignal}{BSFDataSet}(object, newSignal, dropSeqlevels = TRUE, quiet = FALSE)
 }
 \arguments{
 \item{object}{a BSFDataSet object}
@@ -20,6 +20,8 @@ setSignal(object, ...)
 \item{dropSeqlevels}{enforce seqnames to be the same in ranges and signal,
 by dropping unused seqlevels which is required for most downstream functions
 such as \code{coverageOverRanges}}
+
+\item{quiet}{logical; whether to print messages}
 }
 \value{
 an object of type \code{\link{BSFDataSet}} with updated signal

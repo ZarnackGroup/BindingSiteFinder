@@ -6,10 +6,13 @@
 \usage{
 reproducibilityFilter(
   object,
-  cutoff,
-  n.reps,
-  min.crosslinks = 1,
-  returnType = c("BSFDataSet", "data.frame")
+  cutoff = NULL,
+  nReps = NULL,
+  minCrosslinks = 1,
+  returnType = c("BSFDataSet", "data.frame"),
+  n.reps = lifecycle::deprecated(),
+  min.crosslinks = lifecycle::deprecated(),
+  quiet = FALSE
 )
 }
 \arguments{
@@ -19,16 +22,22 @@ reproducibilityFilter(
 levels(getMeta(object)$conditions) with a single number (between 0-1)
 indicating the quantile cutoff}
 
-\item{n.reps}{a vector of length = 1, or of length = l
+\item{nReps}{a vector of length = 1, or of length = l
 evels(getMeta(object)$conditions) indicating how many replicates need to
 meet their threshold for a binding site to be called reproducible.}
 
-\item{min.crosslinks}{numeric of length = 1, defines the lower boundary for
+\item{minCrosslinks}{numeric of length = 1, defines the lower boundary for
 the minimum number of crosslinks a binding site has to be supported by all
 replicates, regardless of the replicate specific quantile threshold}
 
 \item{returnType}{one of "BSFDataSet" or "data.frame". "BSFDataSet" is the
 default and "matrix" can be used for easy plotting.}
+
+\item{n.reps}{deprecated -> use nReps instead}
+
+\item{min.crosslinks}{deprecated -> use minCrosslinks instead}
+
+\item{quiet}{logical; whether to print messages}
 }
 \value{
 an object of type BSFDataSet
@@ -50,7 +59,7 @@ hereby given by the levels of the condition column of the meta data
 specific filter is applied, a meta column is added to the GRanges of the
 \code{BSFDataSet} object, indicating the support for each condition.
 
-If \code{n.reps} is a single number then this number is used as treshold for
+If \code{nReps} is a single number then this number is used as treshold for
 all binding sites. If it is a vector then it is applied to the replicates of
 the respective condition (like in \code{cutoff}). This allows the
 application of different thresholds for experiments of different
@@ -68,10 +77,10 @@ bds <- makeBindingSites(object = bds, bsSize = 9, minWidth = 2,
 minCrosslinks = 2, minClSites = 1)
 
 # use default return with condition specific threshold
-s = reproducibilityFilter(bds, cutoff = c(0.1, 0.05), n.reps = c(1, 2))
+s = reproducibilityFilter(bds, cutoff = c(0.1, 0.05), nReps = c(1, 2))
 
 # use data.frame return type for plotting
-s = reproducibilityFilter(bds, cutoff = c(0.1, 0.05), n.reps = c(1, 2),
+s = reproducibilityFilter(bds, cutoff = c(0.1, 0.05), nReps = c(1, 2),
 returnType = "data.frame")
 library(ComplexHeatmap)
 m = make_comb_mat(s)

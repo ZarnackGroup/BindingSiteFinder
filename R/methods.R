@@ -102,6 +102,7 @@ setMethod(
 #' @param dropSeqlevels enforce seqnames to be the same in ranges and signal,
 #' by dropping unused seqlevels which is required for most downstream functions
 #' such as \code{coverageOverRanges}
+#' @param quiet logical; whether to print messages
 #' @param ... additional arguments
 #'
 #' @return object of type \code{\link{BSFDataSet}} with updated ranges
@@ -266,6 +267,7 @@ setMethod(
 #' @param dropSeqlevels enforce seqnames to be the same in ranges and signal,
 #' by dropping unused seqlevels which is required for most downstream functions
 #' such as \code{coverageOverRanges}
+#' @param quiet logical; whether to print messages
 #' @param ... additional arguments
 #'
 #' @return an object of type \code{\link{BSFDataSet}} with updated signal

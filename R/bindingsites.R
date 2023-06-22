@@ -64,11 +64,13 @@
 #' @param sub.chr chromosome identifier (eg, chr1, chr2) used for subsetting the
 #' BSFDataSet object. This option can be used for testing different
 #' parameter options
+#' @param quiet logical, whether to print info messages
 #'
 #' @return an object of type BSFDataSet with modified ranges
 #'
 #' @import GenomicRanges methods
 #' @importFrom GenomeInfoDb seqlevels
+#' @importFrom dplyr bind_rows
 #'
 #' @examples
 #'
@@ -86,23 +88,30 @@
 #'
 #' @export
 makeBindingSites <- function(object,
-                             bsSize,
+                             bsSize = NULL,
                              minWidth = 3,
                              minCrosslinks = 2,
                              minClSites = 1,
                              centerIsClSite = TRUE,
                              centerIsSummit = TRUE,
-                             sub.chr = NA) {
+                             sub.chr = NA,
+                             quiet = FALSE) {
     stopifnot(is(object, "BSFDataSet"))
 
-    #---------------------------------------------------------------------------
-    # check integrity of input values
-    if (missing(bsSize)) {
-        stop("bsSize not set. Please provide a desired binding site width.")
+    # INPUT CHECKS
+    # --------------------------------------------------------------------------
+
+    # check if bsSize was estimated before or if input is needed
+    if (!is.null(object@params$bsSize) & !is.null(object@params$geneFilter)) {
+        bsSize = object@params$bsSize
+    } else {
+        if (is.null(bsSize)) {
+            stop("bsSize not set. Please provide a desired binding site width.")
+        }
     }
+    # check integrity of input values
     if (c(bsSize %% 2) == 0) {
-        stop("bsSize is even. An odd number is required to have a distinct
-             binding site center.")
+        stop("bsSize is even. An odd number is required to have a distinct binding site center.")
     }
     if (!is.numeric(bsSize)) {
         stop("bsSize must be of type numeric")
@@ -117,15 +126,14 @@ makeBindingSites <- function(object,
         stop("minCrosslinks must be of type numeric")
     }
     if (minClSites > bsSize) {
-        stop("Number of forced crosslink sites is larger than
-             desired binding site size. ")
+        stop("Number of forced crosslink sites is larger than desired binding site size. ")
     }
 
     #---------------------------------------------------------------------------
     # logical errors
-    if (minWidth >= bsSize) {
-        warning("Desired binding site size is smaller than the minimum merging
-                width. Be sure to check the minWidth and bsSize parameters")
+    if (bsSize < minWidth) {
+        warning("Desired binding site size is smaller than the minimum merging width.\n
+                Be sure to check the minWidth and bsSize parameters")
     }
 
     #---------------------------------------------------------------------------
@@ -148,7 +156,6 @@ makeBindingSites <- function(object,
         stop("0 ranges as input.")
     }
 
-
     # ---
     # Store function parameters
     optstr = list(bsSize = bsSize, minWidth = minWidth,
@@ -162,12 +169,21 @@ makeBindingSites <- function(object,
     sgnMerge = .collapseSamples(sgn)
 
     # execute filter and merging routines
-    rngS1 = .mergeCrosslinkSites(
+    mergeCs = .mergeCrosslinkSites(
         rng = rngS0,
         sgn = sgnMerge,
         bsSize = bsSize,
-        minWidth = minWidth
+        minWidth = minWidth,
+        computeOption = "full"
     )
+    rngS1 = mergeCs$rng
+
+    # ---
+    # Store data for diagnostic plot in list
+    plotDf = mergeCs$countDf
+    object@plotData$makeBindingSites$mergeCsData = plotDf
+
+
     if (length(rngS1) <= 0) {
         stop("No ranges left after initial crosslink merging. ")
     }
@@ -192,8 +208,7 @@ makeBindingSites <- function(object,
         rngS4 = rngS3
     }
     if (length(rngS4) <= 0) {
-        stop("No ranges left after appying crosslink site has to be center of
-             binding site filter. ")
+        stop("No ranges left after appying crosslink site has to be center of binding site filter. ")
     }
 
     if (isTRUE(centerIsSummit)) {
@@ -202,8 +217,7 @@ makeBindingSites <- function(object,
         rngS5 = rngS4
     }
     if (length(rngS5) <= 0) {
-        stop("No ranges left after appying binding site center has
-             to be summit filter. ")
+        stop("No ranges left after appying binding site center has to be summit filter. ")
     }
     #---------------------------------------------------------------------------
     # Add meta information
@@ -234,14 +248,12 @@ makeBindingSites <- function(object,
     #---------------------------------------------------------------------------
     # check output
     if (!all(match(seqlevels(rngS5),unique(seqnames(rngS5)), nomatch = 0) > 0)) {
-        msgWarningin = paste0("Current definition does not result in binding
-                              sites on all chromosomes where signal was present.
-                              No binding sites on: ",
+        msgWarningin = paste0("Current definition does not result in binding sites on all chromosomes where signal was present.\n No binding sites on: ",
                               paste(seqlevels(rngS5)[
                                   !match(seqlevels(rngS5),
                                          unique(seqnames(rngS5)),
-                                         nomatch = 0) > 0], collapse = " "))
-        warning(msgWarningin)
+                                         nomatch = 0) > 0], collapse = " "), "\n")
+        if(!quiet) message(msgWarningin)
     }
 
     # ---
@@ -258,24 +270,33 @@ makeBindingSites <- function(object,
                          ", centerIsSummit=", centerIsSummit, ", sub.chr=", sub.chr)
     )
     object@results = rbind(object@results, resultLine)
+    object@params$bsSize = bsSize
 
     #---------------------------------------------------------------------------
     # update BSFDataSet with new ranges information
-    objectNew = suppressMessages(setRanges(object, rngS5))
-    objectNew = setSignal(objectNew, sgn)
+    objectNew = setRanges(object, rngS5, quiet = TRUE)
+    objectNew = setSignal(objectNew, sgn, quiet = TRUE)
     objectNew = setSummary(objectNew, reportDf)
     ClipDS = objectNew
     return(ClipDS)
 }
 
-
 ################################################################################
 # unexported functions
 
-.mergeCrosslinkSites <- function(rng,
-                                 sgn,
-                                 bsSize,
-                                 minWidth) {
+.mergeCrosslinkSites <- function(rng, # a GRanges object; -> holds PureCLIP sites, is single nt size
+                                 sgn, # the crosslink signal merged per replicates
+                                 bsSize, # the binding site size to compute
+                                 minWidth, # the minimal width sites should be retained after intital merge
+                                 computeOption = c("full", "simple")
+) {
+
+    # initialize local variables
+    w <- n.x <- n.y <- iteration <- s <- NULL
+
+    # handle compute options
+    computeOption = match.arg(computeOption, choices = c("full", "simple"))
+
     # summarize signal over all replicates for mergeing
     sgnMergePlus = sgn$signalPlus
     sgnMergeMinus = sgn$signalMinus
@@ -285,7 +306,8 @@ makeBindingSites <- function(object,
     ### Merge peaks for given bs size
     rngS2 = reduce(rngS1, min.gapwidth = bsSize - 1)
 
-    ### Remove peaks smaller than min width
+    ### Keep only regions that are larger or equal to minWidth
+    # -> if minWiidth == 3, then the smallest range to consider is 3
     rngS3 = rngS2[width(rngS2) >= minWidth]
     names(rngS3) = seq_along(rngS3)
 
@@ -295,6 +317,7 @@ makeBindingSites <- function(object,
     rngToProcessPlus <- subset(rngS3, strand == "+")
     rngToProcessMinus <- subset(rngS3, strand == "-")
 
+    countDf = data.frame()
     Counter = 0
     while (TRUE) {
         # quit if no more regions to check
@@ -348,12 +371,33 @@ makeBindingSites <- function(object,
             }
             Counter = Counter + 1
         }
+        # compute option simple exits the loop after the first iteration, which is
+        # when the first round of merge and extend is done
+        if (computeOption == "simple") {
+            if (length(rngCenterPlus) > 0 | length(rngCenterMinus) > 0){
+                break
+            }
+        }
+
+        # if not simple option is selected, write down stats
+        countPlus = tibble(w = width(rngToProcessPlus)) %>% dplyr::count(w)
+        countMinus = tibble(w = width(rngToProcessMinus)) %>% dplyr::count(w)
+        currCountDf = dplyr::left_join(countPlus, countMinus, by = c("w")) %>%
+            replace_na(replace = list(n.x = 0, n.y = 0)) %>% group_by(w) %>%
+            mutate(s = sum(n.x + n.y, na.rm = FALSE)) %>%
+            mutate(iteration = Counter) %>%
+            dplyr::select(iteration, w, s)
+        countDf = bind_rows(countDf, currCountDf)
+
     }
     rngS4 = c(rngCenterPlus, rngCenterMinus)
     rngS4 = .sortRanges(rngS4)
-    # rngS4 = GenomeInfoDb::sortSeqlevels(rngS4)
-    # rngS4 = sort(rngS4)
-    return(rngS4)
+
+    mcols(rngS4)$bsID = paste0("BS", seq_along(rngS4))
+
+    # manage return
+    ret = list(rng = rngS4, countDf = countDf)
+    return(ret)
 }
 
 .filterMinCrosslinks <- function(rng,
