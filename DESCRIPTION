@@ -1,7 +1,7 @@
 Package: BindingSiteFinder
 Type: Package
 Title: Binding site defintion based on iCLIP data
-Version: 1.3.8
+Version: 1.7.1
 Authors@R: c(
     person("Mirko", "Brüggemann",
         email="mirko.brueggemann@mail.de",
@@ -20,11 +20,11 @@ Description: Precise knowledge on the binding sites of an RNA-binding
 License: Artistic-2.0
 Encoding: UTF-8
 VignetteBuilder: knitr
-Imports: tidyr, tibble, dplyr, plyr, matrixStats, stats, ggplot2, methods, rtracklayer,
-    S4Vectors, ggforce, GenomeInfoDb, Gviz
+Imports: tidyr, tibble, plyr, matrixStats, stats, ggplot2, methods, rtracklayer,
+    S4Vectors, ggforce, GenomeInfoDb, ComplexHeatmap, RColorBrewer, lifecycle,
+    rlang, forcats, dplyr, GenomicFeatures, IRanges, kableExtra
 Depends: GenomicRanges, R (>= 4.2)
-Suggests: testthat, BiocStyle, knitr, rmarkdown, GenomicAlignments, 
-    ComplexHeatmap, forcats, scales
+Suggests: testthat, BiocStyle, knitr, rmarkdown, GenomicAlignments, scales, Gviz
 RoxygenNote: 7.2.1
 Collate: 
     'AllClasses.R'
@@ -35,6 +35,11 @@ Collate:
     'helper.R'
     'PlotFunction.R'
     'CoverageFunctions.R'
+    'workflow.R'
+    'helperSpecific.R'
+    'exports.R'
+    'coveragePlots.R'
+    'bsfind.R'
 biocViews: Sequencing, GeneExpression, GeneRegulation, FunctionalGenomics, 
     Coverage, DataImport
 BugReports: https://github.com/ZarnackGroup/BindingSiteFinder/issues
