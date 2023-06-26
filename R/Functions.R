@@ -246,7 +246,8 @@ reproducibilityFilter <- function(object,
         supportAll = apply(support, 1, any)
 
         newRanges = getRanges(object)
-        mcols(newRanges) = support
+        # mcols(newRanges) = support
+        mcols(newRanges) = cbind.data.frame(mcols(newRanges), support)
         newRanges = newRanges[supportAll]
         newObject = setRanges(object, newRanges, quiet = quiet)
     }

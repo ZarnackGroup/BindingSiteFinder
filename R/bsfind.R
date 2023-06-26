@@ -198,8 +198,8 @@ BSFind <- function(
                                quiet = quiet)
 
     # Check if parameter bsSize and cutoff.geneWiseFilter should be estimated
-    if(!veryQuiet) message("estimateBsWidth...")
     if (is.null(bsSize) | is.null(cutoff.geneWiseFilter)) {
+        if(!veryQuiet) message("estimateBsWidth...")
         obj = estimateBsWidth(obj,
                               geneResolution = est.geneResolution,
                               bsResolution = est.bsResolution,
