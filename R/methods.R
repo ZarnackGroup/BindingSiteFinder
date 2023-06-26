@@ -1,9 +1,7 @@
 #' Show method to for the BSFDataSet
 #'
-#' Prints the information for each of the slots in the \code{BSFDataSet} object.
-#' Ranges of the \code{\link{getRanges}} slot are shown, as well as the number
-#' of crosslinks per strand \code{\link{getSignal}} and the levels of the
-#' experimental conditions (\code{\link{getMeta}}).
+#' Prints the information for each of the input data slots in the
+#' \code{\link{BSFDataSet}} object.
 #'
 #' @docType methods
 #' @name show
@@ -28,31 +26,83 @@
 setMethod("show",
           "BSFDataSet",
           function(object) {
+              if(!is.null(object@meta$name)) {
+                  cat("Dataset: ", unique(object@meta$name))
+              }
+              cat("\n")
               cat("Object of class BSFDataSet \n")
-              cat("Contained ranges: ",
-                  format(
-                      length(object@ranges),
-                      big.mark = ".",
-                      decimal.mark = ","
-                  ),
-                  "\n")
-              cat("----> Number of chromosomes: ",
-                  length(levels(seqnames(object@ranges))), "\n")
+              cat("#N Ranges: ", format(length(object@ranges), big.mark = ",", decimal.mark = "."), "\n")
               if(length(unique(width(object@ranges))) > 6) {
-                  cat("----> Ranges width: ",
+                  cat("Width ranges: ",
                       unique(width(object@ranges))[seq(1,6)], "...\n")
               } else {
-                  cat("----> Ranges width: ",
+                  cat("Width ranges: ",
                       unique(width(object@ranges)), "\n")
               }
-              cat("Contained Signal:",
-                  format(sum(sapply(object@signal$signalPlus, sum) +
-                                 sapply(object@signal$signalMinus, sum)),
-                         big.mark = ","), "\n")
-              cat("Contained conditions: ",
-                  levels(object@meta$condition),
-                  "\n")
+              cat("#N Samples: ", nrow(object@meta),"\n")
+              cat("#N Conditions: ", length(levels(object@meta$condition)), "\n")
           })
+
+#' Summary method to for the BSFDataSet
+#'
+#' Prints the summaryinformation for the \code{\link{BSFDataSet}} object. This
+#' includes information on samples, conditions and crosslinks.
+#'
+#' @docType methods
+#' @name summary
+#' @rdname summary
+#' @aliases summary summary,BSFDataSet-method
+#'
+#' @param object a \code{BSFDataSet} object
+#'
+#' @return summary of the current object
+#'
+#' @seealso \code{\link{BSFDataSet}}
+#'
+#' @examples
+#'
+#' # load data
+#' files <- system.file("extdata", package="BindingSiteFinder")
+#' load(list.files(files, pattern = ".rda$", full.names = TRUE))
+#'
+#' summary(bds)
+#'
+#' @export
+setMethod("summary",
+          "BSFDataSet",
+          function(object) {
+
+              funName <- nice <- condition <- samples <- NULL
+
+              if(!is.null(object@meta$name)) {
+                  cat("Dataset: ", object@meta$name)
+              }
+              cat("Summary of BSFDataSet \n")
+              cat("\n")
+
+              cat("Functions executed: \n")
+              if(! length(object@results) <= 0){
+                  cat(object@results %>% pull(funName))
+              } else {
+                  cat("None")
+              }
+              cat("\n")
+              cat("\n")
+
+              cat("Ranges and chromosomes: \n")
+              cat(object@ranges %>% as.data.frame(row.names = NULL) %>% count(seqnames) %>% mutate(nice = paste0(seqnames, ": ", format(n, big.mark = ","))) %>% pull(nice))
+              cat("\n")
+              cat("\n")
+
+              cat("Samples and conditions: \n")
+              cat(object@meta %>% count(condition, name = "samples") %>% mutate(nice = paste0(condition, ": ", samples)) %>% pull(nice))
+              cat("\n")
+              cat("\n")
+
+              cat("Signal and samples: \n")
+              format(lapply(object@signal$signalPlus, function(x){sum(sum(x))}) %>% unlist() + lapply(object@signal$signalMinus, function(x){sum(sum(x))}) %>% unlist(), big.mark = ",")
+          })
+
 
 #' Accessor method for the ranges of the BSFDataSet object
 #'
