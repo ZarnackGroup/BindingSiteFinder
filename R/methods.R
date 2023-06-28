@@ -75,9 +75,11 @@ setMethod("summary",
               funName <- nice <- condition <- samples <- NULL
 
               if(length(object@name) == 1) {
-                  cat("Dataset: ", unique(object@name))
+                  cat("Dataset: ", unique(object@name), "\n")
+              } else {
+                  cat("Summary of BSFDataSet \n")
               }
-              cat("Summary of BSFDataSet \n")
+
               cat("\n")
 
               cat("Functions executed: \n")
@@ -147,6 +149,7 @@ setMethod(
 #'
 #' @param object a \code{BSFDataSet} object
 #' @param newName a character that is the name
+#' @param ... additional arguments
 #'
 #' @return object of type \code{\link{BSFDataSet}} with updated name
 #'
@@ -164,8 +167,8 @@ setMethod(
 setMethod(
     f = "setName",
     signature(object = "BSFDataSet"),
-    definition = function(object, name) {
-        object@name <- name
+    definition = function(object, newName) {
+        object@name <- newName
         validObject(object)
         return(object)
     }

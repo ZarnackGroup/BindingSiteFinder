@@ -9,10 +9,12 @@ The name slot holds the name information of the dataset}
 \usage{
 setName(object, ...)
 
-\S4method{setName}{BSFDataSet}(object, name)
+\S4method{setName}{BSFDataSet}(object, newName)
 }
 \arguments{
 \item{object}{a \code{BSFDataSet} object}
+
+\item{...}{additional arguments}
 
 \item{newName}{a character that is the name}
 }

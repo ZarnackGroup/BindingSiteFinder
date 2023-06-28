@@ -134,7 +134,7 @@
         rng = rng,
         sgn = sgn,
         bsSize = bsSize,
-        minWidth = 3,
+        minWidth = minWidth,
         computeOption = "simple"
     )
     rng = res$rng

@@ -45,6 +45,7 @@ bdsFull = BSFDataSetFromBigWig(ranges = csFilter, meta = meta)
 
 # reduce signal for size
 bds = .reduceSignalToFrame(bdsFull, frame = 50)
+bds = setName(bds, "Test set")
 
 # export object
 save(bds, file = "./bds.rda")

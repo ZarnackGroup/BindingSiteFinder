@@ -6,7 +6,7 @@
 \alias{getName,BSFDataSet-method}
 \title{Accessor method for the name of the BSFDataSet object}
 \usage{
-getName(object, ...)
+getName(object)
 
 \S4method{getName}{BSFDataSet}(object)
 }
