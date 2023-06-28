@@ -54,6 +54,6 @@ setGeneric("setName", function(object, ...) {
 
 #' @rdname getName
 #' @export
-setGeneric("getName", function(object, ...) {
+setGeneric("getName", function(object) {
     standardGeneric("getName")
 })

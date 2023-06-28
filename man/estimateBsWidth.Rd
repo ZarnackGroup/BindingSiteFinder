@@ -13,6 +13,7 @@ estimateBsWidth(
   est.minimumStepGain = 0.02,
   est.maxSites = Inf,
   est.subsetChromosome = "chr1",
+  est.minWidth = 3,
   anno.annoDB = NULL,
   anno.genes = NULL,
   bsResolution.steps = NULL,
@@ -42,6 +43,9 @@ in percent the next binding site width has to have, to be selected as best optio
 
 \item{est.subsetChromosome}{character; define on which chromosome the
 estimation should be done in function \code{\link{estimateBsWidth}}}
+
+\item{est.minWidth}{the minimum size of regions that are subjected to the
+iterative merging routine, after the initial region concatenation.}
 
 \item{anno.annoDB}{an object of class \code{OrganismDbi} that contains
 the gene annotation.}

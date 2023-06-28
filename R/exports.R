@@ -1,3 +1,139 @@
+#' Function to export sorted RBP target genes
+#'
+#' Genes with binding sites are target genes of the RBP. They can be exported
+#' as 'csv' or 'xlsx' file. Genes can be sorted by the sum of the individual
+#' binding sites score, or by the number of binding sites per gene.
+#'
+#' As output option, one can either output all genes in a single file, or split
+#' by either gene-type or transcript-region. This options requires that either
+#' \code{\link{BSFind}} or the individual functions \code{\link{assignToGenes}},
+#'  and \code{\link{assignToTranscriptRegions}} were run.
+#'
+#' @param object a \code{BSFDataSet} object with stored ranges
+#' @param path A path to where the output should be stored
+#' @param format output file format
+#' @param sort sorting rule for genes
+#' @param split if and how the output file should be split
+#'
+#' @return a file of the type specified in \code{\link{format}}
+#'
+#' @importFrom dplyr filter group_by mutate arrange desc ungroup
+#' @importFrom utils write.csv
+#'
+#' @examples
+#' # load data
+#' files <- system.file("extdata", package="BindingSiteFinder")
+#' load(list.files(files, pattern = ".rda$", full.names = TRUE))
+#' \dontrun{
+#' # export
+#' # exportTargetGenes(bds)
+#' }
+#'
+#' @export
+exportTargetGenes <- function(object,
+                              path = "./", # where to export
+                              format = c("csv", "excel"), # CSV, Excel
+                              sort = c("score", "bs"), # by what to sort (score, number of bs, number of crosslinks),
+                              split = c("none", "geneType", "transcriptRegion")
+){
+    # bind varaibles locally
+    geneID <- NULL
+
+    # INPUT CHECKS
+    # --------------------------------------------------------------------------
+    # type checks
+    stopifnot(is(object, "BSFDataSet"))
+
+    # capture export options
+    format = match.arg(format, choices = c("csv", "excel"))
+    sort = match.arg(sort, choices = c("score", "bs"))
+    split = match.arg(split, choices = c("none", "geneType", "transcriptRegion"))
+
+
+    # MAIN COMPUTE
+    # --------------------------------------------------------------------------
+    expRng = getRanges(object)
+
+    # sort output
+    if (sort == "bs") {
+        df = getRanges(object) %>% as.data.frame(row.names = NULL) %>% filter(!is.na(geneID)) %>%
+            group_by(geneID) %>% mutate(n = n()) %>% arrange(desc(n)) %>% ungroup()
+    }
+    if (sort == "score") {
+        if (! "score" %in% colnames(mcols(getRanges(object)))) {
+            stop("Sorting by score not possible, no column found with name 'score'.")
+        }
+        df = getRanges(object) %>% as.data.frame(row.names = NULL) %>% filter(!is.na(geneID)) %>%
+            group_by(geneID) %>% mutate(n = sum(score)) %>% arrange(desc(n)) %>% ungroup()
+    }
+
+    # manage format
+    if (format == "csv") {
+        # manage split
+        if (split == "none") {
+            write.csv(x = df, file = paste0(path, "results.csv"))
+        }
+        if (split == "geneType") {
+            if (! "geneType" %in% colnames(df)) {
+                msg = paste0("Column geneType not found. Make sure to run assignToGenes() or BSFind() to use this option.")
+                stop(msg)
+            } else {
+                sf = split(df, df$geneType)
+                for (i in 1:length(sf)) {
+                    cName = names(sf[i])
+                    write.csv(x = sf[[i]], file = paste0(path = path, cName, ".csv"))
+                }
+            }
+        }
+        if (split == "transcriptRegion") {
+            if (! "transcriptRegion" %in% colnames(df)) {
+                msg = paste0("Column transcriptRegion not found. Make sure to run assignToTranscriptRegion() or BSFind() to use this option.")
+                stop(msg)
+            } else {
+                sf = split(df, df$transcriptRegion)
+                for (i in 1:length(sf)) {
+                    cName = names(sf[i])
+                    write.csv(x = sf[[i]], file = paste0(path = path, cName, ".csv"))
+                }
+            }
+        }
+    }
+
+    if (format == "excel") {
+        if (!requireNamespace("xlsx", quietly=TRUE)) {
+            stop("format='xlsx' requires installing the package 'xlsx'")
+        }
+        if (split == "none") {
+            xlsx::write.xlsx(x = df, file = paste0(path, "results.xlsx"), sheetName = "All")
+        }
+        if (split == "geneType") {
+            if (! "geneType" %in% colnames(df)) {
+                msg = paste0("Column geneType not found. Make sure to run assignToGenes() or BSFind() to use this option.")
+                stop(msg)
+            }  else {
+                sf = split(df, df$geneType)
+                for (i in 1:length(sf)) {
+                    cName = names(sf[i])
+                    xlsx::write.xlsx(x = sf[[i]], file = paste0(path, "results.xlsx"), sheetName = cName, append = TRUE)
+                }
+            }
+        }
+        if (split == "transcriptRegion") {
+            if (! "transcriptRegion" %in% colnames(df)) {
+                msg = paste0("Column transcriptRegion not found. Make sure to run assignToGenes() or BSFind() to use this option.")
+                stop(msg)
+            }  else {
+                sf = split(df, df$transcriptRegion)
+                for (i in 1:length(sf)) {
+                    cName = names(sf[i])
+                    xlsx::write.xlsx(x = sf[[i]], file = paste0(path, "results.xlsx"), sheetName = cName, append = TRUE)
+                }
+            }
+        }
+
+    }
+
+}
 
 
 #' Wrapper function to export binding sites as BED files
@@ -23,7 +159,7 @@
 #'
 #' @export
 exportToBED <- function(object, con) {
-    # initialize locale vairables
+    # initialize locale variables
     funName <- NULL
 
     # INPUT CHECKS
