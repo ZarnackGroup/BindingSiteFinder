@@ -163,7 +163,7 @@ pureClipGeneWiseFilter <- function(object, # bindingSiteFinder
                                    match.score = "score",
                                    match.geneID = "gene_id",
                                    quiet = FALSE) {
-    # Local varaibles
+    # Local variables
     datasource <- cutoffs <- quantiles <- name <- NULL
     # INPUT CHECKS
     # --------------------------------------------------------------------------
@@ -873,6 +873,8 @@ assignToTranscriptRegions <- function(object, # bindingSiteFinder
 #' @param est.maxSites numeric; maximum number of PureCLIP sites that are used;
 #' @param est.subsetChromosome character; define on which chromosome the
 #' estimation should be done in function \code{\link{estimateBsWidth}}
+#' @param est.minWidth the minimum size of regions that are subjected to the
+#' iterative merging routine, after the initial region concatenation.
 #'
 #' @param anno.annoDB an object of class \code{OrganismDbi} that contains
 #' the gene annotation.
@@ -911,6 +913,7 @@ estimateBsWidth <- function(object, # BindingSiteFinder object
                             est.minimumStepGain = 0.02,
                             est.maxSites = Inf,
                             est.subsetChromosome = "chr1", #
+                            est.minWidth = 3,
                             anno.annoDB = NULL,
                             anno.genes = NULL,
                             bsResolution.steps = NULL,
@@ -1055,16 +1058,24 @@ estimateBsWidth <- function(object, # BindingSiteFinder object
         rngPerWidth = lapply(bsResolution.steps, function(bsWidthStep){
             if (bsResolution == "fine") {
                 # calculate with full binding sites
-                currBsObj = makeBindingSites(object = currFilterObj, bsSize = bsWidthStep, quiet = quiet)
+                currBsObj = makeBindingSites(object = currFilterObj,
+                                             bsSize = bsWidthStep,
+                                             minWidth = est.minWidth,
+                                             quiet = quiet)
                 currBs = getRanges(currBsObj)
             }
             if (bsResolution == "medium") {
                 # approximate binding sites by a single merge and extend round
-                currBs = .approximateBindingSites_medium(rng = currRng, sgn = sgnMerge, bsSize = bsWidthStep, minWidth = 3)
+                currBs = .approximateBindingSites_medium(rng = currRng,
+                                                         sgn = sgnMerge,
+                                                         bsSize = bsWidthStep,
+                                                         minWidth = est.minWidth)
             }
             if (bsResolution == "coarse") {
                 # approximate binding sites by reduced pureclip sites center
-                currBs = .approximateBindingSites_coarse(rng = currRng, bsSize = bsWidthStep, minWidth = 3)
+                currBs = .approximateBindingSites_coarse(rng = currRng,
+                                                         bsSize = bsWidthStep,
+                                                         minWidth = est.minWidth)
             }
             return(currBs)
         })
