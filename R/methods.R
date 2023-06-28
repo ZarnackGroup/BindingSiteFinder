@@ -26,8 +26,8 @@
 setMethod("show",
           "BSFDataSet",
           function(object) {
-              if(!is.null(object@meta$name)) {
-                  cat("Dataset: ", unique(object@meta$name))
+              if(length(object@name) == 1) {
+                  cat("Dataset: ", unique(object@name))
               }
               cat("\n")
               cat("Object of class BSFDataSet \n")
@@ -74,8 +74,8 @@ setMethod("summary",
 
               funName <- nice <- condition <- samples <- NULL
 
-              if(!is.null(object@meta$name)) {
-                  cat("Dataset: ", object@meta$name)
+              if(length(object@name) == 1) {
+                  cat("Dataset: ", unique(object@name))
               }
               cat("Summary of BSFDataSet \n")
               cat("\n")
@@ -102,6 +102,76 @@ setMethod("summary",
               cat("Signal and samples: \n")
               format(lapply(object@signal$signalPlus, function(x){sum(sum(x))}) %>% unlist() + lapply(object@signal$signalMinus, function(x){sum(sum(x))}) %>% unlist(), big.mark = ",")
           })
+
+
+#' Accessor method for the name of the BSFDataSet object
+#'
+#' The name slot holds the name of the dataset
+#'
+#' @docType methods
+#' @name getName
+#' @rdname getName
+#' @aliases getName getName,BSFDataSet-method
+#'
+#' @param object a \code{BSFDataSet} object
+#'
+#' @return returns the name of the dataset
+#'
+#' @seealso \code{\link{BSFDataSet}}
+#'
+#' @examples
+#'
+#' # load data
+#' files <- system.file("extdata", package="BindingSiteFinder")
+#' load(list.files(files, pattern = ".rda$", full.names = TRUE))
+#'
+#' getName(bds)
+#'
+#' @export
+setMethod(
+    f = "getName",
+    signature(object = "BSFDataSet"),
+    definition = function(object) {
+        validObject(object)
+        return(object@name)
+    }
+)
+
+#' Setter method for the names of the BSFDataSet object
+#' The name slot holds the name information of the dataset
+#'
+#' @docType methods
+#' @name setName
+#' @rdname setName
+#' @aliases setName setName,BSFDataSet-method
+#'
+#' @param object a \code{BSFDataSet} object
+#' @param newName a character that is the name
+#'
+#' @return object of type \code{\link{BSFDataSet}} with updated name
+#'
+#' @seealso \code{\link{BSFDataSet}}
+#'
+#' @examples
+#'
+#' # load data
+#' files <- system.file("extdata", package="BindingSiteFinder")
+#' load(list.files(files, pattern = ".rda$", full.names = TRUE))
+#'
+#' bdsNew = setName(bds, "test01")
+#'
+#' @export
+setMethod(
+    f = "setName",
+    signature(object = "BSFDataSet"),
+    definition = function(object, name) {
+        object@name <- name
+        validObject(object)
+        return(object)
+    }
+
+)
+
 
 
 #' Accessor method for the ranges of the BSFDataSet object

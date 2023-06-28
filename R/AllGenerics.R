@@ -46,3 +46,14 @@ setGeneric("getSummary", function(object, ...) {
     standardGeneric("getSummary")
 })
 
+#' @rdname setName
+#' @export
+setGeneric("setName", function(object, ...) {
+    standardGeneric("setName")
+})
+
+#' @rdname getName
+#' @export
+setGeneric("getName", function(object, ...) {
+    standardGeneric("getName")
+})

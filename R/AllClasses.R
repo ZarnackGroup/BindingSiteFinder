@@ -9,7 +9,8 @@ BSFDataSet <- setClass(
         summary = "data.frame",
         params = "list",
         plotData = "list",
-        results = "data.frame"
+        results = "data.frame",
+        name = "character"
     )
 )
 setValidity("BSFDataSet", function(object) {
@@ -193,7 +194,20 @@ BSFDataSet <- function(ranges, meta, signal, dropSeqlevels = TRUE, silent = FALS
         }
     }
 
-    # set placeholder for summary slot
+    # manage dataset name
+    if ("name" %in% colnames(meta)){
+        if (length(unique(meta$name)) != 1) {
+            # name corrupt
+            warning("Dataset name can not be constructed from meta data column named 'name'. ")
+        } else {
+            # set name from meta
+            name = unique(meta$name)
+        }
+    } else {
+        name = character()
+    }
+
+    # set placeholder for slots
     summary = data.frame()
     params = list()
     plotData = list()
@@ -208,7 +222,8 @@ BSFDataSet <- function(ranges, meta, signal, dropSeqlevels = TRUE, silent = FALS
         summary = summary,
         params = params,
         plotData = plotData,
-        results = results
+        results = results,
+        name = name
     )
     return(obj)
 }
