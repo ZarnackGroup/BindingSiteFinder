@@ -750,6 +750,12 @@ assignToTranscriptRegions <- function(object, # bindingSiteFinder
         msg0 = paste0("No binding sites (", format(totalBs, big.mark = ',', decimal.mark = "."), ") on overlapping transcript loci. \n")
         msg1 = paste0("Parameter 'overlaps' set to '", overlaps, "' not in use. \n")
         if(!quiet) message(c(msg0, msg1))
+        # assign regions
+        countDfSorted = countDf
+        countDfSorted[countDfSorted > 0] = 1
+        col_names = colnames(countDfSorted)
+        transcriptRegion = ifelse(rowSums(countDfSorted) == 1, col_names[max.col(countDfSorted, ties.method = "first")], "Ambiguous")
+        mcols(rng) = cbind.data.frame(mcols(rng), transcriptRegion = transcriptRegion)
     }
     # Cases where we have to resolve overlapping loci
     if (ambigousBs > 0) {
@@ -875,6 +881,8 @@ assignToTranscriptRegions <- function(object, # bindingSiteFinder
 #' estimation should be done in function \code{\link{estimateBsWidth}}
 #' @param est.minWidth the minimum size of regions that are subjected to the
 #' iterative merging routine, after the initial region concatenation.
+#' @param est.offset constant added to the flanking count in the signal-to-flank
+#' ratio calculation to avoid division by Zero
 #'
 #' @param anno.annoDB an object of class \code{OrganismDbi} that contains
 #' the gene annotation.
@@ -886,10 +894,13 @@ assignToTranscriptRegions <- function(object, # bindingSiteFinder
 #' vector for gene-wise filtering resolution. Overwrites \code{geneResolution}
 #' @param quiet logical; whether to print messages
 #' @param veryQuiet logical; whether to suppress all messages
+#' @param reportScoresPerBindingSite report the ratio score for each binding site
+#' separately. Warning! This is for debugging and testing only. Downstream
+#' functions can be impaired.
 #' @param ... additional arguments passed to \code{\link{pureClipGeneWiseFilter}}
 #'
 #' @return an object of class \code{\link{BSFDataSet}} with binding sites with
-#' the `params` slots `bsSize` and `geneFilter` beeing filled
+#' the `params` slots `bsSize` and `geneFilter` being filled
 #'
 #' @importFrom dplyr summarise slice_head slice_tail
 #' @importFrom utils head
@@ -914,12 +925,14 @@ estimateBsWidth <- function(object, # BindingSiteFinder object
                             est.maxSites = Inf,
                             est.subsetChromosome = "chr1", #
                             est.minWidth = 3,
+                            est.offset = 1,
                             anno.annoDB = NULL,
                             anno.genes = NULL,
                             bsResolution.steps = NULL,
                             geneResolution.steps = NULL,
                             quiet = TRUE,
                             veryQuiet = FALSE,
+                            reportScoresPerBindingSite = FALSE,
                             ...
 ) {
 
@@ -1050,7 +1063,9 @@ estimateBsWidth <- function(object, # BindingSiteFinder object
 
     # calculate binding sites for each filter step and width
     scoreAllDf = lapply(geneResolution.steps, function(bsFilterStep){
+        # bsFilterStep = 0
         # apply current gene-wise filter
+        # currFilterObj = pureClipGeneWiseFilter(object = redObj, anno.genes = anno.genes, cutoff = bsFilterStep, quiet = quiet)
         currFilterObj = pureClipGeneWiseFilter(object = redObj, anno.genes = anno.genes, cutoff = bsFilterStep, quiet = quiet, ...)
         currRng = getRanges(currFilterObj)
 
@@ -1087,7 +1102,8 @@ estimateBsWidth <- function(object, # BindingSiteFinder object
             bsSumPlus = sum(sgnMerge$signalPlus[cRangePlus])
             extendedRangePlus = cRangePlus + cRangePlus$bsSize
             exSumPlus = sum(sgnMerge$signalPlus[extendedRangePlus])
-            extendedRangePlus$score = (bsSumPlus) / ((exSumPlus - bsSumPlus + 0.01) / 2)
+            # extendedRangePlus$score = (bsSumPlus) / ((exSumPlus - bsSumPlus + 0.01) / 2)
+            extendedRangePlus$signalToFlankRatio = (bsSumPlus) / (((exSumPlus - bsSumPlus) / 2) + est.offset)
         } else {
             extendedRangePlus = cRangePlus
         }
@@ -1098,17 +1114,26 @@ estimateBsWidth <- function(object, # BindingSiteFinder object
             bsSumMinus = sum(sgnMerge$signalMinus[cRangeMinus])
             extendedRangeMinus = cRangeMinus + cRangeMinus$bsSize
             exSumMinus = sum(sgnMerge$signalMinus[extendedRangeMinus])
-            extendedRangeMinus$score = (bsSumMinus) / ((exSumMinus - bsSumMinus + 0.01) / 2)
+            # extendedRangeMinus$score = (bsSumMinus) / ((exSumMinus - bsSumMinus + 0.01) / 2)
+            extendedRangeMinus$signalToFlankRatio = (bsSumMinus) / (((exSumMinus - bsSumMinus) / 2) + est.offset)
         } else {
             extendedRangeMinus = cRangeMinus
         }
 
+        if (isTRUE(reportScoresPerBindingSite)) {
+            # report the scores for each binding site
+            # -> does not allow the usage of the standard plot
+            df = rbind(as.data.frame(mcols(extendedRangeMinus)), as.data.frame(mcols(extendedRangePlus))) %>%
+                group_by(bsSize) %>%
+                mutate(geneWiseFilter = bsFilterStep)
 
-        # combine both and make results dataframe
-        df = rbind(as.data.frame(mcols(extendedRangeMinus)), as.data.frame(mcols(extendedRangePlus))) %>%
-            group_by(bsSize) %>%
-            summarize(score = median(score), .groups = "keep") %>%
-            mutate(geneWiseFilter = bsFilterStep)
+        } else {
+            # combine both and make results dataframe
+            df = rbind(as.data.frame(mcols(extendedRangeMinus)), as.data.frame(mcols(extendedRangePlus))) %>%
+                group_by(bsSize) %>%
+                summarize(signalToFlankRatio = median(signalToFlankRatio), .groups = "keep") %>%
+                mutate(geneWiseFilter = bsFilterStep)
+        }
 
         # update chunk counter
         counterCurrentIterations <<- counterCurrentIterations + length(bsResolution.steps)
@@ -1121,12 +1146,16 @@ estimateBsWidth <- function(object, # BindingSiteFinder object
 
     # ---
     # Store results for plotting
-    object@plotData$estimateBsWidth$data = df
+    if (isTRUE(reportScoresPerBindingSite)){
+        object@plotData$estimateBsWidth$dataEnhanced = df
+    } else {
+        object@plotData$estimateBsWidth$data = df
+    }
 
     # Estimate binding site width and gene filter based on mean over all iterations
     dfMean = df %>%
         group_by(bsSize) %>%
-        summarise(ms = mean(score), sd = sd(score)) %>%
+        summarise(ms = mean(signalToFlankRatio), sd = sd(signalToFlankRatio)) %>%
         mutate(geneWiseFilter = "mean")
 
     est.bsSize = dfMean %>%
@@ -1152,7 +1181,7 @@ estimateBsWidth <- function(object, # BindingSiteFinder object
     # take the first filter that is above the mean
     est.geneFilter = df %>%
         filter(bsSize == est.bsSize) %>%
-        filter(score >= max(dfMean$ms[dfMean$bsSize == est.bsSize])) %>%
+        filter(signalToFlankRatio >= max(dfMean$ms[dfMean$bsSize == est.bsSize])) %>%
         slice_head(n = 1) %>% # was head(1)
         pull(geneWiseFilter)
 
