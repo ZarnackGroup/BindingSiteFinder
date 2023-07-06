@@ -862,6 +862,12 @@ assignToTranscriptRegions <- function(object, # bindingSiteFinder
 #' allows control over the minimum additional gain in the score that a tested
 #' width has to have to be selected as the best option.
 #'
+#' To enhance the sensitivity of the binding site estimation, the sensitivity
+#' mode exists. In this mode crosslink sites undergo a pre-filtering and merging
+#' step, to exclude potential artifical peaks (experimental-, mapping-biases).
+#' If sensitivity mode is activated the \code{est.minWidth} option should be set
+#' to 1.
+#'
 #' The optimal geneFilter is selected as the first one that passes the merged
 #' mean of the selected optimal binding site width.
 #'
@@ -883,6 +889,13 @@ assignToTranscriptRegions <- function(object, # bindingSiteFinder
 #' iterative merging routine, after the initial region concatenation.
 #' @param est.offset constant added to the flanking count in the signal-to-flank
 #' ratio calculation to avoid division by Zero
+#'
+#' @param sensitive logical; whether to enable sensitive pre-filtering before
+#' binding site merging or not
+#' @param sensitive.size numeric; the size (in nucleotides) of the merged
+#' sensitive region
+#' @param sensitive.minWidth numeric; the minimum size (in nucleoties) of the
+#' merged sensitive region
 #'
 #' @param anno.annoDB an object of class \code{OrganismDbi} that contains
 #' the gene annotation.
@@ -926,6 +939,9 @@ estimateBsWidth <- function(object, # BindingSiteFinder object
                             est.subsetChromosome = "chr1", #
                             est.minWidth = 3,
                             est.offset = 1,
+                            sensitive = FALSE,
+                            sensitive.size = 5,
+                            sensitive.minWidth = 2,
                             anno.annoDB = NULL,
                             anno.genes = NULL,
                             bsResolution.steps = NULL,
@@ -1063,11 +1079,27 @@ estimateBsWidth <- function(object, # BindingSiteFinder object
 
     # calculate binding sites for each filter step and width
     scoreAllDf = lapply(geneResolution.steps, function(bsFilterStep){
-        # bsFilterStep = 0
-        # apply current gene-wise filter
-        # currFilterObj = pureClipGeneWiseFilter(object = redObj, anno.genes = anno.genes, cutoff = bsFilterStep, quiet = quiet)
-        currFilterObj = pureClipGeneWiseFilter(object = redObj, anno.genes = anno.genes, cutoff = bsFilterStep, quiet = quiet, ...)
-        currRng = getRanges(currFilterObj)
+        # bsFilterStep = 0.2
+
+        # apply current gene-wise filter (has two modes)
+        if (isTRUE(sensitive)) {
+            # -> sensitive mode
+            # define regions in which sites should be kept
+            cRng = getRanges(redObj)
+            cRngMerge = reduce(cRng, min.gapwidth = sensitive.size)
+            cRngMerge = cRngMerge[width(cRngMerge) >= sensitive.minWidth]
+
+            currFilterObj = pureClipGeneWiseFilter(object = redObj, anno.genes = anno.genes, cutoff = bsFilterStep, quiet = quiet, ...)
+            cRngFilter = getRanges(currFilterObj)
+            currRng = subsetByOverlaps(cRngFilter, cRngMerge)
+
+        } else {
+            # -> normal mode
+            # currFilterObj = pureClipGeneWiseFilter(object = redObj, anno.genes = anno.genes, cutoff = bsFilterStep, quiet = quiet)
+            currFilterObj = pureClipGeneWiseFilter(object = redObj, anno.genes = anno.genes, cutoff = bsFilterStep, quiet = quiet, ...)
+            currRng = getRanges(currFilterObj)
+        }
+
 
         # calculate binding sites for current bsWidth
         rngPerWidth = lapply(bsResolution.steps, function(bsWidthStep){
