@@ -40,6 +40,8 @@
 #' width in function \code{\link{estimateBsWidth}}
 #' @param est.subsetChromosome character; define on which chromosome the
 #' estimation should be done in function \code{\link{estimateBsWidth}}
+#' @param merge.minWidth the minimum size of regions that are subjected to the
+#' iterative merging routine, after the initial region concatenation.
 #'
 #' @param cutoff.globalFilter numeric; defines the cutoff for which sites to
 #' keep, the smallest step is 1\% (0.01) in function
@@ -115,6 +117,7 @@ BSFind <- function(
         est.geneResolution = "medium",
         est.bsResolution = "medium",
         est.subsetChromosome = "chr1",
+        merge.minWidth = 3,
         # cutoffs
         cutoff.globalFilter = 0.01,
         cutoff.geneWiseFilter = NULL,
@@ -226,7 +229,7 @@ BSFind <- function(
                                  quiet = quiet)
 
     if(!veryQuiet) message("makeBindingSites...")
-    obj = makeBindingSites(obj, bsSize = bsSize, quiet = quiet, ...)
+    obj = makeBindingSites(obj, bsSize = bsSize, minWidth = merge.minWidth, quiet = quiet, ...)
 
     if(!veryQuiet) message("reproducibilityFilter...")
     obj = reproducibilityFilter(obj, returnType = "BSFDataSet", quiet = quiet, ...)
