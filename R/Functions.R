@@ -507,3 +507,102 @@ supportRatio <- function(object, bsWidths, bsFlank = NA, sub.chr = NA, ...) {
 }
 
 
+
+#' Calculate signal-to-flank score
+#'
+#' This function calculates the signal-to-flank ratio for all present binding
+#' sites.
+#'
+#' Each input range is treated as a binding site. For a particular binding site
+#' all overlapping crosslinks are summed up and divided by the normalized sum of
+#' the crosslinks in the two adjecent regions of the same size. This is done
+#' for all bining sites and the ratio is reported as a score.
+#'
+#' @param object a BSFDataSet object
+#' @param offset numeric; number to be added to the flanking regions before the
+#' division, to avoid division by zero
+#' @param quiet logical; whether to print messages
+#'
+#' @return an object of class \code{\link{BSFDataSet}} with signal-to-flank ratios
+#' added to the meta column of the ranges
+#'
+#' @examples
+#' # load clip data
+#' files <- system.file("extdata", package="BindingSiteFinder")
+#' load(list.files(files, pattern = ".rda$", full.names = TRUE))
+#' bds = makeBindingSites(bds, bsSize = 5)
+#' bds = calculateSignalToFlankScore(bds)
+#'
+#' @export
+calculateSignalToFlankScore <- function(
+        object,
+        offset = 1,
+        quiet = FALSE
+){
+    # INPUT CHECKS
+    # --------------------------------------------------------------------------
+    stopifnot(is(object, "BSFDataSet"))
+    stopifnot(is.logical(quiet))
+
+    # ---
+    # Store function parameters in list
+    optstr = list(offset = offset)
+    object@params$estimateBsWidth = optstr
+
+    # PREPARE TEST RANGES + SIGNAL
+    # --------------------------------------------------------------------------
+    # collapse signal from replicates
+    sgnMerge = .collapseSamples(getSignal(object))
+    # prepare ranges
+    rng = getRanges(object)
+
+    # MAIN COMPUTE
+    # --------------------------------------------------------------------------
+    # handle all plus ranges
+    cRangePlus = subset(rng, strand == "+")
+    if (length(cRangePlus) > 0) {
+        bsSumPlus = sum(sgnMerge$signalPlus[cRangePlus])
+        extendedRangePlus = cRangePlus + cRangePlus$bsSize
+        exSumPlus = sum(sgnMerge$signalPlus[extendedRangePlus])
+        mcols(extendedRangePlus)$signalToFlankRatio = (bsSumPlus) / (((exSumPlus - bsSumPlus) / 2) + offset)
+    } else {
+        msg = paste0("No ranges on '+' strand. \n")
+        if(!quiet) warning(msg)
+        extendedRangePlus = cRangePlus
+    }
+    # handle all minus ranges
+    cRangeMinus = subset(rng, strand == "-")
+    if (length(cRangeMinus) > 0) {
+        bsSumMinus = sum(sgnMerge$signalMinus[cRangeMinus])
+        extendedRangeMinus = cRangeMinus + cRangeMinus$bsSize
+        exSumMinus = sum(sgnMerge$signalMinus[extendedRangeMinus])
+        mcols(extendedRangeMinus)$signalToFlankRatio = (bsSumMinus) / (((exSumMinus - bsSumMinus) / 2) + offset)
+    } else {
+        msg = paste0("No ranges on '-' strand. \n")
+        if(!quiet) warning(msg)
+        extendedRangeMinus = cRangeMinus
+    }
+
+    rngNew = c(extendedRangePlus, extendedRangeMinus)
+    rngNew = .sortRanges(rngNew)
+    object = setRanges(object, rngNew)
+
+    # ---
+    # Store results for plotting
+    # TODO no results are stored for a dedicated plot at the moment
+    plotDf = NULL
+    object@plotData$assignToTranscriptRegions$dataOverlaps = plotDf
+
+    # ---
+    # Store for results
+    rng = getRanges(object)
+    resultLine = data.frame(
+        funName = "calculateSignalToFlankScore()", class = "estimate",
+        nIn = length(rng), nOut = length(rng),
+        per = paste0(round(length(rng)/ length(rng), digits = 2)*100,"%"),
+        options = paste0("offset=", offset)
+    )
+    object@results = rbind(object@results, resultLine)
+
+    return(object)
+}
