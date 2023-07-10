@@ -934,7 +934,7 @@ estimateBsWidth <- function(object, # BindingSiteFinder object
                             bsResolution = c("medium", "fine", "coarse"),
                             geneResolution = c("medium", "coarse", "fine", "finest"),
                             est.maxBsWidth = 13,
-                            est.minimumStepGain = 0.02,
+                            est.minimumStepGain = 0.03,
                             est.maxSites = Inf,
                             est.subsetChromosome = "chr1", #
                             est.minWidth = 3,
@@ -953,7 +953,7 @@ estimateBsWidth <- function(object, # BindingSiteFinder object
 ) {
 
     # initialize local variables
-    bsSize <- ms <- growth_per <- sel <- geneWiseFilter <- NULL
+    bsSize <- ms <- growth_per <- sel <- geneWiseFilter <- est.option <- NULL
 
     # INPUT CHECKS
     # --------------------------------------------------------------------------
@@ -1090,6 +1090,7 @@ estimateBsWidth <- function(object, # BindingSiteFinder object
             cRngMerge = cRngMerge[width(cRngMerge) >= sensitive.minWidth]
 
             currFilterObj = pureClipGeneWiseFilter(object = redObj, anno.genes = anno.genes, cutoff = bsFilterStep, quiet = quiet, ...)
+            # currFilterObj = pureClipGeneWiseFilter(object = redObj, anno.genes = anno.genes, cutoff = bsFilterStep, quiet = quiet)
             cRngFilter = getRanges(currFilterObj)
             currRng = subsetByOverlaps(cRngFilter, cRngMerge)
 
@@ -1097,6 +1098,7 @@ estimateBsWidth <- function(object, # BindingSiteFinder object
             # -> normal mode
             # currFilterObj = pureClipGeneWiseFilter(object = redObj, anno.genes = anno.genes, cutoff = bsFilterStep, quiet = quiet)
             currFilterObj = pureClipGeneWiseFilter(object = redObj, anno.genes = anno.genes, cutoff = bsFilterStep, quiet = quiet, ...)
+            # currFilterObj = pureClipGeneWiseFilter(object = redObj, anno.genes = anno.genes, cutoff = bsFilterStep, quiet = quiet)
             currRng = getRanges(currFilterObj)
         }
 
@@ -1134,7 +1136,6 @@ estimateBsWidth <- function(object, # BindingSiteFinder object
             bsSumPlus = sum(sgnMerge$signalPlus[cRangePlus])
             extendedRangePlus = cRangePlus + cRangePlus$bsSize
             exSumPlus = sum(sgnMerge$signalPlus[extendedRangePlus])
-            # extendedRangePlus$score = (bsSumPlus) / ((exSumPlus - bsSumPlus + 0.01) / 2)
             extendedRangePlus$signalToFlankRatio = (bsSumPlus) / (((exSumPlus - bsSumPlus) / 2) + est.offset)
         } else {
             extendedRangePlus = cRangePlus
@@ -1146,7 +1147,6 @@ estimateBsWidth <- function(object, # BindingSiteFinder object
             bsSumMinus = sum(sgnMerge$signalMinus[cRangeMinus])
             extendedRangeMinus = cRangeMinus + cRangeMinus$bsSize
             exSumMinus = sum(sgnMerge$signalMinus[extendedRangeMinus])
-            # extendedRangeMinus$score = (bsSumMinus) / ((exSumMinus - bsSumMinus + 0.01) / 2)
             extendedRangeMinus$signalToFlankRatio = (bsSumMinus) / (((exSumMinus - bsSumMinus) / 2) + est.offset)
         } else {
             extendedRangeMinus = cRangeMinus
@@ -1189,34 +1189,56 @@ estimateBsWidth <- function(object, # BindingSiteFinder object
         group_by(bsSize) %>%
         summarise(ms = mean(signalToFlankRatio), sd = sd(signalToFlankRatio)) %>%
         mutate(geneWiseFilter = "mean")
-
-    est.bsSize = dfMean %>%
-        mutate(growth_per = (ms / dplyr::lag(ms)) - 1) %>%
-        mutate(sel = growth_per >= est.minimumStepGain) %>%
-        mutate(sel = ifelse(is.na(sel), TRUE, sel))
-
-
-    est.bsSize = dfMean %>%
+    # Compute binding site width over all gene-wise filter levels (global option)
+    est.global = dfMean %>%
         mutate(growth_per = (ms / dplyr::lag(ms)) - 1) %>%
         mutate(sel = growth_per >= est.minimumStepGain)
-
-    firstGainStop = which(est.bsSize$sel == FALSE)[1]
+    # Check if global option converges
+    firstGainStop = which(est.global$sel == FALSE)[1]
+    # Depending on if global option converges or not, continue with local version
+    # -> local version is the minimal width from all individual gene-wise filter
+    #.   function iterations
     if (is.na(firstGainStop)) {
-        msg = paste0("No maximum found with est.maxBsWidth=", est.maxBsWidth, ". Using current maximum instead.")
+        est.option = "local"
+        # no global maximum found (median did not converge)
+        msg = paste0("No global maximum found with est.maxBsWidth=", est.maxBsWidth, ". Using local maximum instead.\n")
         if(!veryQuiet) warning(msg)
-        est.bsSize = est.bsSize %>% slice_tail(n = 1) %>% pull(bsSize)
+        # compute maximum for each filter level
+        est.local = df %>%
+            group_by(geneWiseFilter) %>%
+            mutate(growth_per = (signalToFlankRatio / dplyr::lag(signalToFlankRatio)) - 1) %>%
+            mutate(sel = growth_per >= est.minimumStepGain) %>%
+            filter(sel == FALSE) %>% arrange(bsSize, desc(growth_per)) %>% head(1)
+
+        if (nrow(est.local) == 0){
+            # in case local maximum does not converge, prompt user to use
+            # a different cutoff of the minimumStepGain (from 2% to 5% eg.)
+            # -> this will eventually cause the function to converge
+            msg = paste0("Local maximum did also not converge. Raise 'est.minimumStepGain' argument/ or change bsResolution and/or geneResolution arguments. \n")
+            if(!veryQuiet) stop(msg)
+        }
+
+        est.bsSize = est.local$bsSize
+        est.geneFilter = est.local$geneWiseFilter
     } else {
-        est.bsSize = est.bsSize$bsSize[firstGainStop-1]
+        est.option = "global"
+        # global maximum found (median conveged)
+        est.bsSize = est.global$bsSize[firstGainStop-1]
+
+        # GeneFilter is taken based on the selected bsSize
+        # -> take the first filter that is above the mean
+        est.geneFilter = df %>%
+            filter(bsSize == est.bsSize) %>%
+            filter(signalToFlankRatio >= max(dfMean$ms[dfMean$bsSize == est.bsSize])) %>%
+            slice_head(n = 1) %>% # was head(1)
+            pull(geneWiseFilter)
     }
 
-    # GeneFilter is estimated from the selected bsSize
-    # take the first filter that is above the mean
-    est.geneFilter = df %>%
-        filter(bsSize == est.bsSize) %>%
-        filter(signalToFlankRatio >= max(dfMean$ms[dfMean$bsSize == est.bsSize])) %>%
-        slice_head(n = 1) %>% # was head(1)
-        pull(geneWiseFilter)
+    # Store estimate type in options (global/ local)
+    optstr$option = est.option
+    object@params$estimateBsWidth = optstr
 
+    # Store estimated parameters
     object@params$bsSize = est.bsSize
     object@params$geneFilter = est.geneFilter
 
