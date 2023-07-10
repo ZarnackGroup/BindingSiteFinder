@@ -961,7 +961,7 @@ estimateBsWidthPlot <- function(object) {
 
     dfMean = dfPlot %>%
         group_by(bsSize) %>%
-        summarise(ms = mean(score), sd = sd(score)) %>%
+        summarise(ms = mean(signalToFlankRatio), sd = sd(signalToFlankRatio)) %>%
         mutate(geneWiseFilter = "mean")
 
 
@@ -971,18 +971,16 @@ estimateBsWidthPlot <- function(object) {
         filter(bsSize == max(bsSize)) %>%
         mutate(bsSize = as.factor(bsSize))
 
-    cols = c("#f8ede3", "#f4e8dd", "#f1e3d7", "#edddd1", "#e9d8cb", "#e6d3c5",
-             "#e2cebf", "#dec9b9", "#dbc3b3", "#d7bead", "#d4b9a6", "#d0b4a0",
-             "#ccaf9a", "#c9a994", "#c5a48e", "#c19f88", "#be9a82", "#ba957c",
-             "#b68f76", "#b38a70", "#af856a")
+    colfunc = colorRampPalette(c("#dceaef", "#4C6793"))
+    cols = colfunc(n = length(unique(dfPlot$geneWiseFilter)))
 
     p = ggplot(dfMean, aes(x = bsSize, y = ms, group = geneWiseFilter)) +
-        geom_line(data = dfPlot, aes(x = bsSize, y = score, group = geneWiseFilter, color = geneWiseFilter), size = 0.8) +
-        geom_point(data = dfPlot, aes(x = bsSize, y = score, group = geneWiseFilter, color = geneWiseFilter), size = 2) +
+        geom_line(data = dfPlot, aes(x = bsSize, y = signalToFlankRatio, group = geneWiseFilter, color = geneWiseFilter), linewidth = 0.7) +
+        geom_point(data = dfPlot, aes(x = bsSize, y = signalToFlankRatio, group = geneWiseFilter, color = geneWiseFilter), size = 2) +
         scale_colour_manual(values = cols) +
-        geom_errorbar(aes(ymin = ms-sd, ymax = ms+sd), color = "#7D6E83", width = 0.2, size = 1) +
-        geom_line(color = "#7D6E83", size = 1) +
-        geom_point(size = 4, shape = 21, color = "#7D6E83", fill = "#7D6E83", stroke = 1) +
+        geom_errorbar(aes(ymin = ms-sd, ymax = ms+sd), color = "#874C62", width = 0.2, linewidth = 1.1) +
+        geom_line(color = "#874C62", linewidth = 1.1) +
+        geom_point(size = 4, shape = 21, color = "#874C62", fill = "#874C62", stroke = 1) +
         theme_bw() +
         theme(legend.position = "bottom") +
         guides(color=guide_legend(nrow=2,byrow=TRUE)) +
