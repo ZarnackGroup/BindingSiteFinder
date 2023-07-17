@@ -594,7 +594,7 @@ targetGeneSpectrumPlot <- function(object, showNGroups = 5) {
     stopifnot(is(object, "BSFDataSet"))
 
     if (is.null(object@params$assignToGenes)) {
-        msg0 = paste0("Assignment to anno.genes was not applied yet. Run BSFind() or assigneToGenes() to compute values first. \n")
+        msg0 = paste0("Assignment to genes was not applied yet. Run BSFind() or assigneToGenes() to compute values first. \n")
         stop(msg0)
     }
     if (is.null(object@plotData$assignToGenes$dataOverlaps) |
@@ -775,7 +775,7 @@ transcriptRegionSpectrumPlot <- function(object) {
     stopifnot(is(object, "BSFDataSet"))
 
     if (is.null(object@params$assignToTranscriptRegions)) {
-        msg0 = paste0("Reproducibility filter was not applied yet. Run BSFind() or assignToTranscriptRegions() to compute values first. \n")
+        msg0 = paste0("Transcript region assignment was not computed yet. Run BSFind() or assignToTranscriptRegions() to compute values first. \n")
         stop(msg0)
     }
     if (is.null(object@plotData$assignToTranscriptRegions$dataOverlaps) |
@@ -947,8 +947,14 @@ estimateBsWidthPlot <- function(object) {
 
     optstr = object@params$estimateBsWidth
     optstrNice = paste0("bsResolution=", optstr$bsResolution,
-                        ", geneFilter_resolution=", optstr$geneResolution,
-                        ", subsetChromosome=", optstr$est.subsetChromosome)
+                        ", geneResolution=", optstr$geneResolution,
+                        ",\noption=", optstr$option,
+                        ", subsetChromosome=", ifelse(!is.null(optstr$est.subsetChromosome),
+                                                      ifelse(length(optstr$est.subsetChromosome) == 1,
+                                                             optstr$est.subsetChromosome, paste(optstr$est.subsetChromosome, collapse = ",")
+                                                             ), "None"
+                                                      )
+                        )
 
     est.bsSize = object@params$bsSize
     est.GeneFilter = object@params$geneFilter
@@ -1126,6 +1132,166 @@ processingStepsFlowChart <- function(object) {
 
     return(p)
 }
+
+
+
+
+
+
+#' Binding site definedness plot
+#'
+#' Binding site definedness is given by the percent of crosslinks that fall
+#' diretly inside the binding site compare to those around the binding site.
+#' This plotting function shows the distribution of those percentage values
+#' grouped by what is indicated in the \code{by} argument.
+#'
+#' If \code{by} = 'all', then all binding site are grouped into one distribution.
+#' For options 'transcript_region' and 'gene_type' binding sites are split into
+#' groups according to the respective assignment. This requires that the respective
+#' assignment function was executed on the dataset prior to calling this plot function.
+#'
+#' @param object a \code{\link{BSFDataSet}} object
+#' @param by character; the option by which the plot should be grouped by
+#' @param showN.genes numeric; if \code{by} is `gene_type`, then this argument
+#' set the maximum number of groups to be shown in the plot
+#'
+#' @return a plot of type \code{\link{ggplot}}
+#'
+#' @seealso \code{\link{BSFind}}
+#'
+#' @import ggplot2
+#' @importFrom ggdist stat_halfeye
+#'
+#' @examples
+#' # load clip data
+#' files <- system.file("extdata", package="BindingSiteFinder")
+#' load(list.files(files, pattern = ".rda$", full.names = TRUE))
+#' load(list.files(files, pattern = ".rds$", full.names = TRUE)[1])
+#' load(list.files(files, pattern = ".rds$", full.names = TRUE)[2])
+#' bds = BSFind(bds, anno.genes = gns, anno.transcriptRegionList = regions,
+#'  est.subsetChromosome = "chr22")
+#' bds = calculateSignalToFlankScore(bds)
+#' bindingSiteDefinednessPlot(bds)
+#'
+#' @export
+bindingSiteDefinednessPlot <- function(
+        object,
+        by = c("all", "transcript_region", "gene_type"),
+        showN.genes = 5
+) {
+
+    # INPUT CHECKS
+    # --------------------------------------------------------------------------
+    stopifnot(is(object, "BSFDataSet"))
+
+    if (is.null(object@params$calculateSignalToFlankScore)) {
+        msg0 = paste0("Signal-to-flank ratio was not calculated yet. Run BSFind() or CalculateSignalToFlankScore() to compute values first. \n")
+        stop(msg0)
+    }
+
+    # handle by options
+    by = match.arg(by, choices = c("all", "transcript_region", "gene_type"))
+
+
+    optstr = object@params$calculateSignalToFlankScore
+    optstrNice = paste0("Flank=", optstr$flank)
+
+    df = as.data.frame(mcols(getRanges(object)), row.names = NULL)
+
+
+    # check for what plotting options are available
+    if (by == "transcript_region") {
+        # check if option is really available
+        if (is.null(object@params$assignToTranscriptRegions)) {
+            msg0 = paste0("Transcript region assignment was not computed yet. Run BSFind() or assignToTranscriptRegions() to compute values first. \n")
+            stop(msg0)
+        } else {
+            # set color scheme
+            cols = c("#A7D2CB", "#F2D388", "#C98474", "#874C62", "#576F72", "#B4CDE6", "#7D6E83", "#D0B8A8")
+            cols = cols[1:nrow(df)]
+            # make plot
+            p = ggplot(df, aes(x = transcriptRegion, y = signalToFlankRatio)) +
+                ggdist::stat_halfeye(aes(fill = transcriptRegion), adjust = 1.5, width = .6, .width = 0, justification = -.2, point_colour = NA) +
+                geom_boxplot(aes(color = transcriptRegion), width = .15, outlier.shape = NA) +
+                scale_fill_manual(values = cols) +
+                scale_color_manual(values = cols) +
+                theme_bw() +
+                theme(legend.position = "none") +
+                labs(
+                    title = "bindingSiteDefinednessPlot()",
+                    subtitle = optstrNice,
+                    x = "Transcript region",
+                    y = "Percent bound"
+                )  +
+                ylim(0,1) +
+                geom_hline(yintercept = mean(df$signalToFlankRatio), linetype = "dashed", color = "#696969") +
+                coord_flip()
+        }
+    }
+    if (by == "gene_type") {
+        # check if option is really available
+        if (is.null(object@params$assignToGenes)) {
+            msg0 = paste0("Assignment to genes was not applied yet. Run BSFind() or assigneToGenes() to compute values first. \n")
+            stop(msg0)
+        } else {
+            selGroup = df %>%
+                group_by(geneType) %>%
+                summarise(n = n()) %>%
+                arrange(desc(n)) %>%
+                slice_head(n = showN.genes) %>%
+                pull(geneType)
+
+            df = df %>% filter(geneType %in% selGroup) %>%
+                mutate(geneType  = factor(geneType, levels = rev(selGroup)))
+
+            #  set color scheme
+            colfunc = colorRampPalette(c("#cccccc", "#1a1a1a"))
+            cols = colfunc(n = showN.genes)
+
+            # make plot
+            p = ggplot(df, aes(x = geneType, y = signalToFlankRatio)) +
+                ggdist::stat_halfeye(aes(fill = geneType), adjust = 1.5,
+                                     width = .6, .width = 0, justification = -.2,
+                                     point_colour = NA, slab_color = "#202020",
+                                     slab_linewidth = 0.5) +
+                geom_boxplot(aes(fill = geneType), width = .15, outlier.shape = NA, color = "#202020") +
+                scale_fill_manual(values = cols) +
+                scale_color_manual(values = cols) +
+                theme_bw() +
+                theme(legend.position = "none") +
+                labs(
+                    title = "bindingSiteDefinednessPlot()",
+                    subtitle = optstrNice,
+                    x = "Gene type",
+                    y = "Percent bound"
+                )  +
+                ylim(0,1) +
+                geom_hline(yintercept = mean(df$signalToFlankRatio), linetype = "dashed", color = "#696969") +
+                coord_flip()
+
+        }
+    }
+    if (by == "all") {
+        # make plot
+        p = ggplot(df, aes(x = "Total", y = signalToFlankRatio)) +
+            ggdist::stat_halfeye(color = "#696969", fill = "#D3D3D3", adjust = 1.5, width = .6, .width = 0, justification = -.2, point_colour = NA) +
+            geom_boxplot(color = "#696969", fill = "#D3D3D3", width = .15, outlier.shape = NA) +
+            theme_bw() +
+            theme(legend.position = "none") +
+            labs(
+                title = "bindingSiteDefinednessPlot()",
+                subtitle = optstrNice,
+                x = "All",
+                y = "Percent bound"
+            ) +
+            ylim(0,1) +
+            coord_flip()
+    }
+    return(p)
+}
+
+
+
 
 
 #' Plot crosslink events coverage over range
