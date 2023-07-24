@@ -1662,14 +1662,14 @@ mergeSummaryPlot <- function(object,
 #' minCrosslinks = 2, minClSites = 1)
 #'
 #' # use the same cutoff for both conditions
-#' suppressWarnings(reproducibiliyCutoffPlot(bds, max.range = 20, cutoff = c(0.05, 0.05)))
+#' suppressWarnings(reproducibilityCutoffPlot(bds, max.range = 20, cutoff = c(0.05, 0.05)))
 #'
 #' # use different cutoffs for each condition
-#' suppressWarnings(reproducibiliyCutoffPlot(bds, max.range = 20, cutoff = c(0.1, 0.05)))
+#' suppressWarnings(reproducibilityCutoffPlot(bds, max.range = 20, cutoff = c(0.1, 0.05)))
 #'
 #'
 #' @export
-reproducibiliyCutoffPlot <-
+reproducibilityCutoffPlot <-
     function(object,
              cutoff = 0.05,
              min.crosslinks = 1,
