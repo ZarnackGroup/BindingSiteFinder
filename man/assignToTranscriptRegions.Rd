@@ -10,6 +10,8 @@ assignToTranscriptRegions(
   overlaps.rule = NULL,
   anno.annoDB = NULL,
   anno.transcriptRegionList = NULL,
+  normalize.exclude.upper = 0.02,
+  normalize.exclude.lower = 0.02,
   quiet = FALSE
 )
 }
@@ -28,6 +30,14 @@ the transcript region annotation.}
 
 \item{anno.transcriptRegionList}{an object of class \code{\link{CompressedGRangesList}}
 that holds an ranges for each transcript region}
+
+\item{normalize.exclude.upper}{numeric; percentage value that indicates the
+upper boundary for transcript region length to be considered when calculating
+normalization factors for regions.}
+
+\item{normalize.exclude.lower}{numeric; percentage value that indicates the
+lower boundary for transcript region length to be considered when calculating
+normalization factors for regions.}
 
 \item{quiet}{logical; whether to print messages}
 }
