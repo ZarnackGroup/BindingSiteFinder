@@ -17,7 +17,8 @@
 .subsetByChr <- function(object, chr, quiet = FALSE) {
     # subset ranges
     rng = getRanges(object)
-    rngSub = rng[seqnames(rng) %in% chr]
+    # rngSub = rng[seqnames(rng) %in% chr]
+    rngSub = subset(rng, match(seqnames(rng), chr))
 
     # subset the signal
     sgn = getSignal(object)
