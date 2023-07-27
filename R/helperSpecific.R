@@ -178,3 +178,151 @@
     return(rngNew)
 }
 
+.findFirstMaximum <- function(x, est.minimumStepGain){
+
+    est.option <- df.global <- bsFirstDrop <- idxFirstDrop <- NULL
+    localEstimates <- est.option <- est.bsSize <- est.geneFilter <- NULL
+
+
+    df.global = x %>%
+        group_by(bsSize) %>%
+        summarise(ms = mean(signalToFlankRatio), sd = sd(signalToFlankRatio)) %>%
+        mutate(geneWiseFilter = "mean") %>%
+        mutate(growth_per = (ms / dplyr::lag(ms)) - 1) %>%
+        mutate(increase = growth_per > 0) %>%
+        mutate(increaseOverMin = (growth_per) >= est.minimumStepGain) %>%
+        slice(-1)
+
+    # check for minimum increase
+    if (all(!df.global$increaseOverMin)) {
+        # no size leads to score increase larger than est.minimumStepGain
+        # -> trigger local estimation
+        localEstimates = .findFirstMaximum_local(x, est.minimumStepGain)
+        est.option = localEstimates$option
+        est.bsSize = localEstimates$est.bsSize
+        est.geneFilter = localEstimates$est.geneFilter
+
+    } else {
+        # at lease one size leads to score increase larger than est.minimumStepGain
+        # -> trigger global estimation
+
+        # finde die zeile in der ein TRUE auf ein FALSE folgt
+        bsFirstDrop = df.global %>%
+            filter(increaseOverMin == FALSE & lag(increaseOverMin, default = TRUE) == TRUE) %>%
+            pull(bsSize)
+        bsFirstDrop = max(bsFirstDrop)
+
+        # firstMax = which(df.global$increaseOverMin == TRUE)[1]
+        # df.current = df.global %>% slice(1:firstMax)
+
+        # firstDrop = which(df.global$increaseOverMin == FALSE)[1]
+
+        if (is.na(bsFirstDrop)) {
+            localEstimates = .findFirstMaximum_local(x, est.minimumStepGain)
+            est.option = localEstimates$option
+            est.bsSize = localEstimates$est.bsSize
+            est.geneFilter = localEstimates$est.geneFilter
+
+        } else {
+            # pull bsSize
+            idxFirstDrop = which(df.global$bsSize == bsFirstDrop)
+            est.bsSize = df.global %>% slice(idxFirstDrop-1) %>% pull(bsSize)
+
+            # est.bsSize = df.global %>% slice(1:firstDrop-1) %>%
+            # est.bsSize = df.global %>% slice(1:firstMax) %>%
+            #     filter(increase == TRUE & increaseOverMin == TRUE) %>%
+            #     arrange(desc(bsSize)) %>% slice(1) %>% pull(bsSize)
+            # pull geneWiseFilter
+            est.geneFilter = x %>%
+                filter(bsSize == est.bsSize & signalToFlankRatio >= df.global$ms[df.global$bsSize == est.bsSize]) %>%
+                arrange(geneWiseFilter) %>%
+                slice_head(n = 1) %>%
+                pull(geneWiseFilter)
+            # set option
+            est.option = "global"
+        }
+
+    }
+
+    res = list(est.bsSize = est.bsSize, est.geneFilter = est.geneFilter, est.option = est.option)
+
+    return(res)
+}
+
+.findFirstMaximum_local <- function(x, est.minimumStepGain) {
+
+    df.local <- option <- est.bsSize <- est.geneFilter <- NULL
+
+    df.local = x %>%
+        group_by(geneWiseFilter) %>%
+        mutate(growth_per = (signalToFlankRatio / dplyr::lag(signalToFlankRatio)) - 1) %>%
+        mutate(increase = growth_per > 0) %>%
+        mutate(increaseOverMin = (growth_per) >= est.minimumStepGain) %>%
+        filter(!is.na(growth_per))
+
+    if (any(df.local$increase)) {
+        # check if at any point an increase of the curve was found
+        # -> if so take it as anchor
+        df.curr = df.local %>%
+            filter(increase == TRUE) %>%
+            ungroup() %>%
+            filter(growth_per == max(growth_per))
+        # pull bsSize
+        est.bsSize = df.curr %>% pull(bsSize)
+        # pull geneWiseFilter
+        est.geneFilter = df.curr %>% pull(geneWiseFilter)
+        # set option
+        option = "local"
+    }
+    if (all(!df.local$increase)) {
+        # check if there is not a single increase in the curve at any point
+        # -> if so use the overall maximum as anchor
+        # pull bsSize
+        est.bsSize = df.local$bsSize[which.max(df.local$signalToFlankRatio)]
+        # pull geneWiseFilter
+        est.geneFilter = df.local$geneWiseFilter[which.max(df.local$signalToFlankRatio)]
+        # set option
+        option = "fallback"
+    }
+    # return results
+    res = list(option = option, est.bsSize = est.bsSize, est.geneFilter = est.geneFilter)
+    return(res)
+}
+
+.calcNormalizeFactors <- function(object, rng, trl, normalize.exclude.lower,
+                                  normalize.exclude.upper){
+
+    # ---
+    # Checks
+    # ---
+    # compute normalization factors for only those regions that actually have binding sites
+    this.trl = trl[toupper(names(trl)) %in% toupper(unique(rng$transcriptRegion))]
+
+    # ---
+    # Hosting
+    # ---
+    # -> compute width for all ranges that overlap with at least one binding site
+    w.hosting = lapply(seq_along(this.trl), function(x){
+        # get all relevant width
+        curr.width = width(reduce(subsetByOverlaps(this.trl[[x]], rng)))
+        # find upper and lower boundary cutoffs
+        currIdx = findInterval(curr.width, vec = quantile(x = curr.width, probs = seq(from = 0, to = 1, by = 0.01)), all.inside = TRUE)
+        seqs = seq(from = 0.01, to = 1, by = 0.01)
+        names(seqs) = seq_along(seqs)
+        idxRemoveLower = as.numeric(names(seqs[seqs <= normalize.exclude.lower]))
+        idxRemoveUpper = as.numeric(names(seqs[seqs >= 1-normalize.exclude.upper+0.01]))
+        # apply cutoffs
+        curr.w.reduced = curr.width[which(!currIdx %in% c(idxRemoveLower, idxRemoveUpper))]
+        # convert to normalization values
+        width.return = c(mean(curr.w.reduced), median(curr.w.reduced), sum(curr.w.reduced))
+        return(width.return)
+    })
+    w.hosting = do.call(rbind, w.hosting)
+    colnames(w.hosting) = c("norm.hosting.mean", "norm.hosting.median", "norm.hosting.sum")
+    w.hosting = as.data.frame(w.hosting)
+    # set names
+    w.hosting$TranscriptRegion = names(this.trl)
+
+    w.total = cbind.data.frame(w.hosting)
+    return(w.total)
+}

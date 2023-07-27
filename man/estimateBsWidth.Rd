@@ -13,13 +13,18 @@ estimateBsWidth(
   est.minimumStepGain = 0.02,
   est.maxSites = Inf,
   est.subsetChromosome = "chr1",
-  est.minWidth = 3,
+  est.minWidth = 2,
+  est.offset = 1,
+  sensitive = FALSE,
+  sensitive.size = 5,
+  sensitive.minWidth = 2,
   anno.annoDB = NULL,
   anno.genes = NULL,
   bsResolution.steps = NULL,
   geneResolution.steps = NULL,
   quiet = TRUE,
   veryQuiet = FALSE,
+  reportScoresPerBindingSite = FALSE,
   ...
 )
 }
@@ -47,6 +52,18 @@ estimation should be done in function \code{\link{estimateBsWidth}}}
 \item{est.minWidth}{the minimum size of regions that are subjected to the
 iterative merging routine, after the initial region concatenation.}
 
+\item{est.offset}{constant added to the flanking count in the signal-to-flank
+ratio calculation to avoid division by Zero}
+
+\item{sensitive}{logical; whether to enable sensitive pre-filtering before
+binding site merging or not}
+
+\item{sensitive.size}{numeric; the size (in nucleotides) of the merged
+sensitive region}
+
+\item{sensitive.minWidth}{numeric; the minimum size (in nucleoties) of the
+merged sensitive region}
+
 \item{anno.annoDB}{an object of class \code{OrganismDbi} that contains
 the gene annotation.}
 
@@ -63,11 +80,15 @@ vector for gene-wise filtering resolution. Overwrites \code{geneResolution}}
 
 \item{veryQuiet}{logical; whether to suppress all messages}
 
+\item{reportScoresPerBindingSite}{report the ratio score for each binding site
+separately. Warning! This is for debugging and testing only. Downstream
+functions can be impaired.}
+
 \item{...}{additional arguments passed to \code{\link{pureClipGeneWiseFilter}}}
 }
 \value{
 an object of class \code{\link{BSFDataSet}} with binding sites with
-the `params` slots `bsSize` and `geneFilter` beeing filled
+the `params` slots `bsSize` and `geneFilter` being filled
 }
 \description{
 This function tests different width of binding sites for different gene-wise
@@ -98,6 +119,12 @@ binding site width that was tested. The width that yielded the highest score
 is selected as optimal. In addtion the \code{minimumStepGain} option
 allows control over the minimum additional gain in the score that a tested
 width has to have to be selected as the best option.
+
+To enhance the sensitivity of the binding site estimation, the sensitivity
+mode exists. In this mode crosslink sites undergo a pre-filtering and merging
+step, to exclude potential artifical peaks (experimental-, mapping-biases).
+If sensitivity mode is activated the \code{est.minWidth} option should be set
+to 1.
 
 The optimal geneFilter is selected as the first one that passes the merged
 mean of the selected optimal binding site width.

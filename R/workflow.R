@@ -614,6 +614,14 @@ assignToGenes <- function(object,
 #' the transcript region annotation.
 #' @param anno.transcriptRegionList an object of class \code{\link{CompressedGRangesList}}
 #' that holds an ranges for each transcript region
+#'
+#' @param normalize.exclude.upper numeric; percentage value that indicates the
+#' upper boundary for transcript region length to be considered when calculating
+#' normalization factors for regions.
+#' @param normalize.exclude.lower numeric; percentage value that indicates the
+#' lower boundary for transcript region length to be considered when calculating
+#' normalization factors for regions.
+#'
 #' @param quiet logical; whether to print messages
 #'
 #' @return an object of class \code{\link{BSFDataSet}} with binding sites having
@@ -639,6 +647,8 @@ assignToTranscriptRegions <- function(object, # bindingSiteFinder
                                       overlaps.rule = NULL, # rule to apply when option hierarchy is selected
                                       anno.annoDB = NULL, # annotation data base of class OrganismDbi; can be NULL -> but then anno.transcriptRegionList must be provided
                                       anno.transcriptRegionList = NULL, # GRangesList object with the transcript features to be used; can be NULL -> but then anno.annoDB must be provided
+                                      normalize.exclude.upper = 0.02,
+                                      normalize.exclude.lower = 0.02,
                                       quiet = FALSE
 ) {
     # local variables
@@ -667,7 +677,7 @@ assignToTranscriptRegions <- function(object, # bindingSiteFinder
             stop(msg)
         } else {
             datasource = "anno.annoDB"
-            # extract relevant annotation
+            # extract relevant annotation - transcripts
             cdseq = cds(anno.annoDB)
             intrns = unlist(intronsByTranscript(anno.annoDB))
             utrs3 = unlist(threeUTRsByTranscript(anno.annoDB))
@@ -677,17 +687,16 @@ assignToTranscriptRegions <- function(object, # bindingSiteFinder
         }
     }
     # anno.transcriptRegionList should be used
-    if (is.null(anno.annoDB) & !is.null(anno.transcriptRegionList)) {
+    if (is.null(anno.annoDB) & !is.null(anno.transcriptRegionList) ) {
         stopifnot(is(anno.transcriptRegionList, "GenomicRangesList"))
         if (!is.null(anno.annoDB)) {
             msg = paste0("Parameter anno.annoDB and anno.transcriptRegionList are specified at the same time. Use only one of them.")
             stop(msg)
         } else {
             datasource = "anno.transcriptRegionList"
-            # extract relevant annotation
+            # extract relevant annotation - transcripts
             anno.transcriptRegionList = anno.transcriptRegionList
             names(anno.transcriptRegionList) = toupper(names(anno.transcriptRegionList))
-            #
         }
     }
     # handle options (hierarchy, frequency, remove, keep)
@@ -810,9 +819,24 @@ assignToTranscriptRegions <- function(object, # bindingSiteFinder
             rng = rng[rng$transcriptRegion != "Ambiguous"]
         }
     }
+
+    # ---
+    # Calculate width for length based normalization
+    ## normalize by all expressed regions
+    debugList = list(object = object, rng = rng)
+    # saveRDS(debugList, file = "./debugList.rds")
+    norm.factors = .calcNormalizeFactors(object, rng, anno.transcriptRegionList,
+                                         normalize.exclude.lower = normalize.exclude.lower,
+                                         normalize.exclude.upper = normalize.exclude.upper)
+
     # ---
     # Store results for plotting
-    dfPlot = rng$transcriptRegion %>% table() %>% as.data.frame() %>% rename("TranscriptRegion" = ".") %>% arrange(desc(Freq))
+    dfPlot = rng$transcriptRegion %>%
+        table() %>%
+        as.data.frame() %>%
+        rename("TranscriptRegion" = ".") %>%
+        arrange(desc(Freq)) %>%
+        left_join(., y = norm.factors, by = "TranscriptRegion")
     object@plotData$assignToTranscriptRegions$dataSpectrum = dfPlot
 
     # ---
@@ -934,10 +958,10 @@ estimateBsWidth <- function(object, # BindingSiteFinder object
                             bsResolution = c("medium", "fine", "coarse"),
                             geneResolution = c("medium", "coarse", "fine", "finest"),
                             est.maxBsWidth = 13,
-                            est.minimumStepGain = 0.03,
+                            est.minimumStepGain = 0.02,
                             est.maxSites = Inf,
                             est.subsetChromosome = "chr1", #
-                            est.minWidth = 3,
+                            est.minWidth = 2,
                             est.offset = 1,
                             sensitive = FALSE,
                             sensitive.size = 5,
@@ -1034,15 +1058,22 @@ estimateBsWidth <- function(object, # BindingSiteFinder object
     # Store function parameters in list
     optstr = list(bsResolution = bsResolution,
                   geneResolution = geneResolution,
-                  est.maxBsWidth = est.maxBsWidth, est.maxSites = est.maxSites,
-                  est.subsetChromosome = est.subsetChromosome)
+                  est.maxBsWidth = est.maxBsWidth,
+                  est.maxSites = est.maxSites,
+                  est.minimumStepGain = est.minimumStepGain,
+                  est.subsetChromosome = est.subsetChromosome,
+                  est.minWidth = est.minWidth,
+                  est.offset = est.offset,
+                  sensitive = sensitive,
+                  sensitive.size = sensitive.size,
+                  sensitive.minWidth = sensitive.minWidth)
     object@params$estimateBsWidth = optstr
 
     # PREPARE TEST RANGES + SIGNAL
     # --------------------------------------------------------------------------
     checkRng = getRanges(object)
     # check if subset is part of the seqnames from ranges
-    if (!est.subsetChromosome %in% levels(seqnames(checkRng))){
+    if (!all(est.subsetChromosome %in% levels(seqnames(checkRng)))){
         msg = paste0("Chromosome to estimate on (", est.subsetChromosome, "), is not included in the ranges: ", paste(levels(seqnames(checkRng)), collapse = ", "))
         stop(msg)
     }
@@ -1053,15 +1084,24 @@ estimateBsWidth <- function(object, # BindingSiteFinder object
     } else {
         redObj = object
     }
+
     # limit estimation to a maximum number of sites
     estRng = getRanges(redObj)
     if (length(estRng) > est.maxSites) {
         estRng = head(estRng, est.maxSites)
         redObj = setRanges(redObj, estRng, quiet = quiet)
     }
+
     # limit the clip signal to the ranges used for estimation (plus some extra offset)
-    maxFrame = ceiling((max(bsResolution.steps) *3))
-    redObj = .reduceSignalToFrame(redObj, frame = maxFrame, quiet = quiet)
+    if (!is.null(est.subsetChromosome)) {
+       # reduce signal to frame
+        maxFrame = ceiling((max(bsResolution.steps) *3))
+        redObj = .reduceSignalToFrame(redObj, frame = maxFrame, quiet = quiet)
+    } else {
+        # don't reduce signal
+        redObj = redObj
+    }
+
     # collapse signal from replicates
     sgnMerge = .collapseSamples(getSignal(redObj))
 
@@ -1089,19 +1129,17 @@ estimateBsWidth <- function(object, # BindingSiteFinder object
             cRngMerge = reduce(cRng, min.gapwidth = sensitive.size)
             cRngMerge = cRngMerge[width(cRngMerge) >= sensitive.minWidth]
 
-            currFilterObj = pureClipGeneWiseFilter(object = redObj, anno.genes = anno.genes, cutoff = bsFilterStep, quiet = quiet, ...)
-            # currFilterObj = pureClipGeneWiseFilter(object = redObj, anno.genes = anno.genes, cutoff = bsFilterStep, quiet = quiet)
+            # currFilterObj = pureClipGeneWiseFilter(object = redObj, anno.genes = anno.genes, cutoff = bsFilterStep, quiet = quiet, ...)
+            currFilterObj = pureClipGeneWiseFilter(object = redObj, anno.genes = anno.genes, cutoff = bsFilterStep, quiet = quiet)
             cRngFilter = getRanges(currFilterObj)
             currRng = subsetByOverlaps(cRngFilter, cRngMerge)
 
         } else {
             # -> normal mode
-            # currFilterObj = pureClipGeneWiseFilter(object = redObj, anno.genes = anno.genes, cutoff = bsFilterStep, quiet = quiet)
-            currFilterObj = pureClipGeneWiseFilter(object = redObj, anno.genes = anno.genes, cutoff = bsFilterStep, quiet = quiet, ...)
-            # currFilterObj = pureClipGeneWiseFilter(object = redObj, anno.genes = anno.genes, cutoff = bsFilterStep, quiet = quiet)
+            # currFilterObj = pureClipGeneWiseFilter(object = redObj, anno.genes = anno.genes, cutoff = bsFilterStep, quiet = quiet, ...)
+            currFilterObj = pureClipGeneWiseFilter(object = redObj, anno.genes = anno.genes, cutoff = bsFilterStep, quiet = quiet)
             currRng = getRanges(currFilterObj)
         }
-
 
         # calculate binding sites for current bsWidth
         rngPerWidth = lapply(bsResolution.steps, function(bsWidthStep){
@@ -1136,7 +1174,8 @@ estimateBsWidth <- function(object, # BindingSiteFinder object
             bsSumPlus = sum(sgnMerge$signalPlus[cRangePlus])
             extendedRangePlus = cRangePlus + cRangePlus$bsSize
             exSumPlus = sum(sgnMerge$signalPlus[extendedRangePlus])
-            extendedRangePlus$signalToFlankRatio = (bsSumPlus) / (((exSumPlus - bsSumPlus) / 2) + est.offset)
+            # extendedRangePlus$signalToFlankRatio = (bsSumPlus) / (((exSumPlus - bsSumPlus) / 2) + est.offset)
+            extendedRangePlus$signalToFlankRatio = (bsSumPlus / exSumPlus)
         } else {
             extendedRangePlus = cRangePlus
         }
@@ -1147,7 +1186,8 @@ estimateBsWidth <- function(object, # BindingSiteFinder object
             bsSumMinus = sum(sgnMerge$signalMinus[cRangeMinus])
             extendedRangeMinus = cRangeMinus + cRangeMinus$bsSize
             exSumMinus = sum(sgnMerge$signalMinus[extendedRangeMinus])
-            extendedRangeMinus$signalToFlankRatio = (bsSumMinus) / (((exSumMinus - bsSumMinus) / 2) + est.offset)
+            # extendedRangeMinus$signalToFlankRatio = (bsSumMinus) / (((exSumMinus - bsSumMinus) / 2) + est.offset)
+            extendedRangeMinus$signalToFlankRatio = (bsSumMinus / exSumMinus)
         } else {
             extendedRangeMinus = cRangeMinus
         }
@@ -1184,54 +1224,22 @@ estimateBsWidth <- function(object, # BindingSiteFinder object
         object@plotData$estimateBsWidth$data = df
     }
 
-    # Estimate binding site width and gene filter based on mean over all iterations
-    dfMean = df %>%
-        group_by(bsSize) %>%
-        summarise(ms = mean(signalToFlankRatio), sd = sd(signalToFlankRatio)) %>%
-        mutate(geneWiseFilter = "mean")
-    # Compute binding site width over all gene-wise filter levels (global option)
-    est.global = dfMean %>%
-        mutate(growth_per = (ms / dplyr::lag(ms)) - 1) %>%
-        mutate(sel = growth_per >= est.minimumStepGain)
-    # Check if global option converges
-    firstGainStop = which(est.global$sel == FALSE)[1]
-    # Depending on if global option converges or not, continue with local version
-    # -> local version is the minimal width from all individual gene-wise filter
-    #.   function iterations
-    if (is.na(firstGainStop)) {
-        est.option = "local"
-        # no global maximum found (median did not converge)
+    resEstimate = .findFirstMaximum(df, est.minimumStepGain = est.minimumStepGain)
+    est.bsSize = resEstimate$est.bsSize
+    est.geneFilter = resEstimate$est.geneFilter
+    est.option = resEstimate$est.option
+
+    if (est.option == "local") {
         msg = paste0("No global maximum found with est.maxBsWidth=", est.maxBsWidth, ". Using local maximum instead.\n")
         if(!veryQuiet) warning(msg)
-        # compute maximum for each filter level
-        est.local = df %>%
-            group_by(geneWiseFilter) %>%
-            mutate(growth_per = (signalToFlankRatio / dplyr::lag(signalToFlankRatio)) - 1) %>%
-            mutate(sel = growth_per >= est.minimumStepGain) %>%
-            filter(sel == FALSE) %>% arrange(bsSize, desc(growth_per)) %>% head(1)
-
-        if (nrow(est.local) == 0){
-            # in case local maximum does not converge, prompt user to use
-            # a different cutoff of the minimumStepGain (from 2% to 5% eg.)
-            # -> this will eventually cause the function to converge
-            msg = paste0("Local maximum did also not converge. Raise 'est.minimumStepGain' argument/ or change bsResolution and/or geneResolution arguments. \n")
-            if(!veryQuiet) stop(msg)
-        }
-
-        est.bsSize = est.local$bsSize
-        est.geneFilter = est.local$geneWiseFilter
-    } else {
-        est.option = "global"
-        # global maximum found (median conveged)
-        est.bsSize = est.global$bsSize[firstGainStop-1]
-
-        # GeneFilter is taken based on the selected bsSize
-        # -> take the first filter that is above the mean
-        est.geneFilter = df %>%
-            filter(bsSize == est.bsSize) %>%
-            filter(signalToFlankRatio >= max(dfMean$ms[dfMean$bsSize == est.bsSize])) %>%
-            slice_head(n = 1) %>% # was head(1)
-            pull(geneWiseFilter)
+    }
+    if (est.option == "fallback") {
+        msg = paste0("No global or local maximum found with est.maxBsWidth=", est.maxBsWidth, ". Falling back to simple maximum instead.\n")
+        if(!veryQuiet) warning(msg)
+    }
+    if (est.option == "error") {
+        msg = paste0("Local maximum did also not converge. Raise 'est.minimumStepGain' argument/ or change bsResolution and/or geneResolution arguments. \n")
+        stop(msg)
     }
 
     # Store estimate type in options (global/ local)
@@ -1250,7 +1258,7 @@ estimateBsWidth <- function(object, # BindingSiteFinder object
         nIn = length(rng), nOut = length(rng),
         per = paste0(round(length(rng)/ length(rng), digits = 2)*100,"%"),
         options = paste0("bsResolution=", bsResolution, ", geneResolution=", geneResolution,
-                         ", est.maxBsWidth=", est.maxBsWidth, ", est.maxSites=", est.maxSites, ", est.subsetChromosome=", est.subsetChromosome)
+                         ", est.maxBsWidth=", est.maxBsWidth, ", est.maxSites=", est.maxSites, ", est.subsetChromosome=", paste(est.subsetChromosome, collapse = ","))
     )
     object@results = rbind(object@results, resultLine)
 

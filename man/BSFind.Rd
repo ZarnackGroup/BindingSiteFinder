@@ -7,9 +7,22 @@
 BSFind(
   object,
   bsSize = NULL,
-  est.geneResolution = "medium",
   est.bsResolution = "medium",
+  est.geneResolution = "medium",
+  est.maxBsWidth = 13,
+  est.minimumStepGain = 0.02,
+  est.maxSites = Inf,
   est.subsetChromosome = "chr1",
+  est.minWidth = 2,
+  est.offset = 1,
+  est.sensitive = FALSE,
+  est.sensitive.size = 5,
+  est.sensitive.minWidth = 2,
+  merge.minWidth = 2,
+  merge.minCrosslinks = 2,
+  merge.minClSites = 1,
+  merge.CenterIsClSite = TRUE,
+  merge.CenterIsSummit = TRUE,
   cutoff.globalFilter = 0.01,
   cutoff.geneWiseFilter = NULL,
   overlaps.geneWiseFilter = "keepSingle",
@@ -17,6 +30,8 @@ BSFind(
   overlaps.rule.geneAssignment = NULL,
   overlaps.TranscriptRegions = "frequency",
   overlaps.rule.TranscriptRegions = NULL,
+  stf.flank = "bs",
+  stf.flank.size = NULL,
   match.score = "score",
   match.geneID = "gene_id",
   match.geneName = "gene_name",
@@ -37,14 +52,52 @@ BSFind(
 \item{bsSize}{an odd integer value specifying the size of the output
 binding sites}
 
-\item{est.geneResolution}{character; level of resolution of the gene-wise
-filtering in function \code{\link{estimateBsWidth}}}
-
 \item{est.bsResolution}{character; level of resolution of the binding site
 width in function \code{\link{estimateBsWidth}}}
 
+\item{est.geneResolution}{character; level of resolution of the gene-wise
+filtering in function \code{\link{estimateBsWidth}}}
+
+\item{est.maxBsWidth}{numeric; the largest binding site width which should
+considered in the testing}
+
+\item{est.minimumStepGain}{numeric; the minimum additional gain in the score
+in percent the next binding site width has to have, to be selected as best option}
+
+\item{est.maxSites}{numeric; maximum number of PureCLIP sites that are used}
+
 \item{est.subsetChromosome}{character; define on which chromosome the
 estimation should be done in function \code{\link{estimateBsWidth}}}
+
+\item{est.minWidth}{the minimum size of regions that are subjected to the
+iterative merging routine, after the initial region concatenation.}
+
+\item{est.offset}{constant added to the flanking count in the signal-to-flank
+ratio calculation to avoid division by Zero}
+
+\item{est.sensitive}{logical; whether to enable sensitive pre-filtering before
+binding site merging or not}
+
+\item{est.sensitive.size}{numeric; the size (in nucleotides) of the merged
+sensitive region}
+
+\item{est.sensitive.minWidth}{numeric; the minimum size (in nucleoties) of the
+merged sensitive region}
+
+\item{merge.minWidth}{the minimum size of regions that are subjected to the
+iterative merging routine, after the initial region concatenation.}
+
+\item{merge.minCrosslinks}{the minimal number of positions to overlap with at least
+one crosslink event in the final binding sites}
+
+\item{merge.minClSites}{the minimal number of crosslink sites that have to
+overlap a final binding site}
+
+\item{merge.CenterIsClSite}{logical, whether the center of a final binding
+site must be covered by an initial crosslink site}
+
+\item{merge.CenterIsSummit}{logical, whether the center of a final binding
+site must exhibit the highest number of crosslink events}
 
 \item{cutoff.globalFilter}{numeric; defines the cutoff for which sites to
 keep, the smallest step is 1\% (0.01) in function
@@ -74,6 +127,11 @@ that should be used to handle overlaps if option 'hierarchy' is selected
 for \code{\link{assignToTranscriptRegions}}. The order of the vector is the order of
 the hierarchy.}
 
+\item{stf.flank}{character; how the flanking region shoule be set. Options are
+'bs', 'manual'}
+
+\item{stf.flank.size}{numeric; if flank='manual' provide the desired flanking size}
+
 \item{match.score}{character; meta column name of the crosslink site}
 
 \item{match.geneID}{character; meta column name of the genes}
@@ -101,8 +159,8 @@ that holds an ranges for each transcript region}
 
 \item{veryQuiet}{logical; whether to suppress all messages}
 
-\item{...}{additional arguments passed to \code{\link{makeBindingSites}} and
-\code{\link{reproducibilityFilter}}}
+\item{...}{additional arguments passed to \code{\link{estimateBsWidth}},
+\code{\link{makeBindingSites}} and \code{\link{reproducibilityFilter}}}
 }
 \value{
 an object of class \code{\link{BSFDataSet}} with ranges merged into
