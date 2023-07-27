@@ -8,7 +8,7 @@ crosslink events.}
 makeBindingSites(
   object,
   bsSize = NULL,
-  minWidth = 3,
+  minWidth = 2,
   minCrosslinks = 2,
   minClSites = 1,
   centerIsClSite = TRUE,
