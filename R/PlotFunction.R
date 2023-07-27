@@ -412,6 +412,8 @@ reproducibilityFilterPlot <- function(object, plotRange = 20) {
 #'
 #' @param object a \code{\link{BSFDataSet}} object
 #' @param nIntersections numeric; number of intersection to be shown
+#' @param show.title logical; if plot title should be visible
+#' @param text.size numeric; fontsize of all numbers on axis
 #'
 #' @return a plot of type \code{\link{ggplot}}
 #'
@@ -431,7 +433,10 @@ reproducibilityFilterPlot <- function(object, plotRange = 20) {
 #' reproducibilitySamplesPlot(bds)
 #'
 #' @export
-reproducibilitySamplesPlot <- function(object, nIntersections = 20) {
+reproducibilitySamplesPlot <- function(object,
+                                       nIntersections = 20,
+                                       show.title = TRUE,
+                                       text.size = NULL) {
 
     # bind locally used variables
     title <- rowTitle <- Freq <- `.` <- NULL
@@ -472,19 +477,42 @@ reproducibilitySamplesPlot <- function(object, nIntersections = 20) {
 
     title = paste0("reproducibilitySamplesPlot()\n", optstrNice)
 
-    UpSet(m, column_title = title,
-          row_title = rowTitle,
+    # set fontsizes
+    if (!is.null(text.size)) {
+        fontsize.top = text.size
+        fontsize.right = text.size
+        fontsize.row.title = text.size
+        fontsize.column.title = text.size
+        fontsize.row.names = text.size
+        fontsize.column.names = text.size
+    } else {
+        fontsize.top = 8
+        fontsize.right = 8
+        fontsize.row.title = 12
+        fontsize.column.title = 12
+        fontsize.row.names = 10
+        fontsize.column.names = 10
+    }
+
+    UpSet(m, column_title = ifelse(isTRUE(show.title), title, ""),
+          row_title = ifelse(isTRUE(show.title), rowTitle, ""),
           comb_order = order(comb_size(m), decreasing = TRUE),
-          top_annotation = upset_top_annotation(m, add_numbers = TRUE,
-                                                numbers_gp = gpar(col = "#4C6793", fontsize = 8, fontface = "italic")),
-          right_annotation = upset_right_annotation(m, add_numbers = TRUE, gp = gpar(fill = "#0B2447"),
-                                                    numbers_gp = gpar(col = "#0B2447", fontsize = 8, fontface = "italic"),
+          top_annotation = upset_top_annotation(m, add_numbers = TRUE, annotation_name_gp = gpar(fontsize = 0),
+                                                numbers_gp = gpar(col = "#4C6793", fontsize = fontsize.top, fontface = "italic")),
+          right_annotation = upset_right_annotation(m, add_numbers = TRUE, annotation_name_gp = gpar(fontsize = 0),
+                                                    gp = gpar(fill = "#0B2447"),
+                                                    numbers_gp = gpar(col = "#0B2447", fontsize = fontsize.right, fontface = "italic"),
                                                     numbers_rot = 25),
           comb_col = "#4C6793", bg_col = "white", pt_size = unit(.5, "cm"),
           border = T, lwd = 2, bg_pt_col = "grey",
+          row_title_gp = gpar(fontsize = fontsize.row.title),
+          column_title_gp = gpar(fontsize = fontsize.column.title),
+          row_names_gp = gpar(fontsize = fontsize.row.names),
+          column_names_gp = gpar(fontsize = fontsize.column.names),
           set_order = seq_along(set_size(m)))
 
 }
+
 
 
 #' UpSet-plot to that shows the gene type overlaps
@@ -494,6 +522,8 @@ reproducibilitySamplesPlot <- function(object, nIntersections = 20) {
 #' executed prior to calling this plot function.
 #'
 #' @param object a \code{\link{BSFDataSet}} object
+#' @param show.title logical; if plot title should be visible
+#' @param text.size numeric; fontsize of all numbers on axis
 #'
 #' @return a plot of type \code{\link{ggplot}}
 #'
@@ -513,7 +543,9 @@ reproducibilitySamplesPlot <- function(object, nIntersections = 20) {
 #' geneOverlapsPlot(bds)
 #'
 #' @export
-geneOverlapsPlot <- function(object) {
+geneOverlapsPlot <- function(object,
+                             text.size = NULL,
+                             show.title = TRUE) {
 
     # bind locally used variables
     title <- rowTitle <- NULL
@@ -543,15 +575,37 @@ geneOverlapsPlot <- function(object) {
     rowTitle = "All intersections"
     title = paste0("geneOverlapsPlot()\n", optstrNice)
 
-    UpSet(m, column_title = title,
-          row_title = rowTitle,
+
+    # set fontsizes
+    if (!is.null(text.size)) {
+        fontsize.top = text.size
+        fontsize.right = text.size
+        fontsize.row.title = text.size
+        fontsize.column.title = text.size
+        fontsize.row.names = text.size
+        fontsize.column.names = text.size
+    } else {
+        fontsize.top = 8
+        fontsize.right = 8
+        fontsize.row.title = 12
+        fontsize.column.title = 12
+        fontsize.row.names = 10
+        fontsize.column.names = 10
+    }
+
+    UpSet(m, column_title = ifelse(isTRUE(show.title), title, ""),
+          row_title = ifelse(isTRUE(show.title), rowTitle, ""),
           comb_order = order(comb_size(m), decreasing = TRUE),
-          top_annotation = upset_top_annotation(m, add_numbers = TRUE,
-                                                numbers_gp = gpar(col = "#4C6793", fontsize = 8, fontface = "italic")),
-          right_annotation = upset_right_annotation(m, add_numbers = TRUE, gp = gpar(fill = "#0B2447"),
-                                                    numbers_gp = gpar(col = "#0B2447", fontsize = 8, fontface = "italic"),
+          top_annotation = upset_top_annotation(m, add_numbers = TRUE, annotation_name_gp = gpar(fontsize = 0),
+                                                numbers_gp = gpar(col = "#4C6793", fontsize = fontsize.top, fontface = "italic")),
+          right_annotation = upset_right_annotation(m, add_numbers = TRUE, gp = gpar(fill = "#0B2447"), annotation_name_gp = gpar(fontsize = 0),
+                                                    numbers_gp = gpar(col = "#0B2447", fontsize = fontsize.right, fontface = "italic"),
                                                     numbers_rot = 25),
           comb_col = "#4C6793", bg_col = "white", pt_size = unit(.5, "cm"),
+          row_title_gp = gpar(fontsize = fontsize.row.title),
+          column_title_gp = gpar(fontsize = fontsize.column.title),
+          row_names_gp = gpar(fontsize = fontsize.row.names),
+          column_names_gp = gpar(fontsize = fontsize.column.names),
           border = T, lwd = 2, bg_pt_col = "grey",
           set_order = seq_along(set_size(m)))
 }
@@ -584,7 +638,9 @@ geneOverlapsPlot <- function(object) {
 #' targetGeneSpectrumPlot(bds)
 #'
 #' @export
-targetGeneSpectrumPlot <- function(object, showNGroups = 5) {
+targetGeneSpectrumPlot <- function(object,
+                                   showNGroups = 5,
+                                   text.size = 5) {
 
     # bind locally used variables
     GeneType <- Freq <- FreqNice <- nGenes <- nBs <- geneType <- nice <- NULL
@@ -655,7 +711,7 @@ targetGeneSpectrumPlot <- function(object, showNGroups = 5) {
         scale_fill_manual(values = cols) +
         theme_bw() +
         theme(legend.position = "none") +
-        geom_text(color = "#b35900", hjust = 1, fontface = "bold") +
+        geom_text(aes(y = Inf), color = "#b35900", hjust = 1, fontface = "bold", size = text.size) +
         labs(
             title = "targetGeneSpectrumPlot()",
             subtitle = optstrNice,
@@ -675,6 +731,8 @@ targetGeneSpectrumPlot <- function(object, showNGroups = 5) {
 #' executed prior to calling this plot function.
 #'
 #' @param object a \code{\link{BSFDataSet}} object
+#' @param show.title logical; if plot title should be visible
+#' @param text.size numeric; fontsize of all numbers on axis
 #'
 #' @return a plot of type \code{\link{ggplot}}
 #'
@@ -696,7 +754,9 @@ targetGeneSpectrumPlot <- function(object, showNGroups = 5) {
 #' transcriptRegionOverlapsPlot(bds)
 #'
 #' @export
-transcriptRegionOverlapsPlot <- function(object) {
+transcriptRegionOverlapsPlot <- function(object,
+                                         text.size = NULL,
+                                         show.title = TRUE) {
 
     # bind locally used variables
     title <- rowTitle <- Freq <- NULL
@@ -725,15 +785,36 @@ transcriptRegionOverlapsPlot <- function(object) {
     rowTitle = "All intersections"
     title = paste0("transcriptRegionOverlapsPlot()\n", optstrNice)
 
-    UpSet(m, column_title = title,
-          row_title = rowTitle,
+    # set fontsizes
+    if (!is.null(text.size)) {
+        fontsize.top = text.size
+        fontsize.right = text.size
+        fontsize.row.title = text.size
+        fontsize.column.title = text.size
+        fontsize.row.names = text.size
+        fontsize.column.names = text.size
+    } else {
+        fontsize.top = 8
+        fontsize.right = 8
+        fontsize.row.title = 12
+        fontsize.column.title = 12
+        fontsize.row.names = 10
+        fontsize.column.names = 10
+    }
+
+    UpSet(m, column_title = ifelse(isTRUE(show.title), title, ""),
+          row_title = ifelse(isTRUE(show.title), rowTitle, ""),
           comb_order = order(comb_size(m), decreasing = TRUE),
-          top_annotation = upset_top_annotation(m, add_numbers = TRUE,
-                                                numbers_gp = gpar(col = "#4C6793", fontsize = 8, fontface = "italic")),
-          right_annotation = upset_right_annotation(m, add_numbers = TRUE, gp = gpar(fill = "#0B2447"),
-                                                    numbers_gp = gpar(col = "#0B2447", fontsize = 8, fontface = "italic"),
+          top_annotation = upset_top_annotation(m, add_numbers = TRUE, annotation_name_gp = gpar(fontsize = 0),,
+                                                numbers_gp = gpar(col = "#4C6793", fontsize = fontsize.top, fontface = "italic")),
+          right_annotation = upset_right_annotation(m, add_numbers = TRUE, gp = gpar(fill = "#0B2447"), annotation_name_gp = gpar(fontsize = 0),,
+                                                    numbers_gp = gpar(col = "#0B2447", fontsize = fontsize.right, fontface = "italic"),
                                                     numbers_rot = 25),
           comb_col = "#4C6793", bg_col = "white", pt_size = unit(.5, "cm"),
+          row_title_gp = gpar(fontsize = fontsize.row.title),
+          column_title_gp = gpar(fontsize = fontsize.column.title),
+          row_names_gp = gpar(fontsize = fontsize.row.names),
+          column_names_gp = gpar(fontsize = fontsize.column.names),
           border = T, lwd = 2, bg_pt_col = "grey",
           set_order = seq_along(set_size(m)))
 }
@@ -741,11 +822,29 @@ transcriptRegionOverlapsPlot <- function(object) {
 
 #' Bar-chart to show the hosting transcript regions of binding sites
 #'
-#' A diagnostic function that plots the transcript regions of the hosting gene for
-#' each binding site. The function \code{\link{assignToTranscriptRegions}} is expected to be
-#' executed prior to calling this plot function.
+#' A diagnostic function that plots the transcript regions of the hosting gene
+#' for each binding site. The function \code{\link{assignToTranscriptRegions}}
+#' is expected to be executed prior to calling this plot function.
+#'
+#' Count frequencies can be normalized to the length of the hosting region with
+#' option \code{normalize}. The specific factor how the hosting region length is
+#' used is given by \code{normalize.factor}. In the case of
+#' \code{normalize.factor = "sum"} binding site frequencies are divided by the
+#' summed length of all regions that host the specific binding site.
+#'
+#' Further with option \code{values} once can indicate whether raw or normalized
+#' frequencies should be shown 'as-is' or normalized to 'percentages'.
 #'
 #' @param object a \code{\link{BSFDataSet}} object
+#' @param values character; if values should be presented 'as-is', that means
+#' for example as frequencies in case \code{normalization = FALSE}, or as
+#' percentages
+#' @param normalize logical; whether to normalize values
+#' @param normalize.factor character; indicate by what factor values should be
+#' normalized to region length by
+#' @param show.others logical; whether to show 'others' category. Has to be false
+#' if \code{normalize = TRUE}
+#' @param text.size numeric; font size of the numbers to be displayed on each bar
 #'
 #' @return a plot of type \code{\link{ggplot}}
 #'
@@ -765,7 +864,12 @@ transcriptRegionOverlapsPlot <- function(object) {
 #' transcriptRegionSpectrumPlot(bds)
 #'
 #' @export
-transcriptRegionSpectrumPlot <- function(object) {
+transcriptRegionSpectrumPlot <- function(object,
+                                         values = c("asis", "percentage"),
+                                         normalize = FALSE,
+                                         normalize.factor = c("sum", "median", "mean"),
+                                         show.others = FALSE,
+                                         text.size = 6) {
 
     # bind locally used variables
     TranscriptRegion <- FreqNice <- Freq <-  NULL
@@ -784,40 +888,192 @@ transcriptRegionSpectrumPlot <- function(object) {
         stop(msg1)
     }
 
+    # handle options
+    values = match.arg(values, choices = c("asis", "percentage"))
+    normalize.factor = match.arg(normalize.factor, choices = c("sum", "median", "mean"))
+
+    # make option string
     optstr = object@params$assignToTranscriptRegions
-    optstrNice = paste0("Source=", ifelse(!is.null(optstr$anno.annoDB), "anno.annoDB", "anno.transcriptRegionList"), ", overlaps=", optstr$overlaps,
+    optstrNice = paste0("values=", values, ", normalize=", normalize, ifelse(isTRUE(normalize), paste0(", normalize.factor=", normalize.factor), ""),
+                        ", overlaps=", optstr$overlaps,
                         ifelse(! rlang::is_empty(optstr$rule), paste0(", rule=", paste(optstr$rule, collapse = ">")), ""))
 
     # Get full combination matrix
     df = object@plotData$assignToTranscriptRegions$dataSpectrum
+
+    # Nice formatting of standard names
+    df = df %>% mutate(TranscriptRegion = ifelse(toupper(TranscriptRegion) == "UTR3", "3'UTR",
+                                                 ifelse(toupper(TranscriptRegion) == "UTR5", "5'UTR",
+                                                        ifelse(toupper(TranscriptRegion) == "CDS", "CDS",
+                                                               ifelse(toupper(TranscriptRegion) == "INTRON", "Intron", TranscriptRegion)))))
+
     df = df %>% as.data.frame() %>% arrange(desc(Freq)) %>%
         mutate(FreqNice = format(Freq, big.mark = ",", small.mark = ".")) %>%
-        mutate(TranscriptRegion = forcats::fct_reorder(TranscriptRegion, Freq)) %>%
-        mutate(TranscriptRegion = tolower(TranscriptRegion))
-
-    # Nice formatting of names
-    df$TranscriptRegion = unlist(lapply(df$TranscriptRegion, function(x){
-        ifelse(x == "utr3", "3'UTR",
-               ifelse(x == "utr5", "5'UTR",
-                      ifelse(x == "cds", "CDS", .capitalize(x))))
-    }))
+        mutate(TranscriptRegion = forcats::fct_reorder(TranscriptRegion, Freq))
 
     # set color scheme
     cols = c("#A7D2CB", "#F2D388", "#C98474", "#874C62", "#576F72", "#B4CDE6", "#7D6E83", "#D0B8A8")
     cols = cols[1:nrow(df)]
 
-    p = ggplot(df, aes(x = TranscriptRegion, y = Freq, fill = TranscriptRegion, label = FreqNice)) +
-        geom_col(color = "darkgrey", size = 0.5) +
-        theme_bw() +
-        theme(legend.position = "none") +
-        geom_text(color = "#b35900", hjust = 0.5, fontface = "bold") +
-        scale_fill_manual(values = cols) +
-        # scale_fill_brewer(palette = "Set2") +
-        coord_flip(clip = "on", expand = TRUE) +
-        labs(title = "transcriptRegionSpectrumPlot()",
-             subtitle = optstrNice,
-             x = "Transcript regions",
-             y = "#N Binding sites")
+    # Make plot variations
+    # --------------------------------------------------------------------------
+    if (!isTRUE(normalize)) {
+        # don't normalize
+
+        if (!isTRUE(show.others)) {
+            # remove other category to match raw plot with normalized plot
+            df = df %>% drop_na() %>%
+                mutate(TranscriptRegion = forcats::fct_reorder(TranscriptRegion, Freq))
+        }
+
+        if (values == "asis") {
+            # show raw numbers
+            p = ggplot(df, aes(x = TranscriptRegion, y = Freq, fill = TranscriptRegion, label = FreqNice)) +
+                geom_col(color = "darkgrey", linewidth = 0.5) +
+                theme_bw() +
+                theme(legend.position = "none") +
+                geom_text(aes(y = Inf), color = "#b35900", hjust = 1, fontface = "bold", size = text.size) +
+                scale_fill_manual(values = cols) +
+                coord_flip(clip = "on", expand = TRUE) +
+                labs(title = "transcriptRegionSpectrumPlot()",
+                     subtitle = optstrNice,
+                     x = "Transcript regions",
+                     y = "#N Binding sites")
+        }
+        if (values == "percentage") {
+            # show percentages
+            df = df %>%
+                mutate(per = round(Freq / sum(Freq) * 100, digits = 1)) %>%
+                mutate(perNice = paste0(per, "%"))
+
+            p = ggplot(df, aes(x = TranscriptRegion, y = per, fill = TranscriptRegion, label = perNice)) +
+                geom_col(color = "darkgrey", linewidth = 0.5) +
+                theme_bw() +
+                theme(legend.position = "none") +
+                geom_text(aes(y = Inf), color = "#b35900", hjust = 1, fontface = "bold", size = text.size) +
+                scale_fill_manual(values = cols) +
+                coord_flip(clip = "on", expand = TRUE) +
+                labs(title = "transcriptRegionSpectrumPlot()",
+                     subtitle = optstrNice,
+                     x = "Transcript regions",
+                     y = "% Binding sites")
+
+        }
+
+    }
+
+    if (isTRUE(normalize)) {
+        # normalize counts
+        df = df %>%
+            drop_na() %>%
+            pivot_longer(-c(TranscriptRegion, Freq, FreqNice)) %>%
+            mutate(norm.value = Freq / value) %>%
+            group_by(name) %>%
+            mutate(norm.per = round(norm.value / sum(norm.value) * 100, digits = 1),
+                   freq.per = round(Freq / sum(Freq) * 100, digits = 1)) %>%
+            mutate(diff.per = round(norm.per - freq.per, digits = 1) ) %>%
+            mutate(FreqNice = format(Freq, big.mark = ","))
+
+        if (values == "asis") {
+            # show raw numbers
+            if (normalize.factor == "mean") {
+                # normalize by mean length
+                p = df %>% filter(name == "norm.hosting.mean") %>%
+                    ggplot(., aes(x = TranscriptRegion, y = norm.value, fill = TranscriptRegion, label = round(norm.value, digits = 2))) +
+                    geom_col(color = "darkgrey", linewidth = 0.5) +
+                    theme_bw() +
+                    theme(legend.position = "none") +
+                    geom_text(aes(y = Inf), color = "#b35900", hjust = 1, fontface = "bold", size = text.size) +
+                    scale_fill_manual(values = cols) +
+                    coord_flip(clip = "on", expand = TRUE) +
+                    labs(title = "transcriptRegionSpectrumPlot()",
+                         subtitle = optstrNice,
+                         x = "Transcript regions",
+                         y = "% Binding sites")
+            }
+            if (normalize.factor == "median") {
+                # normalize by mean length
+                p = df %>% filter(name == "norm.hosting.median") %>%
+                    ggplot(., aes(x = TranscriptRegion, y = norm.value, fill = TranscriptRegion, label = round(norm.value, digits = 2))) +
+                    geom_col(color = "darkgrey", linewidth = 0.5) +
+                    theme_bw() +
+                    theme(legend.position = "none") +
+                    geom_text(aes(y = Inf), color = "#b35900", hjust = 1, fontface = "bold", size = text.size) +
+                    scale_fill_manual(values = cols) +
+                    coord_flip(clip = "on", expand = TRUE) +
+                    labs(title = "transcriptRegionSpectrumPlot()",
+                         subtitle = optstrNice,
+                         x = "Transcript regions",
+                         y = "% Binding sites")
+            }
+            if (normalize.factor == "sum") {
+                # normalize by mean length
+                p = df %>% filter(name == "norm.hosting.sum") %>%
+                    ggplot(., aes(x = TranscriptRegion, y = norm.value, fill = TranscriptRegion, label = round(norm.value, digits = 2))) +
+                    geom_col(color = "darkgrey", linewidth = 0.5) +
+                    theme_bw() +
+                    theme(legend.position = "none") +
+                    geom_text(aes(y = Inf), color = "#b35900", hjust = 1, fontface = "bold", size = text.size) +
+                    scale_fill_manual(values = cols) +
+                    coord_flip(clip = "on", expand = TRUE) +
+                    labs(title = "transcriptRegionSpectrumPlot()",
+                         subtitle = optstrNice,
+                         x = "Transcript regions",
+                         y = "% Binding sites")
+            }
+
+        }
+        if (values == "percentage") {
+            # show percentages
+            if (normalize.factor == "mean") {
+                # normalize by mean length
+                p = df %>% filter(name == "norm.hosting.mean") %>%
+                    ggplot(., aes(x = TranscriptRegion, y = norm.per, fill = TranscriptRegion, label = paste0(round(norm.per, digits = 1), "%"))) +
+                    geom_col(color = "darkgrey", linewidth = 0.5) +
+                    theme_bw() +
+                    theme(legend.position = "none") +
+                    geom_text(aes(y = Inf), color = "#b35900", hjust = 1, fontface = "bold", size = text.size) +
+                    scale_fill_manual(values = cols) +
+                    coord_flip(clip = "on", expand = TRUE) +
+                    labs(title = "transcriptRegionSpectrumPlot()",
+                         subtitle = optstrNice,
+                         x = "Transcript regions",
+                         y = "% Binding sites")
+            }
+            if (normalize.factor == "median") {
+                # normalize by mean length
+                p = df %>% filter(name == "norm.hosting.median") %>%
+                    ggplot(., aes(x = TranscriptRegion, y = norm.per, fill = TranscriptRegion, label = paste0(round(norm.per, digits = 1), "%"))) +
+                    geom_col(color = "darkgrey", linewidth = 0.5) +
+                    theme_bw() +
+                    theme(legend.position = "none") +
+                    geom_text(aes(y = Inf), color = "#b35900", hjust = 1, fontface = "bold", size = text.size) +
+                    scale_fill_manual(values = cols) +
+                    coord_flip(clip = "on", expand = TRUE) +
+                    labs(title = "transcriptRegionSpectrumPlot()",
+                         subtitle = optstrNice,
+                         x = "Transcript regions",
+                         y = "% Binding sites")
+            }
+            if (normalize.factor == "sum") {
+                # normalize by mean length
+                p = df %>% filter(name == "norm.hosting.sum") %>%
+                    ggplot(., aes(x = TranscriptRegion, y = norm.per, fill = TranscriptRegion, label = paste0(round(norm.per, digits = 1), "%"))) +
+                    geom_col(color = "darkgrey", linewidth = 0.5) +
+                    theme_bw() +
+                    theme(legend.position = "none") +
+                    geom_text(aes(y = Inf), color = "#b35900", hjust = 1, fontface = "bold", size = text.size) +
+                    scale_fill_manual(values = cols) +
+                    coord_flip(clip = "on", expand = TRUE) +
+                    labs(title = "transcriptRegionSpectrumPlot()",
+                         subtitle = optstrNice,
+                         x = "Transcript regions",
+                         y = "% Binding sites")
+            }
+        }
+
+    }
+
     return(p)
 }
 
@@ -1032,7 +1288,7 @@ estimateBsWidthPlot <- function(object) {
 #' processingStepsFlowChart(bds)
 #'
 #' @export
-processingStepsFlowChart <- function(object) {
+processingStepsFlowChart <- function(object, size.all = 3) {
 
     # bind locally used variables
     xmin <- ymin <- xmax <- ymax <- Type <- NULL
@@ -1103,7 +1359,7 @@ processingStepsFlowChart <- function(object) {
 
     p = ggplot() +
         geom_rect(data = flowNode, aes(xmin = xmin, ymin = ymin, xmax = xmax, ymax = ymax, fill = Type), color = "#4d4d4d") +
-        geom_text(data = flowNode, aes(x = x, y = y, label = Step), color = "#585c45") +
+        geom_text(data = flowNode, aes(x = x, y = y, label = Step), color = "#585c45", size = size.all) +
         geom_path(data = flowEdges,
                   mapping = aes(x = x, y = y, group = id),
                   colour = "#585c45",
@@ -1114,8 +1370,8 @@ processingStepsFlowChart <- function(object) {
         geom_curve(data = flowArrowOut, aes(x = x1, y = y1, xend = x2, yend = y2),
                    arrow = arrow(length = unit(0.2, "cm"), type = "closed"), size = 0.4,
                    color = "gray20", curvature = -0.2) +
-        geom_label(data = flowArrowIn, aes(x = x1, y = y1, label = `#N In`), size = 4, hjust = 1, color = "#4d4d4d", fill = "#EDEDED") +
-        geom_label(data = flowOutLast, aes(x = x1, y = y1, label = `#N Out`), size = 4, hjust = 1, color = "#4d4d4d", fill = "#EDEDED") +
+        geom_label(data = flowArrowIn, aes(x = x1, y = y1, label = `#N In`), size = size.all, hjust = 1, color = "#4d4d4d", fill = "#EDEDED") +
+        geom_label(data = flowOutLast, aes(x = x1, y = y1, label = `#N Out`), size = size.all, hjust = 1, color = "#4d4d4d", fill = "#EDEDED") +
         xlim(-1.3,1.3) +
         scale_fill_manual(values = cols) +
         theme_void() +
@@ -1125,17 +1381,13 @@ processingStepsFlowChart <- function(object) {
         theme(legend.position = "bottom",
               plot.title = element_text(hjust = 0.5, color = "#748DA6", size = 20, face = "bold"),
               plot.subtitle = element_text(color = "#748DA6", size = 8, face = "italic")) +
-        geom_label(data = flowOption, aes(x = x1, y = y1, label = opt), size = 3, hjust = 0, color = "#4d4d4d", fill = "#EDEDED", fontface = "italic") +
+        geom_label(data = flowOption, aes(x = x1, y = y1, label = opt), size = size.all, hjust = 0, color = "#4d4d4d", fill = "#EDEDED", fontface = "italic") +
         geom_curve(data = flowOptionArrow, aes(x = x1, y = y1, xend = x2, yend = y2),
                    arrow = arrow(length = unit(0.2, "cm"), type = "closed"), size = 0.4,
                    color = "gray20", curvature = -0.2)
 
     return(p)
 }
-
-
-
-
 
 
 #' Binding site definedness plot
@@ -1151,9 +1403,11 @@ processingStepsFlowChart <- function(object) {
 #' assignment function was executed on the dataset prior to calling this plot function.
 #'
 #' @param object a \code{\link{BSFDataSet}} object
-#' @param by character; the option by which the plot should be grouped by
+#' @param by character; the option by which the plot should be grouped by.
+#' Options are: "all", "transcript_region", "gene_type"
 #' @param showN.genes numeric; if \code{by} is `gene_type`, then this argument
 #' set the maximum number of groups to be shown in the plot
+#' @param show.others logical; whether to show 'others' category.
 #'
 #' @return a plot of type \code{\link{ggplot}}
 #'
@@ -1177,7 +1431,9 @@ processingStepsFlowChart <- function(object) {
 bindingSiteDefinednessPlot <- function(
         object,
         by = c("all", "transcript_region", "gene_type"),
-        showN.genes = 5
+        showN.genes = 5,
+        show.others = FALSE,
+        order.manual = NULL
 ) {
 
     # INPUT CHECKS
@@ -1196,8 +1452,24 @@ bindingSiteDefinednessPlot <- function(
     optstr = object@params$calculateSignalToFlankScore
     optstrNice = paste0("Flank=", optstr$flank)
 
+    # get main plotting dataframe
     df = as.data.frame(mcols(getRanges(object)), row.names = NULL)
 
+    # filter if needed
+    if (!isTRUE(show.others)) {
+        # remove other category to match raw plot with normalized plot
+        df = subset(df, transcriptRegion != "OTHER")
+    }
+
+    # Nice formatting of standard names
+    df = df %>% mutate(transcriptRegion = ifelse(toupper(transcriptRegion) == "UTR3", "3'UTR",
+                                                 ifelse(toupper(transcriptRegion) == "UTR5", "5'UTR",
+                                                        ifelse(toupper(transcriptRegion) == "CDS", "CDS",
+                                                               ifelse(toupper(transcriptRegion) == "INTRON", "Intron", transcriptRegion)))))
+
+    # set plotting order based on frequency
+    df.order = df %>% group_by(transcriptRegion) %>% tally() %>% arrange(desc(n))
+    df$transcriptRegion = factor(df$transcriptRegion, levels = rev(df.order$transcriptRegion), ordered = TRUE)
 
     # check for what plotting options are available
     if (by == "transcript_region") {
@@ -1211,6 +1483,7 @@ bindingSiteDefinednessPlot <- function(
             cols = cols[1:nrow(df)]
             # make plot
             p = ggplot(df, aes(x = transcriptRegion, y = signalToFlankRatio)) +
+                geom_boxplot(aes(color = transcriptRegion), width = .15, outlier.shape = NA) +
                 ggdist::stat_halfeye(aes(fill = transcriptRegion), adjust = 1.5, width = .6, .width = 0, justification = -.2, point_colour = NA) +
                 geom_boxplot(aes(color = transcriptRegion), width = .15, outlier.shape = NA) +
                 scale_fill_manual(values = cols) +
@@ -1289,8 +1562,6 @@ bindingSiteDefinednessPlot <- function(
     }
     return(p)
 }
-
-
 
 
 
@@ -1839,3 +2110,254 @@ supportRatioPlot <- function(object, bsWidths, bsFlank = NA, ...){
     p
 }
 
+
+#' Plot that shows binding site reproducibility as scatter
+#'
+#' Function compute the number of crosslinks per binding site on a log2 scale
+#' for each sample. Samples are pairwise correlated as a scatter and pairwise
+#' pearson correlation is shown.
+#'
+#' Unlike most plotting functions, this function is actively calculating the
+#' values to plot.
+#'
+#' @param object a BSFDataSet object
+#' @param quiet logical; whether to print messages
+#'
+#' @return an object of class \code{ggplot2}
+#'
+#' @import ggplot2 GGally
+#'
+#' @examples
+#' # load data
+#' files <- system.file("extdata", package="BindingSiteFinder")
+#' load(list.files(files, pattern = ".rda$", full.names = TRUE))
+#' bds <- makeBindingSites(object = bds, bsSize = 9, minWidth = 2,
+#' minCrosslinks = 2, minClSites = 3, sub.chr = "chr22")
+#' reproducibilityScatterPlot(bds)
+#'
+#' @export
+reproducibilityScatterPlot <- function(object,
+                                       quiet = FALSE
+
+){
+    # bind locally used variables
+    what <- NULL
+
+    # INPUT CHECKS
+    # --------------------------------------------------------------------------
+    stopifnot(is(object, "BSFDataSet"))
+    stopifnot(is.logical(quiet))
+
+    if (is.null(object@params$reproducibilityFilter)) {
+        what = "BEFORE"
+        msg1 = paste0("Reproducibility filter was not applied yet.\n")
+        msg2 = paste0("Correlations are shown BEFORE reproducibility filtering.\n")
+        msg3 = paste0("Run BSFind() or reproducibilityFilter() to show correlations AFTER reproducibility filtering.\n")
+        if (!quiet) message(c(msg1, msg2, msg3))
+    } else {
+        what = "AFTER"
+        msg1 = paste0("Reproducibility filter was applied.\n")
+        msg2 = paste0("Correlations are shown AFTER reproducibility filtering.\n")
+        if (!quiet) message(c(msg1, msg2))
+    }
+    cov = coverageOverRanges(object, returnOptions = "merge_positions_keep_replicates", silent = quiet)
+    df = as.data.frame(mcols(cov))
+    df = log2(df+1)
+    max.value = max(df)
+    p = GGally::ggpairs(df,
+                        upper = list(continuous = .pairsCorColor),
+                        lower = list(continuous = wrap(.parisCorrelationPlot, max.value = max.value)),
+                        diag = list(continuous = .pairsDensity),
+                        progress = quiet) +
+        labs(title = "reproducibilityScatterPlot()",
+             subtitle = paste0("Correlations are ", what, " reproducibility filter was applied."))
+
+    return(p)
+}
+
+
+
+
+
+#' Quick figures
+#'
+#' Summarize all results in a set of quick figures. Depending on how the
+#' function is called a different set of analytic plots are arranged into
+#' either a 'main' or 'supplementary' type multi-panel figure.
+#'
+#' @param object a \code{\link{BSFDataSet}} object
+#' @param what character; the plotting option. One of: 'main', 'supp'
+#' @param save.filename File name to create on the disc
+#' @param save.width numeric; plot size width
+#' @param save.height numeric; plot size height
+#' @param save.device charcter; Device to use. One of: 'pdf', 'png', ...
+#' @param quiet whether to print messages
+#' @param ... further arguments passed to \code{\link{ggplot2::ggsave}}
+#'
+#' @return a plot
+#'
+#' @seealso \code{\link{BSFind}}
+#'
+#' @import ggplot2 patchwork
+#'
+#' @examples
+#' # load clip data
+#' files <- system.file("extdata", package="BindingSiteFinder")
+#' load(list.files(files, pattern = ".rda$", full.names = TRUE))
+#' load(list.files(files, pattern = ".rds$", full.names = TRUE)[1])
+#' load(list.files(files, pattern = ".rds$", full.names = TRUE)[2])
+#' bds = BSFind(bds, anno.genes = gns, anno.transcriptRegionList = regions,
+#'  est.subsetChromosome = "chr22")
+#' quickFigure(bds)
+#'
+#' @export
+quickFigure <- function(object,
+                        what = c("main", "supp"),
+                        save.filename = NULL, # if it is NULL, then plot to normal device, if it is a path, then plot to the path
+                        save.width = 10,
+                        save.height = 12,
+                        save.device = "pdf",
+                        quiet = TRUE,
+                        ...
+){
+    # INPUT CHECKS
+    # --------------------------------------------------------------------------
+    stopifnot(is(object, "BSFDataSet"))
+
+    # handle options
+    what = match.arg(what, choices = c("main", "supp"))
+
+
+    # setting ggplot local theme
+    theme_clean <- theme(
+        plot.title = element_blank(),
+        plot.subtitle = element_blank(),
+        axis.text = element_text(size = 6),
+        axis.title = element_text(size = 6)
+    )
+
+
+    if (what == "main") {
+
+        # overview
+        p1 = processingStepsFlowChart(object, size.all = 2) +
+            theme(plot.title = element_blank(),
+                  plot.subtitle = element_blank())
+
+        # binding sites
+        p2 = estimateBsWidthPlot(object) + theme_clean
+        p3 = reproducibilitySamplesPlot(object, text.size = 6, show.title = FALSE)
+        p3 = as.grob(p3)
+        # targets and assignment
+        p4 = targetGeneSpectrumPlot(object, text.size = 2) + theme_clean
+        p5 = transcriptRegionSpectrumPlot(object, normalize = TRUE, values = "percentage", normalize.factor = "median", text.size = 2) + theme_clean
+        p6 = bindingSiteDefinednessPlot(object, by = "transcript_region") + theme_clean
+
+        # stitch plots into patch
+        patch = p1 + p2 + p3 + p4 + p5 + p6
+
+        # set layout
+        layout <- "
+        AAAABBB#
+        AAAABBB#
+        AAAABBB#
+        AAAACCCC
+        AAAACCCC
+        AAAACCCC
+        AAAACCCC
+        AAAACCCC
+        #DDDEEFF
+        #DDDEEFF
+        #DDDEEFF
+        #DDDEEFF
+        #DDDEEFF
+        "
+
+        # annotate patches
+        patch = patch + patchwork::plot_layout(guides = "collect", design = layout) &
+            theme(legend.position = "bottom",
+                  legend.title = element_blank(),
+                  legend.text = element_text(size = 6))  &
+            theme(legend.key.size = unit(3,"mm")) &
+            guides(fill = guide_legend(nrow = 4, byrow = TRUE))
+        patch = patch +
+            plot_annotation(
+                title = paste0("Binding spectrum of: ", getName(object)),
+                subtitle = "Disclaimer: This is an auto generated figure, handle with care.",
+                caption = paste0("Binding spectrum of: ", getName(object), "\n",
+                                 "A) processingStepsFlowChart, B) estimateBsWidthPlot,
+                                 C) reproducibilitySamplesPlot, D) targetGeneSpectrumPlot,
+                                 E) transcriptRegionSpectrumPlot, F) bindingSiteDefinednessPlot"),
+                tag_levels = "A"
+            )
+
+    }
+    if (what == "supp") {
+        # binding site definition
+        p1 = pureClipGlobalFilterPlot(object) + theme_clean
+        p2 = duplicatedSitesPlot(object) + theme_clean
+        p3 = mergeCrosslinkDiagnosticsPlot(object) + theme_clean
+        p4 = makeBsSummaryPlot(object) + theme_clean
+        p5 = globalScorePlot(object) + theme_clean
+        # targets and assignment
+        p6 = reproducibilityFilterPlot(object) + theme_clean
+        p7 = reproducibilityScatterPlot(object, quiet = quiet) + theme_clean
+
+        p8 = geneOverlapsPlot(object, text.size = 6, show.title = FALSE)
+        p9 = transcriptRegionOverlapsPlot(object, text.size = 6, show.title = FALSE)
+
+        p = reproducibilitySamplesPlot(object, text.size = 6, show.title = FALSE)
+
+
+        # stitch plots into patch
+        patch = p1 + p2 + p3 + p4 + p5 +
+            p6  + wrap_elements(ggmatrix_gtable(p7)) +
+            as.grob(p8) + as.grob(p9)
+
+        # set layout
+        layout <- "
+        AAABBBCCCDDDEEE
+        AAABBBCCCDDDEEE
+        AAABBBCCCDDDEEE
+        FFFFFFGGGGGGGGG
+        FFFFFFGGGGGGGGG
+        FFFFFFGGGGGGGGG
+        FFFFFFGGGGGGGGG
+        FFFFFFGGGGGGGGG
+        FFFFFFGGGGGGGGG
+        FFFFFFGGGGGGGGG
+        FFFFFFGGGGGGGGG
+        HHHHHHH#IIIIIII
+        HHHHHHH#IIIIIII
+        HHHHHHH#IIIIIII
+        HHHHHHH#IIIIIII
+        "
+
+        patch = patch + patchwork::plot_layout(guides = "collect", design = layout) &
+            theme(legend.position = "right",
+                  legend.title = element_blank(),
+                  legend.text = element_text(size = 6))  &
+            theme(legend.key.size = unit(3,"mm")) &
+            guides(fill = guide_legend(ncol = 2, byrow = FALSE))
+        patch = patch +
+            plot_annotation(
+                title = paste0("Binding spectrum of: ", getName(object)),
+                subtitle = "Disclaimer: This is an auto generated figure, handle with care.",
+                caption = paste0("Binding spectrum of: ", getName(object), "\n",
+                                 "A) pureClipGlobalFilterPlot, B) duplicatedSitesPlot, C) mergeCrosslinkDiagnosticsPlot,
+                                 D) makeBsSummaryPlot, E) globalScorePlot, F) reproducibilityFilterPlot,
+                                 G) reproducibilityScatterPlot, H) geneOverlapsPlot, I) transcriptRegionOverlapsPlot"),
+                tag_levels = "A"
+            )
+
+    }
+
+    # manage output
+    if (is.null(save.filename)) {
+        return(patch)
+    } else {
+        ggsave(filename = save.filename, plot = patch,
+               width = save.width, height = save.height,
+               device = save.device, ...)
+    }
+}

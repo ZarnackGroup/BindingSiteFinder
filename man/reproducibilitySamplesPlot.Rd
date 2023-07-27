@@ -4,12 +4,21 @@
 \alias{reproducibilitySamplesPlot}
 \title{UpSet-plot to that shows how each replicate supports binding sites}
 \usage{
-reproducibilitySamplesPlot(object, nIntersections = 20)
+reproducibilitySamplesPlot(
+  object,
+  nIntersections = 20,
+  show.title = TRUE,
+  text.size = NULL
+)
 }
 \arguments{
 \item{object}{a \code{\link{BSFDataSet}} object}
 
 \item{nIntersections}{numeric; number of intersection to be shown}
+
+\item{show.title}{logical; if plot title should be visible}
+
+\item{text.size}{numeric; fontsize of all numbers on axis}
 }
 \value{
 a plot of type \code{\link{ggplot}}

@@ -4,7 +4,7 @@
 \alias{targetGeneSpectrumPlot}
 \title{Bar-chart to show the hosting gene types of binding sites}
 \usage{
-targetGeneSpectrumPlot(object, showNGroups = 5)
+targetGeneSpectrumPlot(object, showNGroups = 5, text.size = 5)
 }
 \arguments{
 \item{object}{a \code{\link{BSFDataSet}} object}

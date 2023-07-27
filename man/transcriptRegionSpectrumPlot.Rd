@@ -4,18 +4,49 @@
 \alias{transcriptRegionSpectrumPlot}
 \title{Bar-chart to show the hosting transcript regions of binding sites}
 \usage{
-transcriptRegionSpectrumPlot(object)
+transcriptRegionSpectrumPlot(
+  object,
+  values = c("asis", "percentage"),
+  normalize = FALSE,
+  normalize.factor = c("sum", "median", "mean"),
+  show.others = FALSE,
+  text.size = 6
+)
 }
 \arguments{
 \item{object}{a \code{\link{BSFDataSet}} object}
+
+\item{values}{character; if values should be presented 'as-is', that means
+for example as frequencies in case \code{normalization = FALSE}, or as
+percentages}
+
+\item{normalize}{logical; whether to normalize values}
+
+\item{normalize.factor}{character; indicate by what factor values should be
+normalized to region length by}
+
+\item{show.others}{logical; whether to show 'others' category. Has to be false
+if \code{normalize = TRUE}}
+
+\item{text.size}{numeric; font size of the numbers to be displayed on each bar}
 }
 \value{
 a plot of type \code{\link{ggplot}}
 }
 \description{
-A diagnostic function that plots the transcript regions of the hosting gene for
-each binding site. The function \code{\link{assignToTranscriptRegions}} is expected to be
-executed prior to calling this plot function.
+A diagnostic function that plots the transcript regions of the hosting gene
+for each binding site. The function \code{\link{assignToTranscriptRegions}}
+is expected to be executed prior to calling this plot function.
+}
+\details{
+Count frequencies can be normalized to the length of the hosting region with
+option \code{normalize}. The specific factor how the hosting region length is
+used is given by \code{normalize.factor}. In the case of
+\code{normalize.factor = "sum"} binding site frequencies are divided by the
+summed length of all regions that host the specific binding site.
+
+Further with option \code{values} once can indicate whether raw or normalized
+frequencies should be shown 'as-is' or normalized to 'percentages'.
 }
 \examples{
 # load clip data

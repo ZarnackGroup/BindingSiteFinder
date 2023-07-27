@@ -4,10 +4,14 @@
 \alias{transcriptRegionOverlapsPlot}
 \title{UpSet-plot to that shows the transcript region overlaps}
 \usage{
-transcriptRegionOverlapsPlot(object)
+transcriptRegionOverlapsPlot(object, text.size = NULL, show.title = TRUE)
 }
 \arguments{
 \item{object}{a \code{\link{BSFDataSet}} object}
+
+\item{text.size}{numeric; fontsize of all numbers on axis}
+
+\item{show.title}{logical; if plot title should be visible}
 }
 \value{
 a plot of type \code{\link{ggplot}}

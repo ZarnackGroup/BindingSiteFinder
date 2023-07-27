@@ -4,7 +4,7 @@
 \alias{processingStepsFlowChart}
 \title{Step-wise flowchart plot}
 \usage{
-processingStepsFlowChart(object)
+processingStepsFlowChart(object, size.all = 3)
 }
 \arguments{
 \item{object}{a \code{\link{BSFDataSet}} object}
