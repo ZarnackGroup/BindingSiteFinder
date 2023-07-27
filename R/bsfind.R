@@ -33,15 +33,39 @@
 #' @param object a \code{\link{BSFDataSet}} object with stored ranges
 #' @param bsSize an odd integer value specifying the size of the output
 #' binding sites
-
-#' @param est.geneResolution character; level of resolution of the gene-wise
-#' filtering in function \code{\link{estimateBsWidth}}
+#'
 #' @param est.bsResolution character; level of resolution of the binding site
 #' width in function \code{\link{estimateBsWidth}}
+#' @param est.geneResolution character; level of resolution of the gene-wise
+#' filtering in function \code{\link{estimateBsWidth}}
+#' @param est.maxBsWidth numeric; the largest binding site width which should
+#' considered in the testing
+#' @param est.minimumStepGain numeric; the minimum additional gain in the score
+#' in percent the next binding site width has to have, to be selected as best option
+#' @param est.maxSites numeric; maximum number of PureCLIP sites that are used
 #' @param est.subsetChromosome character; define on which chromosome the
 #' estimation should be done in function \code{\link{estimateBsWidth}}
+#' @param est.minWidth the minimum size of regions that are subjected to the
+#' iterative merging routine, after the initial region concatenation.
+#' @param est.offset constant added to the flanking count in the signal-to-flank
+#' ratio calculation to avoid division by Zero
+#' @param est.sensitive logical; whether to enable sensitive pre-filtering before
+#' binding site merging or not
+#' @param est.sensitive.size numeric; the size (in nucleotides) of the merged
+#' sensitive region
+#' @param est.sensitive.minWidth numeric; the minimum size (in nucleoties) of the
+#' merged sensitive region
+#'
 #' @param merge.minWidth the minimum size of regions that are subjected to the
 #' iterative merging routine, after the initial region concatenation.
+#' @param merge.minCrosslinks the minimal number of positions to overlap with at least
+#' one crosslink event in the final binding sites
+#' @param merge.minClSites the minimal number of crosslink sites that have to
+#' overlap a final binding site
+#' @param merge.CenterIsClSite logical, whether the center of a final binding
+#' site must be covered by an initial crosslink site
+#' @param merge.CenterIsSummit logical, whether the center of a final binding
+#' site must exhibit the highest number of crosslink events
 #'
 #' @param cutoff.globalFilter numeric; defines the cutoff for which sites to
 #' keep, the smallest step is 1\% (0.01) in function
@@ -65,6 +89,9 @@
 #' that should be used to handle overlaps if option 'hierarchy' is selected
 #' for \code{\link{assignToTranscriptRegions}}. The order of the vector is the order of
 #' the hierarchy.
+#' @param stf.flank character; how the flanking region shoule be set. Options are
+#' 'bs', 'manual'
+#' @param stf.flank.size numeric; if flank='manual' provide the desired flanking size
 #'
 #' @param match.score character; meta column name of the crosslink site
 #' @param match.geneID character; meta column name of the genes
@@ -84,8 +111,8 @@
 #'
 #' @param quiet logical; whether to print messages
 #' @param veryQuiet logical; whether to suppress all messages
-#' @param ... additional arguments passed to \code{\link{makeBindingSites}} and
-#' \code{\link{reproducibilityFilter}}
+#' @param ... additional arguments passed to \code{\link{estimateBsWidth}},
+#' \code{\link{makeBindingSites}} and \code{\link{reproducibilityFilter}}
 #'
 #'
 #' @return an object of class \code{\link{BSFDataSet}} with ranges merged into
@@ -114,10 +141,24 @@ BSFind <- function(
         object,
         # binding site size
         bsSize = NULL,
-        est.geneResolution = "medium",
+        # binding site size estimation
         est.bsResolution = "medium",
+        est.geneResolution = "medium",
+        est.maxBsWidth = 13,
+        est.minimumStepGain = 0.02,
+        est.maxSites = Inf,
         est.subsetChromosome = "chr1",
-        merge.minWidth = 3,
+        est.minWidth = 2,
+        est.offset = 1,
+        est.sensitive = FALSE,
+        est.sensitive.size = 5,
+        est.sensitive.minWidth = 2,
+        # binding site merging
+        merge.minWidth = 2,
+        merge.minCrosslinks = 2,
+        merge.minClSites = 1,
+        merge.CenterIsClSite = TRUE,
+        merge.CenterIsSummit = TRUE,
         # cutoffs
         cutoff.globalFilter = 0.01,
         cutoff.geneWiseFilter = NULL,
@@ -127,6 +168,9 @@ BSFind <- function(
         overlaps.rule.geneAssignment = NULL,
         overlaps.TranscriptRegions = "frequency",
         overlaps.rule.TranscriptRegions = NULL ,
+        # signal-to-flank
+        stf.flank = "bs",
+        stf.flank.size = NULL,
         # matching arguments
         match.score = "score",
         match.geneID = "gene_id",
@@ -204,11 +248,19 @@ BSFind <- function(
     if (is.null(bsSize) | is.null(cutoff.geneWiseFilter)) {
         if(!veryQuiet) message("estimateBsWidth...")
         obj = estimateBsWidth(obj,
-                              geneResolution = est.geneResolution,
                               bsResolution = est.bsResolution,
+                              geneResolution = est.geneResolution,
+                              est.maxBsWidth = est.maxBsWidth,
+                              est.minimumStepGain = est.minimumStepGain,
+                              est.maxSites = est.maxSites,
                               est.subsetChromosome = est.subsetChromosome,
+                              est.minWidth = est.minWidth,
+                              est.offset = est.offset,
+                              sensitive = est.sensitive,
+                              sensitive.size = est.sensitive.size,
+                              sensitive.minWidth = est.sensitive.minWidth,
                               anno.annoDB = anno.annoDB,
-                              anno.genes = anno.genes, ...)
+                              anno.genes = anno.genes)
         if (is.null(bsSize) & !is.null(cutoff.geneWiseFilter)) {
             obj@params$geneFilter = cutoff.geneWiseFilter
         }
@@ -229,7 +281,14 @@ BSFind <- function(
                                  quiet = quiet)
 
     if(!veryQuiet) message("makeBindingSites...")
-    obj = makeBindingSites(obj, bsSize = bsSize, minWidth = merge.minWidth, quiet = quiet, ...)
+    obj = makeBindingSites(obj,
+                           bsSize = bsSize,
+                           minWidth = merge.minWidth,
+                           minCrosslinks = merge.minCrosslinks,
+                           minClSites = merge.minClSites,
+                           centerIsClSite = merge.CenterIsClSite,
+                           centerIsSummit = merge.CenterIsSummit,
+                           quiet = quiet)
 
     if(!veryQuiet) message("reproducibilityFilter...")
     obj = reproducibilityFilter(obj, returnType = "BSFDataSet", quiet = quiet, ...)
@@ -263,6 +322,13 @@ BSFind <- function(
                             match.score = match.score,
                             match.option = match.option.score,
                             quiet = quiet)
+
+
+    if(!veryQuiet) message("calculateSignalToFlankScore...")
+    obj = calculateSignalToFlankScore(obj,
+                                      flank = stf.flank,
+                                      flank.size = stf.flank.size,
+                                      quiet = quiet)
 
     return(obj)
 }

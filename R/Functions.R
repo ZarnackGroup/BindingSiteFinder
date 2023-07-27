@@ -519,8 +519,9 @@ supportRatio <- function(object, bsWidths, bsFlank = NA, sub.chr = NA, ...) {
 #' for all bining sites and the ratio is reported as a score.
 #'
 #' @param object a BSFDataSet object
-#' @param offset numeric; number to be added to the flanking regions before the
-#' division, to avoid division by zero
+#' @param flank character; how the flanking region shoule be set. Options are
+#' 'bs', 'manual'
+#' @param flank.size numeric; if flank='manual' provide the desired flanking size
 #' @param quiet logical; whether to print messages
 #'
 #' @return an object of class \code{\link{BSFDataSet}} with signal-to-flank ratios
@@ -536,7 +537,8 @@ supportRatio <- function(object, bsWidths, bsFlank = NA, sub.chr = NA, ...) {
 #' @export
 calculateSignalToFlankScore <- function(
         object,
-        offset = 1,
+        flank = c("bs", "manual"),
+        flank.size = NULL,
         quiet = FALSE
 ){
     # INPUT CHECKS
@@ -544,10 +546,12 @@ calculateSignalToFlankScore <- function(
     stopifnot(is(object, "BSFDataSet"))
     stopifnot(is.logical(quiet))
 
+    flank = match.arg(flank, choices = c("bs", "manual"))
+
     # ---
     # Store function parameters in list
-    optstr = list(offset = offset)
-    object@params$estimateBsWidth = optstr
+    optstr = list(flank = flank)
+    object@params$calculateSignalToFlankScore = optstr
 
     # PREPARE TEST RANGES + SIGNAL
     # --------------------------------------------------------------------------
@@ -562,9 +566,20 @@ calculateSignalToFlankScore <- function(
     cRangePlus = subset(rng, strand == "+")
     if (length(cRangePlus) > 0) {
         bsSumPlus = sum(sgnMerge$signalPlus[cRangePlus])
-        extendedRangePlus = cRangePlus + cRangePlus$bsSize
+        # make flanking range
+        if (flank == "bs") {
+            extendedRangePlus = cRangePlus + width(cRangePlus)
+        }
+        if (flank == "manual") {
+            if (is.null(flank.size)) {
+                msg = paste0("If 'flank' is set to be 'manual', then provide a valide flank.size as numeric value reflecting in nucleotides, or use option 'bs'.\n")
+            } else {
+                extendedRangePlus = cRangePlus + flank.size
+            }
+        }
+        # get sum over flanking range
         exSumPlus = sum(sgnMerge$signalPlus[extendedRangePlus])
-        mcols(extendedRangePlus)$signalToFlankRatio = (bsSumPlus) / (((exSumPlus - bsSumPlus) / 2) + offset)
+        mcols(extendedRangePlus)$signalToFlankRatio = (bsSumPlus / exSumPlus)
     } else {
         msg = paste0("No ranges on '+' strand. \n")
         if(!quiet) warning(msg)
@@ -574,9 +589,21 @@ calculateSignalToFlankScore <- function(
     cRangeMinus = subset(rng, strand == "-")
     if (length(cRangeMinus) > 0) {
         bsSumMinus = sum(sgnMerge$signalMinus[cRangeMinus])
+        # make flanking range
+        if (flank == "bs") {
+            extendedRangeMinus = cRangeMinus + width(cRangeMinus)
+        }
+        if (flank == "manual") {
+            if (is.null(flank.size)) {
+                msg = paste0("If 'flank' is set to be 'manual', then provide a valide flank.size as numeric value reflecting in nucleotides, or use option 'bs'.\n")
+            } else {
+                extendedRangeMinus = cRangeMinus + flank.size
+            }
+        }
+        # get sum over flanking range
         extendedRangeMinus = cRangeMinus + cRangeMinus$bsSize
         exSumMinus = sum(sgnMerge$signalMinus[extendedRangeMinus])
-        mcols(extendedRangeMinus)$signalToFlankRatio = (bsSumMinus) / (((exSumMinus - bsSumMinus) / 2) + offset)
+        mcols(extendedRangeMinus)$signalToFlankRatio = (bsSumMinus / exSumMinus)
     } else {
         msg = paste0("No ranges on '-' strand. \n")
         if(!quiet) warning(msg)
@@ -588,19 +615,13 @@ calculateSignalToFlankScore <- function(
     object = setRanges(object, rngNew)
 
     # ---
-    # Store results for plotting
-    # TODO no results are stored for a dedicated plot at the moment
-    plotDf = NULL
-    object@plotData$assignToTranscriptRegions$dataOverlaps = plotDf
-
-    # ---
     # Store for results
     rng = getRanges(object)
     resultLine = data.frame(
         funName = "calculateSignalToFlankScore()", class = "estimate",
         nIn = length(rng), nOut = length(rng),
         per = paste0(round(length(rng)/ length(rng), digits = 2)*100,"%"),
-        options = paste0("offset=", offset)
+        options = paste0("flank=", optstr$flank)
     )
     object@results = rbind(object@results, resultLine)
 
