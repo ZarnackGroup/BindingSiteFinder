@@ -977,7 +977,7 @@ estimateBsWidth <- function(object, # BindingSiteFinder object
 ) {
 
     # initialize local variables
-    bsSize <- ms <- growth_per <- sel <- geneWiseFilter <- est.option <- NULL
+    bsSize <- ms <- growth_per <- sel <- geneWiseFilter <- est.option <- signalToFlankRatio <- NULL
 
     # INPUT CHECKS
     # --------------------------------------------------------------------------
@@ -1132,7 +1132,7 @@ estimateBsWidth <- function(object, # BindingSiteFinder object
             # currFilterObj = pureClipGeneWiseFilter(object = redObj, anno.genes = anno.genes, cutoff = bsFilterStep, quiet = quiet, ...)
             currFilterObj = pureClipGeneWiseFilter(object = redObj, anno.genes = anno.genes, cutoff = bsFilterStep, quiet = quiet)
             cRngFilter = getRanges(currFilterObj)
-            currRng = subsetByOverlaps(cRngFilter, cRngMerge)
+            currRng = IRanges::subsetByOverlaps(cRngFilter, cRngMerge)
 
         } else {
             # -> normal mode
@@ -1238,7 +1238,7 @@ estimateBsWidth <- function(object, # BindingSiteFinder object
         if(!veryQuiet) warning(msg)
     }
     if (est.option == "error") {
-        msg = paste0("Local maximum did also not converge. Raise 'est.minimumStepGain' argument/ or change bsResolution and/or geneResolution arguments. \n")
+        msg = paste0("No maximum found at all. Raise 'est.minimumStepGain' argument/, change bsResolution and/or geneResolution arguments/ raise est.maxBsWidth and check visually. \n")
         stop(msg)
     }
 

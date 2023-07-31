@@ -7,19 +7,16 @@ test_that("Test for estimateBsWidth()", {
     # load transcript region list
     load(list.files(files, pattern = "regions.rds$", full.names = TRUE))
 
+    # Test for correct input
     expect_error(estimateBsWidth(object = bds, anno.genes = gns, est.maxBsWidth = 7, geneResolution = "medium", bsResolution = "medium"))
+    expect_error(estimateBsWidth(object = bds, anno.genes = gns, est.maxBsWidth = 7, geneResolution = "medium", bsResolution = "medium",
+                                   est.subsetChromosome = "chr21", quiet = TRUE))
 
-    expect_warning(estimateBsWidth(object = bds, anno.genes = gns, est.maxBsWidth = 7, geneResolution = "medium", bsResolution = "medium",
-                                   est.subsetChromosome = "chr22", quiet = TRUE))
+    # Test for correct execution
+    expect_error(estimateBsWidth(object = bds, anno.genes = gns, est.maxBsWidth = 7, geneResolution = "medium", bsResolution = "coarse",
+                                   est.subsetChromosome = "chr22", quiet = TRUE, veryQuiet = TRUE))
 
     expect_output(estimateBsWidth(object = bds, anno.genes = gns, est.maxBsWidth = 13, geneResolution = "medium", bsResolution = "medium",
-                                   est.subsetChromosome = "chr22", quiet = TRUE))
-
-    # expect_silent(estimateBsWidth(object = bds, anno.genes = gns, est.maxBsWidth = 7, geneResolution = "coarse", bsResolution = "fine",
-    #                               est.subsetChromosome = "chr22", veryQuiet = TRUE))
-    # expect_silent(estimateBsWidth(object = bds, anno.genes = gns, est.maxBsWidth = 7, geneResolution = "coarse", bsResolution = "medium",
-    #                               est.subsetChromosome = "chr22", veryQuiet = TRUE))
-    # expect_silent(estimateBsWidth(object = bds, anno.genes = gns, est.maxBsWidth = 7, geneResolution = "coarse", bsResolution = "coarse",
-    #                               est.subsetChromosome = "chr22", veryQuiet = TRUE))
+                                  est.subsetChromosome = "chr22", quiet = TRUE, veryQuiet = TRUE))
 
 })

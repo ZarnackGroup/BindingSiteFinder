@@ -180,8 +180,9 @@
 
 .findFirstMaximum <- function(x, est.minimumStepGain){
 
-    est.option <- df.global <- bsFirstDrop <- idxFirstDrop <- NULL
+    est.option <- df.global <- bsFirstDrop <- idxFirstDrop <- bsSize <- NULL
     localEstimates <- est.option <- est.bsSize <- est.geneFilter <- NULL
+    signalToFlankRatio <- ms <- growth_per <- increaseOverMin <- geneWiseFilter <- NULL
 
 
     df.global = x %>%
@@ -208,9 +209,18 @@
 
         # finde die zeile in der ein TRUE auf ein FALSE folgt
         bsFirstDrop = df.global %>%
-            filter(increaseOverMin == FALSE & lag(increaseOverMin, default = TRUE) == TRUE) %>%
+            filter(increaseOverMin == FALSE & dplyr::lag(increaseOverMin, default = TRUE) == TRUE) %>%
             pull(bsSize)
-        bsFirstDrop = max(bsFirstDrop)
+
+        # check for no possible maximum
+        if (length(bsFirstDrop) == 0) {
+            est.option = "error"
+            res = list(est.bsSize = est.bsSize, est.geneFilter = est.geneFilter, est.option = est.option)
+            return(res)
+        } else {
+            bsFirstDrop = max(bsFirstDrop)
+        }
+
 
         # firstMax = which(df.global$increaseOverMin == TRUE)[1]
         # df.current = df.global %>% slice(1:firstMax)
@@ -228,11 +238,6 @@
             idxFirstDrop = which(df.global$bsSize == bsFirstDrop)
             est.bsSize = df.global %>% slice(idxFirstDrop-1) %>% pull(bsSize)
 
-            # est.bsSize = df.global %>% slice(1:firstDrop-1) %>%
-            # est.bsSize = df.global %>% slice(1:firstMax) %>%
-            #     filter(increase == TRUE & increaseOverMin == TRUE) %>%
-            #     arrange(desc(bsSize)) %>% slice(1) %>% pull(bsSize)
-            # pull geneWiseFilter
             est.geneFilter = x %>%
                 filter(bsSize == est.bsSize & signalToFlankRatio >= df.global$ms[df.global$bsSize == est.bsSize]) %>%
                 arrange(geneWiseFilter) %>%
@@ -252,6 +257,7 @@
 .findFirstMaximum_local <- function(x, est.minimumStepGain) {
 
     df.local <- option <- est.bsSize <- est.geneFilter <- NULL
+    geneWiseFilter <- signalToFlankRatio <- growth_per <- increase <- bsSize <- NULL
 
     df.local = x %>%
         group_by(geneWiseFilter) %>%
@@ -304,7 +310,7 @@
     # -> compute width for all ranges that overlap with at least one binding site
     w.hosting = lapply(seq_along(this.trl), function(x){
         # get all relevant width
-        curr.width = width(reduce(subsetByOverlaps(this.trl[[x]], rng)))
+        curr.width = width(reduce(IRanges::subsetByOverlaps(this.trl[[x]], rng)))
         # find upper and lower boundary cutoffs
         currIdx = findInterval(curr.width, vec = quantile(x = curr.width, probs = seq(from = 0, to = 1, by = 0.01)), all.inside = TRUE)
         seqs = seq(from = 0.01, to = 1, by = 0.01)
@@ -326,3 +332,4 @@
     w.total = cbind.data.frame(w.hosting)
     return(w.total)
 }
+
