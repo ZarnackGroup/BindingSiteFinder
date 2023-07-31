@@ -8,7 +8,7 @@
     y <- GGally::eval_data_col(data, mapping$y)
 
     # calc pairwise pearson correlation
-    ct <- cor.test(x,y, method = "pearson")
+    ct <- corrplot::cor.test(x,y, method = "pearson")
 
     # get P value
     pval = ct$p.value
@@ -19,7 +19,7 @@
     tt <- as.character(rt)
 
     # plot the cor value
-    p <- ggally_text(
+    p <- GGally::ggally_text(
         label = tt,
         mapping = aes(),
         xP = 0.5, yP = 0.5,
@@ -76,6 +76,9 @@
 }
 
 .pairsDensity <- function(data, mapping, ...){
+    # init local variables
+    y <- NULL
+
     data = data %>% drop_na()
     # compute quantiles to display
     x <- GGally::eval_data_col(data, mapping$x)
@@ -110,7 +113,7 @@
 
     p = ggplot(data, mapping) +
         geom_bin2d(bins = 100) +
-        scale_fill_viridis() +
+        viridis::scale_fill_viridis() +
         theme_bw() +
         theme(legend.position = "none") +
         scale_x_continuous(limits = c(-1, ceiling(max.value))) +

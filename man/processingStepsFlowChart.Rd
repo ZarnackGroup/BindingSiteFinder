@@ -8,6 +8,8 @@ processingStepsFlowChart(object, size.all = 3)
 }
 \arguments{
 \item{object}{a \code{\link{BSFDataSet}} object}
+
+\item{size.all}{numeric; size of all numbers}
 }
 \value{
 a plot of type \code{\link{ggplot}}

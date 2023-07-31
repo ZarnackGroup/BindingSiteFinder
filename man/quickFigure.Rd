@@ -30,7 +30,7 @@ quickFigure(
 
 \item{quiet}{whether to print messages}
 
-\item{...}{further arguments passed to \code{\link{ggplot2::ggsave}}}
+\item{...}{further arguments passed to \code{\link[ggplot2]{ggsave}}}
 }
 \value{
 a plot

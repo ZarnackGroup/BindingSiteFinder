@@ -10,6 +10,8 @@ targetGeneSpectrumPlot(object, showNGroups = 5, text.size = 5)
 \item{object}{a \code{\link{BSFDataSet}} object}
 
 \item{showNGroups}{numeric; the number of different gene types to show}
+
+\item{text.size}{numeric; the size of the text elments on the plot}
 }
 \value{
 a plot of type \code{\link{ggplot}}

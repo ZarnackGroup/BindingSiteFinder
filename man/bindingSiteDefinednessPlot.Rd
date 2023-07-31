@@ -8,8 +8,7 @@ bindingSiteDefinednessPlot(
   object,
   by = c("all", "transcript_region", "gene_type"),
   showN.genes = 5,
-  show.others = FALSE,
-  order.manual = NULL
+  show.others = FALSE
 )
 }
 \arguments{

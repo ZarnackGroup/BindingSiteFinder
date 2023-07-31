@@ -618,6 +618,7 @@ geneOverlapsPlot <- function(object,
 #'
 #' @param object a \code{\link{BSFDataSet}} object
 #' @param showNGroups numeric; the number of different gene types to show
+#' @param text.size numeric; the size of the text elments on the plot
 #'
 #' @return a plot of type \code{\link{ggplot}}
 #'
@@ -873,6 +874,7 @@ transcriptRegionSpectrumPlot <- function(object,
 
     # bind locally used variables
     TranscriptRegion <- FreqNice <- Freq <-  NULL
+    per <- perNice <- value <- name <- norm.value <- norm.per <- freq.per <- . <- NULL
 
     # INPUT CHECKS
     # --------------------------------------------------------------------------
@@ -1186,7 +1188,7 @@ globalScorePlot <- function(object) {
 estimateBsWidthPlot <- function(object) {
 
     # bind locally used variables
-    bsSize <- ms <- geneWiseFilter <- NULL
+    bsSize <- ms <- geneWiseFilter <- signalToFlankRatio <- NULL
 
     # INPUT CHECKS
     # --------------------------------------------------------------------------
@@ -1268,6 +1270,7 @@ estimateBsWidthPlot <- function(object) {
 #' optimal usage is after a full run of the wrapper function \code{\link{BSFind}}.
 #'
 #' @param object a \code{\link{BSFDataSet}} object
+#' @param size.all numeric; size of all numbers
 #'
 #' @return a plot of type \code{\link{ggplot}}
 #'
@@ -1415,6 +1418,7 @@ processingStepsFlowChart <- function(object, size.all = 3) {
 #'
 #' @import ggplot2
 #' @importFrom ggdist stat_halfeye
+#' @importFrom dplyr tally
 #'
 #' @examples
 #' # load clip data
@@ -1432,9 +1436,10 @@ bindingSiteDefinednessPlot <- function(
         object,
         by = c("all", "transcript_region", "gene_type"),
         showN.genes = 5,
-        show.others = FALSE,
-        order.manual = NULL
+        show.others = FALSE
 ) {
+    # init local vairables
+    transcriptRegion <- signalToFlankRatio <- geneType <- NULL
 
     # INPUT CHECKS
     # --------------------------------------------------------------------------
@@ -2125,7 +2130,7 @@ supportRatioPlot <- function(object, bsWidths, bsFlank = NA, ...){
 #'
 #' @return an object of class \code{ggplot2}
 #'
-#' @import ggplot2 GGally
+#' @import ggplot2
 #'
 #' @examples
 #' # load data
@@ -2166,7 +2171,7 @@ reproducibilityScatterPlot <- function(object,
     max.value = max(df)
     p = GGally::ggpairs(df,
                         upper = list(continuous = .pairsCorColor),
-                        lower = list(continuous = wrap(.parisCorrelationPlot, max.value = max.value)),
+                        lower = list(continuous = GGally::wrap(.parisCorrelationPlot, max.value = max.value)),
                         diag = list(continuous = .pairsDensity),
                         progress = quiet) +
         labs(title = "reproducibilityScatterPlot()",
@@ -2192,13 +2197,13 @@ reproducibilityScatterPlot <- function(object,
 #' @param save.height numeric; plot size height
 #' @param save.device charcter; Device to use. One of: 'pdf', 'png', ...
 #' @param quiet whether to print messages
-#' @param ... further arguments passed to \code{\link{ggplot2::ggsave}}
+#' @param ... further arguments passed to \code{\link[ggplot2]{ggsave}}
 #'
 #' @return a plot
 #'
 #' @seealso \code{\link{BSFind}}
 #'
-#' @import ggplot2 patchwork
+#' @import ggplot2
 #'
 #' @examples
 #' # load clip data
@@ -2247,7 +2252,7 @@ quickFigure <- function(object,
         # binding sites
         p2 = estimateBsWidthPlot(object) + theme_clean
         p3 = reproducibilitySamplesPlot(object, text.size = 6, show.title = FALSE)
-        p3 = as.grob(p3)
+        p3 = ggplotify::as.grob(p3)
         # targets and assignment
         p4 = targetGeneSpectrumPlot(object, text.size = 2) + theme_clean
         p5 = transcriptRegionSpectrumPlot(object, normalize = TRUE, values = "percentage", normalize.factor = "median", text.size = 2) + theme_clean
@@ -2281,7 +2286,7 @@ quickFigure <- function(object,
             theme(legend.key.size = unit(3,"mm")) &
             guides(fill = guide_legend(nrow = 4, byrow = TRUE))
         patch = patch +
-            plot_annotation(
+            patchwork::plot_annotation(
                 title = paste0("Binding spectrum of: ", getName(object)),
                 subtitle = "Disclaimer: This is an auto generated figure, handle with care.",
                 caption = paste0("Binding spectrum of: ", getName(object), "\n",
@@ -2311,8 +2316,8 @@ quickFigure <- function(object,
 
         # stitch plots into patch
         patch = p1 + p2 + p3 + p4 + p5 +
-            p6  + wrap_elements(ggmatrix_gtable(p7)) +
-            as.grob(p8) + as.grob(p9)
+            p6  + patchwork::wrap_elements(GGally::ggmatrix_gtable(p7)) +
+            ggplotify::as.grob(p8) + ggplotify::as.grob(p9)
 
         # set layout
         layout <- "
@@ -2340,7 +2345,7 @@ quickFigure <- function(object,
             theme(legend.key.size = unit(3,"mm")) &
             guides(fill = guide_legend(ncol = 2, byrow = FALSE))
         patch = patch +
-            plot_annotation(
+            patchwork::plot_annotation(
                 title = paste0("Binding spectrum of: ", getName(object)),
                 subtitle = "Disclaimer: This is an auto generated figure, handle with care.",
                 caption = paste0("Binding spectrum of: ", getName(object), "\n",
