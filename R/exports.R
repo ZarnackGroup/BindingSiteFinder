@@ -32,7 +32,7 @@
 #' @export
 exportTargetGenes <- function(object,
                               path = "./", # where to export
-                              format = c("csv", "excel"), # CSV, Excel
+                              format = c("csv", "xslx"), # CSV, Excel
                               sort = c("score", "bs"), # by what to sort (score, number of bs, number of crosslinks),
                               split = c("none", "geneType", "transcriptRegion")
 ){
@@ -45,7 +45,7 @@ exportTargetGenes <- function(object,
     stopifnot(is(object, "BSFDataSet"))
 
     # capture export options
-    format = match.arg(format, choices = c("csv", "excel"))
+    format = match.arg(format, choices = c("csv", "xslx"))
     sort = match.arg(sort, choices = c("score", "bs"))
     split = match.arg(split, choices = c("none", "geneType", "transcriptRegion"))
 
@@ -99,7 +99,7 @@ exportTargetGenes <- function(object,
         }
     }
 
-    if (format == "excel") {
+    if (format == "xslx") {
         if (!requireNamespace("xlsx", quietly=TRUE)) {
             stop("format='xlsx' requires installing the package 'xlsx'")
         }

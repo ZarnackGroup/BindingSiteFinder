@@ -641,7 +641,7 @@ geneOverlapsPlot <- function(object,
 #' @export
 targetGeneSpectrumPlot <- function(object,
                                    showNGroups = 5,
-                                   text.size = 5) {
+                                   text.size = 4) {
 
     # bind locally used variables
     GeneType <- Freq <- FreqNice <- nGenes <- nBs <- geneType <- nice <- NULL
@@ -870,7 +870,7 @@ transcriptRegionSpectrumPlot <- function(object,
                                          normalize = FALSE,
                                          normalize.factor = c("sum", "median", "mean"),
                                          show.others = FALSE,
-                                         text.size = 6) {
+                                         text.size = 4) {
 
     # bind locally used variables
     TranscriptRegion <- FreqNice <- Freq <-  NULL
@@ -1354,7 +1354,8 @@ processingStepsFlowChart <- function(object, size.all = 3) {
             mutate(x2 = xmax+0.01, x1 = xmax +0.25, y2 = ymax -0.85, y1 = ymax -0.65)
     })
 
-    if (!is.null(object@params$estimateBsWidth)) {
+    if (!is.null(object@params$estimateBsWidth) |
+        !is.null(object@params$calculateSignalToFlankScore)) {
         cols = c("#F2D7D9", "#D3CEDF", "#ECE5C7", "#9CB4CC")
     } else {
         cols = c("#F2D7D9", "#D3CEDF", "#9CB4CC")
@@ -1938,10 +1939,10 @@ mergeSummaryPlot <- function(object,
 #' minCrosslinks = 2, minClSites = 1)
 #'
 #' # use the same cutoff for both conditions
-#' suppressWarnings(reproducibilityCutoffPlot(bds, max.range = 20, cutoff = c(0.05, 0.05)))
+#' suppressWarnings(reproducibilityCutoffPlot(bds, max.range = 20, cutoff = c(0.05)))
 #'
 #' # use different cutoffs for each condition
-#' suppressWarnings(reproducibilityCutoffPlot(bds, max.range = 20, cutoff = c(0.1, 0.05)))
+#' suppressWarnings(reproducibilityCutoffPlot(bds, max.range = 20, cutoff = c(0.1)))
 #'
 #'
 #' @export
@@ -2259,7 +2260,9 @@ quickFigure <- function(object,
         p6 = bindingSiteDefinednessPlot(object, by = "transcript_region") + theme_clean
 
         # stitch plots into patch
-        patch = p1 + p2 + p3 + p4 + p5 + p6
+
+        pl = list(p1, p2, p3, p4, p5, p6)
+        patch = patchwork::wrap_plots(pl)
 
         # set layout
         layout <- "
@@ -2313,11 +2316,17 @@ quickFigure <- function(object,
 
         p = reproducibilitySamplesPlot(object, text.size = 6, show.title = FALSE)
 
+        p7 = patchwork::wrap_elements(GGally::ggmatrix_gtable(p7))
+        p8 = ggplotify::as.grob(p8)
+        p9 = ggplotify::as.grob(p9)
 
         # stitch plots into patch
-        patch = p1 + p2 + p3 + p4 + p5 +
-            p6  + patchwork::wrap_elements(GGally::ggmatrix_gtable(p7)) +
-            ggplotify::as.grob(p8) + ggplotify::as.grob(p9)
+        pl = list(p1, p2, p3, p4, p5, p6, p7, p8, p9)
+        patch = patchwork::wrap_plots(pl)
+
+        # patch = p1 + p2 + p3 + p4 + p5 +
+        #     p6  + patchwork::wrap_elements(GGally::ggmatrix_gtable(p7)) +
+        #     ggplotify::as.grob(p8) + ggplotify::as.grob(p9)
 
         # set layout
         layout <- "

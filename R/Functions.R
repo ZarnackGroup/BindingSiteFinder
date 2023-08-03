@@ -50,18 +50,10 @@
 #' load(list.files(files, pattern = ".rda$", full.names = TRUE))
 #'
 #' # merge binding sites
-#' bds <- makeBindingSites(object = bds, bsSize = 9, minWidth = 2,
-#' minCrosslinks = 2, minClSites = 1)
+#' bds <- makeBindingSites(object = bds, bsSize = 9)
 #'
 #' # use default return with condition specific threshold
-#' s = reproducibilityFilter(bds, cutoff = c(0.1, 0.05), nReps = c(1, 2))
-#'
-#' # use data.frame return type for plotting
-#' s = reproducibilityFilter(bds, cutoff = c(0.1, 0.05), nReps = c(1, 2),
-#' returnType = "data.frame")
-#' library(ComplexHeatmap)
-#' m = make_comb_mat(s)
-#' UpSet(m)
+#' bds = reproducibilityFilter(bds, cutoff = 0.1, nReps = 1)
 #'
 #' @export
 reproducibilityFilter <- function(object,

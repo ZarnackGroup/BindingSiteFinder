@@ -8,7 +8,7 @@
     y <- GGally::eval_data_col(data, mapping$y)
 
     # calc pairwise pearson correlation
-    ct <- corrplot::cor.test(x,y, method = "pearson")
+    ct <- stats::cor.test(x,y, method = "pearson")
 
     # get P value
     pval = ct$p.value
