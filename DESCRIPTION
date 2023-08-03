@@ -1,7 +1,7 @@
 Package: BindingSiteFinder
 Type: Package
 Title: Binding site defintion based on iCLIP data
-Version: 1.7.2
+Version: 1.7.3
 Authors@R: c(
     person("Mirko", "Brüggemann",
         email="mirko.brueggemann@mail.de",
@@ -22,9 +22,9 @@ Encoding: UTF-8
 VignetteBuilder: knitr
 Imports: tidyr, tibble, plyr, matrixStats, stats, ggplot2, methods, rtracklayer,
     S4Vectors, ggforce, GenomeInfoDb, ComplexHeatmap, RColorBrewer, lifecycle,
-    rlang, forcats, dplyr, GenomicFeatures, IRanges, kableExtra
+    rlang, forcats, dplyr, GenomicFeatures, IRanges, kableExtra, ggdist
 Depends: GenomicRanges, R (>= 4.2)
-Suggests: testthat, BiocStyle, knitr, rmarkdown, GenomicAlignments, scales, Gviz, xlsx, GGally, patchwork
+Suggests: testthat, BiocStyle, knitr, rmarkdown, GenomicAlignments, scales, Gviz, xlsx, GGally, patchwork, viridis, ggplotify
 RoxygenNote: 7.2.3
 Collate: 
     'AllClasses.R'
