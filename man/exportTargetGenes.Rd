@@ -7,7 +7,7 @@
 exportTargetGenes(
   object,
   path = "./",
-  format = c("csv", "excel"),
+  format = c("csv", "xslx"),
   sort = c("score", "bs"),
   split = c("none", "geneType", "transcriptRegion")
 )

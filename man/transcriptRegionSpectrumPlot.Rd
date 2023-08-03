@@ -10,7 +10,7 @@ transcriptRegionSpectrumPlot(
   normalize = FALSE,
   normalize.factor = c("sum", "median", "mean"),
   show.others = FALSE,
-  text.size = 6
+  text.size = 4
 )
 }
 \arguments{

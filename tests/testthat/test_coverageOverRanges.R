@@ -3,6 +3,19 @@ test_that("Coverage function works", {
     files <- system.file("extdata", package="BindingSiteFinder")
     load(list.files(files, pattern = ".rda$", full.names = TRUE))
 
+    # Set artificial KD condition
+    metaCond = getMeta(bds)
+    metaCond$condition = factor(c(rep("WT", 2), rep("KD", 2)), levels = c("WT", "KD"))
+    bdsCond = setMeta(bds, metaCond)
+    # Fix replicate names in signal
+    namesCond = c("1_WT", "2_WT", "3_KD", "4_KD")
+    sgn = getSignal(bdsCond)
+    names(sgn$signalPlus) = namesCond
+    names(sgn$signalMinus) = namesCond
+    bdsCond = setSignal(bdsCond, sgn)
+    bds = bdsCond
+
+
     bds1 <- makeBindingSites(object = bds, bsSize = 5, minWidth = 2,
                               minCrosslinks = 2, minClSites = 1, quiet = TRUE)
 
@@ -26,6 +39,8 @@ test_that("Coverage function works", {
         bds1, returnOptions = "merge_replicates_per_condition")
     expect_is(test, "list")
     expect_identical(length(test), length(levels(getMeta(bds1)$condition)))
+
+
     expect_identical(dim(test[[1]]), dim(test[[2]]))
 
     # merge_all_replicates

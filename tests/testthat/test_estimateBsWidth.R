@@ -16,7 +16,8 @@ test_that("Test for estimateBsWidth()", {
     expect_error(estimateBsWidth(object = bds, anno.genes = gns, est.maxBsWidth = 7, geneResolution = "medium", bsResolution = "coarse",
                                    est.subsetChromosome = "chr22", quiet = TRUE, veryQuiet = TRUE))
 
-    expect_output(estimateBsWidth(object = bds, anno.genes = gns, est.maxBsWidth = 13, geneResolution = "medium", bsResolution = "medium",
+    expect_silent(estimateBsWidth(object = bds, anno.genes = gns, est.maxBsWidth = 13, geneResolution = "medium", bsResolution = "medium",
                                   est.subsetChromosome = "chr22", quiet = TRUE, veryQuiet = TRUE))
 
 })
+

@@ -30,7 +30,7 @@ test_that("Binding site merging works", {
     expect_equal(unique(width(getRanges(bds1))), 3)
 
     # test defaults
-    bds1 <- makeBindingSites(object = bds, bsSize = 9, minWidth = 3,
+    bds1 <- makeBindingSites(object = bds, bsSize = 9, minWidth = 2,
                             minCrosslinks = 2, minClSites = 1, quiet = TRUE)
     bds2 <- makeBindingSites(object = bds, bsSize = 9, quiet = TRUE)
     expect_identical(bds1,bds2)
