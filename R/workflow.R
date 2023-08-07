@@ -392,7 +392,8 @@ assignToGenes <- function(object,
                           quiet = FALSE
 ) {
     # local variables
-    datasource <- geneIndex <- geneID <- geneName <- value <- bsIndex <- Freq <- geneType <- NULL
+    datasource <- geneIndex <- geneID <- geneName <- value <- bsIndex <- Freq <- geneType <- match.missing <- NULL
+    selectType <- selectID <- selectName <- NULL
 
     # INPUT CHECKS
     # --------------------------------------------------------------------------
@@ -439,23 +440,80 @@ assignToGenes <- function(object,
             # check correct annotation columns
             inNames = c(match.geneID, match.geneName, match.geneType)
             annoColNames = colnames(mcols(anno.genes))
+
             if (!all(inNames %in% annoColNames)) {
-                msg = paste0("One or multiple of the provided matching columns (",
-                             match.geneID, ", ", match.geneName, ", ", match.geneType,
-                             ") is not present in the provided annotation. \n")
-                stop(msg)
+                # one annotation column not present
+                # -> check for combinations
+                notIn = inNames[!inNames %in% annoColNames]
+
+                if (notIn %in% match.geneType) {
+                    # gene type not present
+                    match.missing = match.geneType
+                    # -> set options
+                    # this.choices = c("remove", "keep")
+                    # -> inform user
+                    msg = paste0("No meta column for ", match.geneType, " present.")
+                    if (!quiet) message(msg)
+                    # -> make matching vector for rest
+                    selectID = mcols(anno.genes)[match(match.geneID, colnames(mcols(anno.genes)))][[1]]
+                    selectName = mcols(anno.genes)[match(match.geneName, colnames(mcols(anno.genes)))][[1]]
+                }
+                if (notIn %in% match.geneName) {
+                    # gene name not present
+                    match.missing = match.geneName
+                    # -> set options
+                    # this.choices = c("frequency", "hierarchy", "remove", "keep")
+                    # -> inform user
+                    msg = paste0("No meta column for ", match.geneName, " present.")
+                    if (!quiet) message(msg)
+                    # -> make matching vector for rest
+                    selectID = mcols(anno.genes)[match(match.geneID, colnames(mcols(anno.genes)))][[1]]
+                    selectType = mcols(anno.genes)[match(match.geneType, colnames(mcols(anno.genes)))][[1]]
+                }
+                if (notIn %in% match.geneID) {
+                    # gene id not present
+                    # -> make artificial gene_id
+                    match.missing = match.geneID
+                    # -> set options
+                    # this.choices = c("frequency", "hierarchy", "remove", "keep")
+                    # -> inform user
+                    msg = paste0("No meta column for ", match.geneID, " present. Creating custom ID.")
+                    if (!quiet) message(msg)
+                    # -> make matching vector for rest
+                    selectID = paste0("CUSTOM", seq_along(anno.genes))
+                    selectName = mcols(anno.genes)[match(match.geneName, colnames(mcols(anno.genes)))][[1]]
+                    selectType = mcols(anno.genes)[match(match.geneType, colnames(mcols(anno.genes)))][[1]]
+                }
+            } else {
+                # all annotations are present
+                # this.choices = c("frequency", "hierarchy", "remove", "keep")
+                # Create matching vectors for columns from input annotation
+                # --------------------------------------------------------------------------
+                selectID = mcols(anno.genes)[match(match.geneID, colnames(mcols(anno.genes)))][[1]]
+                selectName = mcols(anno.genes)[match(match.geneName, colnames(mcols(anno.genes)))][[1]]
+                selectType = mcols(anno.genes)[match(match.geneType, colnames(mcols(anno.genes)))][[1]]
             }
-            # Create matching vectors for columns from input annotation
-            # --------------------------------------------------------------------------
-            selectID = mcols(anno.genes)[match(match.geneID, colnames(mcols(anno.genes)))][[1]]
-            selectName = mcols(anno.genes)[match(match.geneName, colnames(mcols(anno.genes)))][[1]]
-            selectType = mcols(anno.genes)[match(match.geneType, colnames(mcols(anno.genes)))][[1]]
+
 
         }
     }
 
     # handle options (hierarchy, frequency, remove, keep)
+    # overlaps = match.arg(overlaps, choices = this.choices)
     overlaps = match.arg(overlaps, choices = c("frequency", "hierarchy", "remove", "keep"))
+    if (!is.null(match.missing)) {
+        # something is missing
+        if (match.missing == match.geneType) {
+            # gene type is missing
+            # -> check for correct overlap option
+            if (overlaps == "frequency" | overlaps == "hierarchy") {
+                msg0 = paste0(match.geneType, " is missing in the annotation. Options 'frequency' and 'hierarchy' are not available.\n")
+                msg1 = paste0("Select one of: 'remove' or 'keep'.\n")
+                stop(c(msg0, msg1))
+            }
+        }
+    }
+
     # Check multiple loci options
     if (overlaps == "hierarchy" & is.null(overlaps.rule)) {
         msg1 = paste0("Binding sites on anno.genes with overlapping annotaitons is set to be handled by 'hierarchy', but no rule is provided. \n")
@@ -486,18 +544,38 @@ assignToGenes <- function(object,
     totalBS = countOlsSize$Freq[1]
     duplicatedBS = countOlsSize$Freq[2]
     duplicatedFraction = paste0(round(duplicatedBS / totalBS * 100, digits = 2), "%")
+
     # ----
     # Store results for plotting
-    dfPlot = data.frame(geneIndex = queryHits(ols), bsIndex = subjectHits(ols),
-                        geneID = selectID[queryHits(ols)],
-                        geneName = selectName[queryHits(ols)],
-                        geneType = selectType[queryHits(ols)]) %>%
-        mutate(value = 1) %>%
-        dplyr::select(-geneIndex, -geneID, -geneName) %>%
-        pivot_wider(names_from = geneType, values_from = value, values_fn = length, values_fill = 0) %>%
-        dplyr::select(-bsIndex) %>%
-        mutate_all(~ ifelse(. > 1, 1, .))
+    # -> select data
+    if (is.null(match.missing)) {
+        # nothing is missing
+        dfPlot = data.frame(geneIndex = queryHits(ols), bsIndex = subjectHits(ols),
+                            geneType = selectType[queryHits(ols)]) %>% #TODO type
+            dplyr::mutate(value = 1) %>%
+            dplyr::select(-geneIndex) %>%
+            tidyr::pivot_wider(names_from = geneType, values_from = value, values_fn = length, values_fill = 0) %>%
+            dplyr::select(-bsIndex) %>%
+            dplyr::mutate_all(~ ifelse(. > 1, 1, .))
+    } else {
+        # check what is missing
+        if (! match.missing %in% match.geneType) {
+            # anything other than gene type is missing
+            dfPlot = data.frame(geneIndex = queryHits(ols), bsIndex = subjectHits(ols),
+                                geneType = selectType[queryHits(ols)]) %>% #TODO type
+                dplyr::mutate(value = 1) %>%
+                dplyr::select(-geneIndex) %>%
+                tidyr::pivot_wider(names_from = geneType, values_from = value, values_fn = length, values_fill = 0) %>%
+                dplyr::select(-bsIndex) %>%
+                dplyr::mutate_all(~ ifelse(. > 1, 1, .))
+        } else {
+            # gene type is missing
+            dfPlot = NULL
+        }
+
+    }
     object@plotData$assignToGenes$dataOverlaps = dfPlot
+
     # Case where there are no overlaps
     if (duplicatedBS == 0) {
         msg = paste0("No binding sites (",
@@ -545,28 +623,92 @@ assignToGenes <- function(object,
             msg1 = "Binding sites from overlapping loci are removed. This is not recommended. Please see options 'heirarchy' and 'frequency'. \n"
             warning(c(msg0, msg1))
             rngResolved = rngInitial[subjectHits(ols)]
-            mcols(rngResolved) = cbind(mcols(rngResolved), geneID = selectID[queryHits(ols)],
-                                       geneType = selectType[queryHits(ols)], geneName = selectName[queryHits(ols)] )
+            # manage meta columns
+            if (is.null(match.missing)) {
+                mcols(rngResolved) = cbind(mcols(rngResolved),
+                                           geneID = selectID[queryHits(ols)],
+                                           geneType = selectType[queryHits(ols)],
+                                           geneName = selectName[queryHits(ols)] )
+            } else {
+                if (match.missing == match.geneID) {
+                    mcols(rngResolved) = cbind(mcols(rngResolved),
+                                               geneID = selectID[queryHits(ols)],
+                                               geneType = selectType[queryHits(ols)],
+                                               geneName = selectName[queryHits(ols)] )
+                }
+                if (match.missing == match.geneName) {
+                    mcols(rngResolved) = cbind(mcols(rngResolved),
+                                               geneID = selectID[queryHits(ols)],
+                                               geneType = selectType[queryHits(ols)] )
+                }
+                if (match.missing == match.geneType) {
+                    mcols(rngResolved) = cbind(mcols(rngResolved),
+                                               geneID = selectID[queryHits(ols)],
+                                               geneName = selectName[queryHits(ols)] )
+                }
+            }
+            # remove duplicates
             rngResolved = rngResolved[countOverlaps(rngResolved) == 1]
         }
         if (overlaps == "keep") {
             msg1 = "Binding sites from overlapping loci are kept. This is not recommended. Please see options 'heirarchy' and 'frequency'. \n"
             warning(c(msg0, msg1))
             rngResolved = rngInitial[subjectHits(ols)]
-            mcols(rngResolved) = cbind(mcols(rngResolved), geneID = selectID[queryHits(ols)],
-                                       geneType = selectType[queryHits(ols)], geneName = selectName[queryHits(ols)] )
+            # manage meta columns
+            if (is.null(match.missing)) {
+                mcols(rngResolved) = cbind(mcols(rngResolved),
+                                           geneID = selectID[queryHits(ols)],
+                                           geneType = selectType[queryHits(ols)],
+                                           geneName = selectName[queryHits(ols)] )
+            } else {
+                if (match.missing == match.geneID) {
+                    mcols(rngResolved) = cbind(mcols(rngResolved),
+                                               geneID = selectID[queryHits(ols)],
+                                               geneType = selectType[queryHits(ols)],
+                                               geneName = selectName[queryHits(ols)] )
+                }
+                if (match.missing == match.geneName) {
+                    mcols(rngResolved) = cbind(mcols(rngResolved),
+                                               geneID = selectID[queryHits(ols)],
+                                               geneType = selectType[queryHits(ols)] )
+                }
+                if (match.missing == match.geneType) {
+                    mcols(rngResolved) = cbind(mcols(rngResolved),
+                                               geneID = selectID[queryHits(ols)],
+                                               geneName = selectName[queryHits(ols)] )
+                }
+            }
         }
     }
     # ---
     # Store results for plotting
-    nCountGenes = rngResolved %>% mcols() %>% as.data.frame() %>%
-        group_by(geneID) %>% count(geneType) %>% ungroup() %>%
-        count(geneType) %>% arrange(desc(n))
-    nCountBs = rngResolved %>% mcols() %>% as.data.frame() %>%
-        count(geneType) %>% arrange(desc(n))
-    nCountAll = left_join(nCountBs, nCountGenes, by = "geneType") %>%
-        rename("nBs" = "n.x", "nGenes" = "n.y")
+    if (is.null(match.missing)) {
+        # nothing is missing
+        nCountGenes = rngResolved %>% mcols() %>% as.data.frame() %>%
+            group_by(geneID) %>% dplyr::count(geneType) %>% ungroup() %>%
+            dplyr::count(geneType) %>% arrange(desc(n))
+        nCountBs = rngResolved %>% mcols() %>% as.data.frame() %>%
+            dplyr::count(geneType) %>% arrange(desc(n))
+        nCountAll = left_join(nCountBs, nCountGenes, by = "geneType") %>%
+            rename("nBs" = "n.x", "nGenes" = "n.y")
+    } else {
+        # check what is missing
+        if (! match.missing %in% match.geneType) {
+            # anything other than gene type is missing
+            nCountGenes = rngResolved %>% mcols() %>% as.data.frame() %>%
+                group_by(geneID) %>% dplyr::count(geneType) %>% ungroup() %>%
+                dplyr::count(geneType) %>% arrange(desc(n))
+            nCountBs = rngResolved %>% mcols() %>% as.data.frame() %>%
+                dplyr::count(geneType) %>% arrange(desc(n))
+            nCountAll = left_join(nCountBs, nCountGenes, by = "geneType") %>%
+                rename("nBs" = "n.x", "nGenes" = "n.y")
+        }
+        else {
+            # gene type is missing
+            nCountAll = NULL
+        }
 
+    }
     object@plotData$assignToGenes$dataSpectrum = nCountAll
 
     # ---
@@ -1115,7 +1257,7 @@ estimateBsWidth <- function(object, # BindingSiteFinder object
 
     # print start message
     msg = paste0("Estimation at: ", round((counterCurrentIterations/counterTotalIterations)*100 ), "%"  )
-    if(!veryQuiet) print(msg)
+    if(!veryQuiet) message(msg)
 
     # calculate binding sites for each filter step and width
     scoreAllDf = lapply(geneResolution.steps, function(bsFilterStep){
@@ -1210,7 +1352,7 @@ estimateBsWidth <- function(object, # BindingSiteFinder object
         # update chunk counter
         counterCurrentIterations <<- counterCurrentIterations + length(bsResolution.steps)
         msg = paste0("Estimation at: ", round((counterCurrentIterations/counterTotalIterations)*100 ), "%"  )
-        if(!veryQuiet) print(msg)
+        if(!veryQuiet) message(msg)
         return(df)
     })
 

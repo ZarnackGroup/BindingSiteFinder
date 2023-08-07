@@ -41,8 +41,27 @@ test_that("Test for assignToGenes()", {
     expect_error(assignToGenes(object = obj3_manual, anno.genes = gns, geneMatchName = "GeneName"))
     expect_error(assignToGenes(object = obj3_manual, anno.genes = gns, geneMatchType = "GeneType"))
 
-    # expect_error(assignToGenes(object = obj3_manual, anno.annoDB = Homo.sapiens38, anno.genes = gns))
-
     # test quiet
     expect_silent(assignToGenes(object = obj3_manual, anno.genes = gns, quiet = TRUE))
+
+    # test with missing gene annotation meta columns
+    gns1 = gns
+    gns1$gene_type = NULL
+    expect_message(expect_error(assignToGenes(object = obj3_manual, anno.genes = gns1)))
+    expect_message(expect_warning(assignToGenes(object = obj3_manual, anno.genes = gns1, overlaps = "remove")))
+    expect_message(expect_warning(assignToGenes(object = obj3_manual, anno.genes = gns1, overlaps = "keep")))
+
+    gns1 = gns
+    gns1$gene_name = NULL
+    expect_message(assignToGenes(object = obj3_manual, anno.genes = gns1))
+    expect_message(expect_warning(assignToGenes(object = obj3_manual, anno.genes = gns1, overlaps = "remove")))
+    expect_message(expect_warning(assignToGenes(object = obj3_manual, anno.genes = gns1, overlaps = "keep")))
+
+    gns1 = gns
+    gns1$gene_id = NULL
+    expect_message(assignToGenes(object = obj3_manual, anno.genes = gns1))
+    expect_message(expect_warning(assignToGenes(object = obj3_manual, anno.genes = gns1, overlaps = "remove")))
+    expect_message(expect_warning(assignToGenes(object = obj3_manual, anno.genes = gns1, overlaps = "keep")))
+
 })
+
