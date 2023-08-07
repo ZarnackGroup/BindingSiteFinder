@@ -32,7 +32,7 @@
 #' @param method sum/ mean, select how replicates/ ranges should be summarized
 #' @param allowNA TRUE/ FALSE, allow NA values in the output if input ranges
 #' are of different width
-#' @param silent TRUE/ FALSE, suppress warning messages
+#' @param quiet logical, whether to print messages
 #'
 #' @return an object of class specified in \code{returnOptions}
 #' @import GenomicRanges
@@ -43,14 +43,10 @@
 #' files <- system.file("extdata", package="BindingSiteFinder")
 #' load(list.files(files, pattern = ".rda$", full.names = TRUE))
 #'
-#' rng = coverageOverRanges(
-#' bds, returnOptions = "merge_ranges_keep_positions", silent = TRUE)
-#' rng = coverageOverRanges(
-#' bds, returnOptions = "merge_replicates_per_condition", silent = TRUE)
-#' rng = coverageOverRanges(
-#' bds, returnOptions = "merge_all_replicates", silent = TRUE)
-#' rng = coverageOverRanges(
-#' bds, returnOptions = "merge_positions_keep_replicates", silent = TRUE)
+#' rng = coverageOverRanges(bds, returnOptions = "merge_ranges_keep_positions")
+#' rng = coverageOverRanges(bds, returnOptions = "merge_replicates_per_condition")
+#' rng = coverageOverRanges(bds, returnOptions = "merge_all_replicates")
+#' rng = coverageOverRanges(bds, returnOptions = "merge_positions_keep_replicates")
 #'
 #' @export
 coverageOverRanges <- function(
@@ -61,7 +57,7 @@ coverageOverRanges <- function(
                       "merge_positions_keep_replicates"),
     method = "sum",
     allowNA = FALSE,
-    silent = FALSE
+    quiet = TRUE
     ) {
     # Check input
     # --------------------------------------------------------------------------
@@ -89,12 +85,13 @@ coverageOverRanges <- function(
         returnOptions = "merge_positions_keep_replicates"
     }
     # check for unique range names
-    if (!isTRUE(silent)) {
-        if(any(duplicated(names(rng)))) {
-            warning("duplicate names in ranges, adding preceding ID")
-            names(rng) = paste0(c(seq_along(rng)), "_", names(rng))
-        }
+
+    if(any(duplicated(names(rng)))) {
+        msg0 = paste0("duplicate names in ranges, adding preceding ID")
+        if(!quiet) message(c(msg0))
+        names(rng) = paste0(c(seq_along(rng)), "_", names(rng))
     }
+
     # prepare signal
     sgn = getSignal(object)
     # extract present conditions
@@ -416,3 +413,4 @@ coverageOverRanges <- function(
         x = x[order(idx),]
     })
 }
+

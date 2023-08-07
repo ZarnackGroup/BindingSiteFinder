@@ -18,17 +18,16 @@ reproducibilityFilter(
 \arguments{
 \item{object}{a BSFDataSet object}
 
-\item{cutoff}{a vector of length = 1, or of length =
-levels(getMeta(object)$conditions) with a single number (between 0-1)
-indicating the quantile cutoff}
+\item{cutoff}{numeric; percentage cutoff to be used for the
+reproducibility quantile filtering}
 
-\item{nReps}{a vector of length = 1, or of length = l
-evels(getMeta(object)$conditions) indicating how many replicates need to
-meet their threshold for a binding site to be called reproducible.}
+\item{nReps}{numeric; number of replicates that must meet the cutoff
+defined in \code{cutoff} for a binding site to be called reproducible.
+Defaults to N-1.}
 
-\item{minCrosslinks}{numeric of length = 1, defines the lower boundary for
-the minimum number of crosslinks a binding site has to be supported by all
-replicates, regardless of the replicate specific quantile threshold}
+\item{minCrosslinks}{numeric; minimal number of crosslinks a binding
+site needs to have to be called reproducible. Acts as a lower boundary for
+\code{cutoff}. Defaults to 1.}
 
 \item{returnType}{one of "BSFDataSet" or "data.frame". "BSFDataSet" is the
 default and "matrix" can be used for easy plotting.}

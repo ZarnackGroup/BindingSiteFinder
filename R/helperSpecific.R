@@ -73,13 +73,13 @@
 
     c0 = rowSums(as.data.frame(mcols(coverageOverRanges(
         object, returnOptions = "merge_positions_keep_replicates",
-        silent = TRUE))))
+        quiet = TRUE))))
 
     objMod = object
     objMod = suppressMessages(setRanges(objMod, getRanges(object) + flankSize))
     c1 = rowSums(as.data.frame(mcols(coverageOverRanges(
         objMod, returnOptions = "merge_positions_keep_replicates",
-        silent = TRUE))))
+        quiet = TRUE))))
 
     # use 0.1 as pseudocount for the score
     score = c0 / (((c1 - c0) + 0.1) / 2)
@@ -95,31 +95,81 @@
     # takes a Hits object from the binding site and gene annotation matching
     # and a rule by which binding sites on multiple genes are matched
     # and the initial ranges
-    # returns the inital binding site ranges with matched gene info
-    olsInfo = data.frame(geneIndex = queryHits(ols),
-                         bsIndex = subjectHits(ols),
-                         geneID = selectID[queryHits(ols)],
-                         geneName = selectName[queryHits(ols)],
-                         geneType = selectType[queryHits(ols)]) %>%
-        group_by(bsIndex) %>%
-        arrange(bsIndex) %>%
-        mutate(choice = rule$idx[match(geneType, rule$gene_type)]) %>%
-        arrange(choice, .by_group = TRUE) %>%
-        slice_head(n = 1)
-    idx = match(rng$currIdx, olsInfo$bsIndex)
-    # handle intergenic cases
-    rngIntergenic = rng[which(is.na(idx))]
-    rngIntergenic$geneID = NA
-    rngIntergenic$geneName = NA
-    rngIntergenic$geneType = "Intergenic"
+    # returns the initial binding site ranges with matched gene info
 
-    # handle normal cases
-    # rngRest = rng[!rng %in% rngIntergenic]
-    rngRest = rng[countOverlaps(rng, rngIntergenic) == 0]
+    # check if input is complete
+    # -> note that selectType cannot be missing since then this option is not
+    # available !!!
+    if (is.null(selectID)) {
+        # the gene_id is missing
+        olsInfo = data.frame(geneIndex = queryHits(ols),
+                             bsIndex = subjectHits(ols),
+                             geneName = selectName[queryHits(ols)],
+                             geneType = selectType[queryHits(ols)]) %>%
+            group_by(bsIndex) %>%
+            arrange(bsIndex) %>%
+            mutate(choice = rule$idx[match(geneType, rule$gene_type)]) %>%
+            arrange(choice, .by_group = TRUE) %>%
+            slice_head(n = 1)
+        # matching index
+        idx = match(rng$currIdx, olsInfo$bsIndex)
+        # handle intergenic cases
+        rngIntergenic = rng[which(is.na(idx))]
+        rngIntergenic$geneName = NA
+        rngIntergenic$geneType = "Intergenic"
+        # handle normal cases
+        rngRest = rng[countOverlaps(rng, rngIntergenic) == 0]
+        rngRest$geneName[idx[!is.na(idx)]] = olsInfo$geneName
+        rngRest$geneType[idx[!is.na(idx)]] = olsInfo$geneType
+    }
+    if (is.null(selectName)) {
+        # the gene_name is missing
+        olsInfo = data.frame(geneIndex = queryHits(ols),
+                             bsIndex = subjectHits(ols),
+                             geneID = selectID[queryHits(ols)],
+                             geneType = selectType[queryHits(ols)]) %>%
+            group_by(bsIndex) %>%
+            arrange(bsIndex) %>%
+            mutate(choice = rule$idx[match(geneType, rule$gene_type)]) %>%
+            arrange(choice, .by_group = TRUE) %>%
+            slice_head(n = 1)
+        # matching index
+        idx = match(rng$currIdx, olsInfo$bsIndex)
+        # handle intergenic cases
+        rngIntergenic = rng[which(is.na(idx))]
+        rngIntergenic$geneID = NA
+        rngIntergenic$geneType = "Intergenic"
+        # handle normal cases
+        rngRest = rng[countOverlaps(rng, rngIntergenic) == 0]
+        rngRest$geneID[idx[!is.na(idx)]] = olsInfo$geneID
+        rngRest$geneType[idx[!is.na(idx)]] = olsInfo$geneType
+    }
+    if (! is.null(selectID) & ! is.null(selectName)) {
+        # everything is in place
+        olsInfo = data.frame(geneIndex = queryHits(ols),
+                             bsIndex = subjectHits(ols),
+                             geneID = selectID[queryHits(ols)],
+                             geneName = selectName[queryHits(ols)],
+                             geneType = selectType[queryHits(ols)]) %>%
+            group_by(bsIndex) %>%
+            arrange(bsIndex) %>%
+            mutate(choice = rule$idx[match(geneType, rule$gene_type)]) %>%
+            arrange(choice, .by_group = TRUE) %>%
+            slice_head(n = 1)
+        # matching index
+        idx = match(rng$currIdx, olsInfo$bsIndex)
+        # handle intergenic cases
+        rngIntergenic = rng[which(is.na(idx))]
+        rngIntergenic$geneID = NA
+        rngIntergenic$geneName = NA
+        rngIntergenic$geneType = "Intergenic"
+        # handle normal cases
+        rngRest = rng[countOverlaps(rng, rngIntergenic) == 0]
+        rngRest$geneID[idx[!is.na(idx)]] = olsInfo$geneID
+        rngRest$geneName[idx[!is.na(idx)]] = olsInfo$geneName
+        rngRest$geneType[idx[!is.na(idx)]] = olsInfo$geneType
+    }
 
-    rngRest$geneID[idx[!is.na(idx)]] = olsInfo$geneID
-    rngRest$geneName[idx[!is.na(idx)]] = olsInfo$geneName
-    rngRest$geneType[idx[!is.na(idx)]] = olsInfo$geneType
     rng = .sortRanges(c(rngIntergenic, rngRest))
 
     return(rng)

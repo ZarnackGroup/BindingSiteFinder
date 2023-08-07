@@ -10,7 +10,7 @@ coverageOverRanges(
     "merge_all_replicates", "merge_positions_keep_replicates"),
   method = "sum",
   allowNA = FALSE,
-  silent = FALSE
+  quiet = TRUE
 )
 }
 \arguments{
@@ -25,7 +25,7 @@ merge_positions_keep_replicates}
 \item{allowNA}{TRUE/ FALSE, allow NA values in the output if input ranges
 are of different width}
 
-\item{silent}{TRUE/ FALSE, suppress warning messages}
+\item{quiet}{logical, whether to print messages}
 }
 \value{
 an object of class specified in \code{returnOptions}
@@ -62,13 +62,9 @@ and added to the original granges object.
 files <- system.file("extdata", package="BindingSiteFinder")
 load(list.files(files, pattern = ".rda$", full.names = TRUE))
 
-rng = coverageOverRanges(
-bds, returnOptions = "merge_ranges_keep_positions", silent = TRUE)
-rng = coverageOverRanges(
-bds, returnOptions = "merge_replicates_per_condition", silent = TRUE)
-rng = coverageOverRanges(
-bds, returnOptions = "merge_all_replicates", silent = TRUE)
-rng = coverageOverRanges(
-bds, returnOptions = "merge_positions_keep_replicates", silent = TRUE)
+rng = coverageOverRanges(bds, returnOptions = "merge_ranges_keep_positions")
+rng = coverageOverRanges(bds, returnOptions = "merge_replicates_per_condition")
+rng = coverageOverRanges(bds, returnOptions = "merge_all_replicates")
+rng = coverageOverRanges(bds, returnOptions = "merge_positions_keep_replicates")
 
 }

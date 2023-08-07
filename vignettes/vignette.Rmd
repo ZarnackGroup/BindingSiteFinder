@@ -135,9 +135,7 @@ We showcase the standard workflow on the example of the RNA-binding protein U2AF
 
 ### Build the BSFDataSet
 
-To build the `BSFDataSet` one needs two types of information. First, the result of the peak calling step (crosslink sites) and second the iCLIP coverage in the form of .bigwig files for each replicate. Here we first import the crosslink sites to be represented as a `GenomicRanges` object. We also expect that all ranges are a single nucleotide wide[^1].
-
-[^1] Note: We remove the column `additionalScore` after the initial load, to clean our input
+To build the `BSFDataSet` one needs two types of information. First, the result of the peak calling step (crosslink sites) and second the iCLIP coverage in the form of .bigwig files for each replicate. Here we first import the crosslink sites to be represented as a `GenomicRanges` object. We also expect that all ranges are a single nucleotide wide^[Note: We remove the column `additionalScore` after the initial load, to clean our input].
 
 ```{r}
 # load crosslink sites
@@ -168,9 +166,8 @@ meta = data.frame(
 meta
 ```
 
-With the crosslink sites and the meta table ready we are good to construct the `BSFDataSet` object using the `BSFDataSetFromBigWig()` function. We can get information of the constructed object using it's `show` method, which show the number of ranges and crosslinks present in the object[^2].
+With the crosslink sites and the meta table ready we are good to construct the `BSFDataSet` object using the `BSFDataSetFromBigWig()` function. We can get information of the constructed object using it's `show` method, which show the number of ranges and crosslinks present in the object^[Note: We load a previously compiled `BSFDataSet` to save disc space.].
 
-[^2] Note: We load a previously compiled `BSFDataSet` to save disc space.
 
 ```{r, eval=FALSE}
 library(BindingSiteFinder)
@@ -209,9 +206,7 @@ To take advantage of the full functionality of the package one needs to provide 
 
 ### Create annotation for genes
 
-To present gene-level information we import the annotation as a .gff3 file into a `GenomicRanges` object. To combine the ranges with the available meta information for each gene (such as a `gene_id`, `gene_name` or `gene_type`), we have to read our annotation twice. First, we import the ranges into a `TxDB` database using functionalists from [GenomicFeatures](https://bioconductor.org/packages/release/bioc/html/GenomicFeatures.html). This database can be queried using the `genes()` function to retrieve the positions of all genes from our resource as `GRanges` objects. Second we use `rtracklayer` to import all ranges with the corresponding meta information. We then match both imports to create a single `GRanges` object which contains all genes from our annotation with relevant meta information added[^3].
-
-[^3] Note: We again only load a previously compiled object at this point to save disc space.
+To present gene-level information we import the annotation as a .gff3 file into a `GenomicRanges` object. To combine the ranges with the available meta information for each gene (such as a `gene_id`, `gene_name` or `gene_type`), we have to read our annotation twice. First, we import the ranges into a `TxDB` database using functionalists from [GenomicFeatures](https://bioconductor.org/packages/release/bioc/html/GenomicFeatures.html). This database can be queried using the `genes()` function to retrieve the positions of all genes from our resource as `GRanges` objects. Second we use `rtracklayer` to import all ranges with the corresponding meta information. We then match both imports to create a single `GRanges` object which contains all genes from our annotation with relevant meta information added^[Note: We again only load a previously compiled object at this point to save disc space.].
 
 ```{r, echo=TRUE, eval=FALSE}
 library(GenomicFeatures)
@@ -236,9 +231,7 @@ gns
 
 ### Create annotation for transcript regions
 
-To represent all possible transcript regions, we re-use the previously created `TxDB` annotation database. The [GenomicFeatures](https://bioconductor.org/packages/release/bioc/html/GenomicFeatures.html) package provides dedicated information to retrieve specific sets of ranges from such a database object, like *CDS*, *UTRs*, etc. Here we store these ranges into a `GRangestList` and name the elements accordingly[^4].
-
-[^4] Note: Just like for the genes, we load a pre-compiled list to save disc space.
+To represent all possible transcript regions, we re-use the previously created `TxDB` annotation database. The [GenomicFeatures](https://bioconductor.org/packages/release/bioc/html/GenomicFeatures.html) package provides dedicated information to retrieve specific sets of ranges from such a database object, like *CDS*, *UTRs*, etc. Here we store these ranges into a `GRangestList` and name the elements accordingly^[Note: Just like for the genes, we load a pre-compiled list to save disc space.].
 
 ```{r, eval=FALSE}
 # Count the overlaps of each binding site for each region of the transcript. 
@@ -258,9 +251,7 @@ load(regionFile)
 
 ## Performing the main analysis
 
-Now that we have prepared our input data, we are good to use the main workhorse, the `BSFind()` function. This function is essentially a high-level wrapper around all core utility functions and provides an easy entry point into the analysis. At it's core each analysis step consists of a utility function that computes the respective result. Each utility function further comes along with a set of diagnostic/ result plotting functions. These can be used to assess the quality of every computational step. We recommend to once run the entire analysis with `BSFind()` and then follow up on each step in detail using the plot functionalities[^5]. 
-
-[^5] Note: Here we set `est.subsetChromosom='chr22'` because we have only signal on chromosome 22 to save disc space
+Now that we have prepared our input data, we are good to use the main workhorse, the `BSFind()` function. This function is essentially a high-level wrapper around all core utility functions and provides an easy entry point into the analysis. At it's core each analysis step consists of a utility function that computes the respective result. Each utility function further comes along with a set of diagnostic/ result plotting functions. These can be used to assess the quality of every computational step. We recommend to once run the entire analysis with `BSFind()` and then follow up on each step in detail using the plot functionalities^[Note: Here we set `est.subsetChromosom='chr22'` because we have only signal on chromosome 22 to save disc space]. 
 
 ```{r}
 bdsOut = BSFind(object = bds, anno.genes = gns, anno.transcriptRegionList = regions,
@@ -289,9 +280,7 @@ pureClipGlobalFilterPlot(bdsOut)
 
 #### Selection of the binding site width
 
-In case the option `bsSize` is not set, the optimal binding site width is estimated from the data directly (using the `estimateBsWidth` function). Since the final binding site width depends on the quality of the input crosslink sites, `bsSize` is estimated together with the gene-wise filter level (`cutoff.geneWiseFilter`). That is filtering by the top X% crosslink sites per gene. Filtering on gene level has been shown to be really effective in diluting the most informative signal from the data[^6].
-
-[^6] Note: Since we did not specify `bsSize` in `BSFind()` the binding site size is estimated automatically.
+In case the option `bsSize` is not set, the optimal binding site width is estimated from the data directly (using the `estimateBsWidth` function). Since the final binding site width depends on the quality of the input crosslink sites, `bsSize` is estimated together with the gene-wise filter level (`cutoff.geneWiseFilter`). That is filtering by the top X% crosslink sites per gene. Filtering on gene level has been shown to be really effective in diluting the most informative signal from the data^[Note: Since we did not specify `bsSize` in `BSFind()` the binding site size is estimated automatically.].
 
 ```{r, fig.retina = 1, dpi = this.dpi, fig.cap="estimateBsWidthPlot. The diagnostic show the ratio between the crosslink events within binding sites and the crosslink events in adjacent windows to the binding sites. This is effectively a 'percent-bound' type ratio, with the higher the better the associated binding site width captures the distribution of the underlying crosslink events. The plot shows how that ratio behaves for different binding site width under varying levels of the gene-wise filter.", fig.small=TRUE}
 estimateBsWidthPlot(bdsOut)
@@ -324,9 +313,7 @@ To handle such overlapping cases the `overlaps` parameter can be used with optio
 
 In this step we turn the single-nucleotide wide PureCLIP sites into binding sites of a desired size (`bsSize`). This most essential parameter can either be estimated automatically, or be set directly. For the inexperienced user we recommend to use the estimated size in almost all cases. An exception would be very sparse or incomplete data, which should result in warning messages during the estimation step. If you do want to use a manual size, because you have eg. prior-knowledge of your RBP please have a look at the [If you already know your binding site size](## If you already know your binding site size) section first. 
 
-Binding site merging happens by combining neighboring crosslink sites into larger regions. These regions are then itteratively split up again using the crosslink coverage of each region as a guide to position the binding sites. The following diagnostic plots the number of regions that are still left to be resolved, over the size of these regions[^7].
-
-[^7] Note: Since we use a very small data-set for demonstration purpose, this plot might look different with a real-sized data-set.
+Binding site merging happens by combining neighboring crosslink sites into larger regions. These regions are then itteratively split up again using the crosslink coverage of each region as a guide to position the binding sites. The following diagnostic plots the number of regions that are still left to be resolved, over the size of these regions^[Note: Since we use a very small data-set for demonstration purpose, this plot might look different with a real-sized data-set.].
 
 ```{r, fig.retina = 1, dpi = this.dpi, fig.cap="mergeCrosslinkDiagnosticsPlot. Diagnostic plot with number and region size at each fitting itteration loop. ", fig.small=TRUE}
 mergeCrosslinkDiagnosticsPlot(bdsOut)
@@ -382,12 +369,8 @@ A major question the follow from binding site definition is the assessment of th
 #### Target gene identification
 
 Here we essentially overlap the annotation given in `anno.genes` with the reproducible set of binding site computed above. Depending on the source and organism, gene annotations overlap each other to some degree.
-We implemented several strategies to resolve these overlaps with `overlaps="frequency"` being the recommended default. Here the most frequently present *gene_type* is used to resolve overlaps. This however requires that the annotated genes (given in `anno.genes`) carry gene type information as a meta column. The exact column name can be specified with `match.geneType`. The same requirement holds true for the option `overlaps="hierarchy"`, where a manual hierarchical rule on the gene type is used (`overlaps.rule` is required)[^9].
-The following plot visualizes among which gene types the most overlaps exist[^10].
-
-[^9] Note: If an overlaps exists, but gene types are identical options "frequency" and "hierarchy" will cause the gene that was seen first to be selected as representative. 
-
-[^10] Note: Strategies that work without gene type information are `overlaps="remove"` and `overlaps="keep"` that respectively remove or keep all overlapping cases.
+We implemented several strategies to resolve these overlaps with `overlaps="frequency"` being the recommended default. Here the most frequently present *gene_type* is used to resolve overlaps. This however requires that the annotated genes (given in `anno.genes`) carry gene type information as a meta column. The exact column name can be specified with `match.geneType`. The same requirement holds true for the option `overlaps="hierarchy"`, where a manual hierarchical rule on the gene type is used (`overlaps.rule` is required)^[Note: If an overlaps exists, but gene types are identical options "frequency" and "hierarchy" will cause the gene that was seen first to be selected as representative. ].
+The following plot visualizes among which gene types the most overlaps exist^[Note: Strategies that work without gene type information are `overlaps="remove"` and `overlaps="keep"` that respectively remove or keep all overlapping cases.].
 
 ```{r, fig.retina = 1, dpi = this.dpi, fig.cap="geneOverlapsPlot. UpSet plot with the number of binding sites overlapping a specific gene type from the annotation before overlaps were resolved. "}
 geneOverlapsPlot(bdsOut)
@@ -405,9 +388,7 @@ The assigned gene with it's ID, name and gene type (if given) is also attached t
 
 Similar to the target gene, each binding site can be assigned to a hosting transcript region. This is done using the `anno.transcriptRegionList` resource that we defined earlier. Essentially each binding site is overlapped with each of the ranges given in the region list. As one would expect, the problem of overlapping annotations is increased manifold on the level of transcript regions compared to entire genes. 
 
-Options to resolve these are similar to those on gene level. Option `overlaps="frequency"` will resolve based on the most frequently observed transcript region, `overlaps="hierarchy"` uses a manual hierarchic assignment based on `overlaps.rule`[^11]. Additionally, option `overlaps="flag"` will just flag all overlaps with the tag *ambiguous* and option `overlaps="remove"` will remove all those cases. The following plot illustrates the degree of overlap for our example data-set. 
-
-[^11] Note: This time the transcript type is pulled from the names of the `GRangesList` defined in `anno.transcriptRegionList`. 
+Options to resolve these are similar to those on gene level. Option `overlaps="frequency"` will resolve based on the most frequently observed transcript region, `overlaps="hierarchy"` uses a manual hierarchic assignment based on `overlaps.rule`^[Note: This time the transcript type is pulled from the names of the `GRangesList` defined in `anno.transcriptRegionList`. ]. Additionally, option `overlaps="flag"` will just flag all overlaps with the tag *ambiguous* and option `overlaps="remove"` will remove all those cases. The following plot illustrates the degree of overlap for our example data-set. 
 
 ```{r, fig.retina = 1, dpi = this.dpi, fig.cap="transcriptRegionOverlapsPlot. UpSet plot with the number of binding sites overlapping a specific transcript region from the annotation before overlaps were resolved."}
 transcriptRegionOverlapsPlot(bdsOut)
@@ -428,19 +409,13 @@ If you want to learn about how to normalize these profiles by the length of each
 The described matching of binding sites and transcript regions is entirely based on overlaps with the regions given in `anno.transcriptRegionList`. This means one can customize these regions by using different sets of ranges to extend and modify this list. For further details on how to do this see section [Use a different set of transcript regions](## Use a different set of transcript regions).
 
 
-
-
-
-
 ### Assessing further binding site properties
 
 Another common task is to assess the strength and shape of a binding site. We provide two additional metrics as part of our core workflow that allow to assess exactly that. 
 
 #### Binding site strength
 
-The affinity of a binding site to the RNA is already given to some degree by *PureCLIP*. The *PureCLIP* model computes a strength score that captures affinity for each crosslink site. Here wer re-mapp these scores from the initial crosslink sites to the final binding sites. This is done through the `match.score` argument that point to the meta column name with the score from the initial crosslink sites[^12]. As for the default we assign the highest score from all overlapping crosslink site to the binding site (`match.option="max"`). The following plot shows the distribution of scores as density for all binding sites after re-assignment. 
-
-[^12] Note: Essentially any numerical score can be transferred from the initial crosslinks to the final binding site using this option.
+The affinity of a binding site to the RNA is already given to some degree by *PureCLIP*. The *PureCLIP* model computes a strength score that captures affinity for each crosslink site. Here we re-map these scores from the initial crosslink sites to the final binding sites. This is done through the `match.score` argument that point to the meta column name with the score from the initial crosslink sites^[Note: Essentially any numerical score can be transferred from the initial crosslinks to the final binding site using this option.]. As for the default we assign the highest score from all overlapping crosslink site to the binding site (`match.option="max"`). The following plot shows the distribution of scores as density for all binding sites after re-assignment. 
 
 ```{r, fig.retina = 1, dpi = this.dpi, fig.cap="globalScorePlot. The diagnostic shows the distribution of PureCLIP scores on a log2 scale with a 10% step increased coloring for easier visualization and comparability.", fig.small=TRUE}
 globalScorePlot(bdsOut)
@@ -578,9 +553,7 @@ transcriptRegionSpectrumPlot(bdsOut, normalize = TRUE, values = "percentage", no
 
 In some instances the `estimateBsWidth()` function used in the `BSFind()` wrapper might not lead to optimal results. This can be the case if the starting data is of below average quality with very few crosslink sites to begin with. Here manual binding site profiling can be used to achieve the best possible result given the input data.
 
-To guide the choice of a good width, we recommend to explicitly compute binding sites for a variety of width. Here we selected 3, 7, 19 and 29nt and manually execute `makeBindingSites()`[^13].
-
-[^13] Note: Notice that we do not subset on a specific chromosome, but rather include all ranges to avoid any local pitfalls. 
+To guide the choice of a good width, we recommend to explicitly compute binding sites for a variety of width. Here we selected 3, 7, 19 and 29nt and manually execute `makeBindingSites()`^[Note: Notice that we do not subset on a specific chromosome, but rather include all ranges to avoid any local pitfalls. ].
 
 ```{r}
 # compute binding sites
@@ -604,9 +577,7 @@ In our example, size = 3 appears too small, since not all of the relevant peak s
 
 ## If you already know your binding site size
 
-In case you already know what binding site size you want to use `BSFind()` can be called directly with that input size. This is usually the case if one has prior knowledge from orthogonal experiments or if the present data-set should be fix to the same size as another data-set for comparison. With a fixed binding site at hand we can call `BSFind()` with that explicit size to avoid estimation and use our manual input instead[^14].
-
-[^14] Note: We also set `cutoff.geneWiseFilter=0` to turn off gene-wise filtering.
+In case you already know what binding site size you want to use `BSFind()` can be called directly with that input size. This is usually the case if one has prior knowledge from orthogonal experiments or if the present data-set should be fix to the same size as another data-set for comparison. With a fixed binding site at hand we can call `BSFind()` with that explicit size to avoid estimation and use our manual input instead^[Note: We also set `cutoff.geneWiseFilter=0` to turn off gene-wise filtering.].
 
 ```{r}
 bdsManual = BSFind(object = bds, anno.genes = gns, anno.transcriptRegionList = regions, bsSize = 9, cutoff.geneWiseFilter = 0)
@@ -617,7 +588,7 @@ If you are not sure how to choose an appropriate binding site size for your data
 
 ## Call utility functions seperately
 
-In the case on does not want to work with `BSFind()` as main wrapper function, all core utility function can be called seperately. In our example from above where we manually decided on a binding site width of 9nt we could also call `makeBindingSites()` directly. This avoids turning off certain default options and will result in the most basic result possible, a simple set of merged binding site.
+In the case on does not want to work with `BSFind()` as main wrapper function, all core utility function can be called separately. In our example from above where we manually decided on a binding site width of 9nt we could also call `makeBindingSites()` directly. This avoids turning off certain default options and will result in the most basic result possible, a simple set of merged binding site.
 
 ```{r}
 bdsSimple = makeBindingSites(object = bds, bsSize = 9)
@@ -642,9 +613,7 @@ Processing steps in custom pipelines can also be visualized with the flow chart 
 
 ## Work without a gene annotation
 
-Setting up a custom pipeline can also be needed when one does not have any supporting gene annotation at hand. In those cases a simplified workflow pipeline can be defined that still allows binding site definition. To achieve this we simply combine all processing functions that do not require an explicit annotation into a new reduced wrapper [^15].
-
-[^15] Note: We highly recommend using an adequate gene annotation since it improves the quality of the analysis.  
+Setting up a custom pipeline can also be needed when one does not have any supporting gene annotation at hand. In those cases a simplified workflow pipeline can be defined that still allows binding site definition. To achieve this we simply combine all processing functions that do not require an explicit annotation into a new reduced wrapper^[Note: We highly recommend using an adequate gene annotation since it improves the quality of the analysis.].
 
 ```{r}
 noAnnotationBSFind <- function(object) {

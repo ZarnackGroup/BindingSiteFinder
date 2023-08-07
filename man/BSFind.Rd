@@ -25,6 +25,9 @@ BSFind(
   merge.CenterIsSummit = TRUE,
   cutoff.globalFilter = 0.01,
   cutoff.geneWiseFilter = NULL,
+  repro.cutoff = NULL,
+  repro.nReps = NULL,
+  repro.minCrosslinks = 1,
   overlaps.geneWiseFilter = "keepSingle",
   overlaps.geneAssignment = "frequency",
   overlaps.rule.geneAssignment = NULL,
@@ -107,6 +110,17 @@ keep, the smallest step is 1\% (0.01) in function
 remove in in function \code{\link{pureClipGeneWiseFilter}}. The smallest step
 is 1\% (0.01). A cutoff of 5\% will remove the lowest 5\% sites, given their
 score, on each gene, thus keeping the strongest 95\%.}
+
+\item{repro.cutoff}{numeric; percentage cutoff to be used for the
+reproducibility quantile filtering}
+
+\item{repro.nReps}{numeric; number of replicates that must meet the cutoff
+defined in \code{repro.cutoff} for a binding site to be called reproducible.
+Defaults to N-1.}
+
+\item{repro.minCrosslinks}{numeric; minimal number of crosslinks a binding
+site needs to have to be called reproducible. Acts as a lower boundary for
+\code{repro.cutoff}. Defaults to 1.}
 
 \item{overlaps.geneWiseFilter}{character; how overlaps should be handled in
 \code{\link{pureClipGeneWiseFilter}}}

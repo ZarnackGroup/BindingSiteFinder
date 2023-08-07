@@ -21,8 +21,8 @@ test_that("Coverage function works", {
 
     # 1) Return option results output with same sized input
     # --------------------------------------------------------------------------
-    expect_warning(coverageOverRanges(
-        bds1, returnOptions = "merge_ranges_keep_positions"))
+    expect_message(coverageOverRanges(
+        bds1, returnOptions = "merge_ranges_keep_positions", quiet = FALSE))
 
     rngNew = getRanges(bds1)
     names(rngNew) = seq_along(rngNew)
@@ -107,3 +107,4 @@ test_that("Coverage function works", {
                              returnOptions = "merge_ranges_keep_positions")
 
 })
+

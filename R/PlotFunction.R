@@ -555,12 +555,12 @@ geneOverlapsPlot <- function(object,
     stopifnot(is(object, "BSFDataSet"))
 
     if (is.null(object@params$assignToGenes)) {
-        msg0 = paste0("Assignment to anno.genes was not applied yet. Run BSFind() or assigneToGenes() to compute values first. \n")
+        msg0 = paste0("Assignment to anno.genes was not applied yet. Run BSFind() or assignToGenes() to compute values first. \n")
         stop(msg0)
     }
     if (is.null(object@plotData$assignToGenes$dataOverlaps) |
         is.null(object@plotData$assignToGenes$dataSpectrum) ) {
-        msg1 = paste0("It seems like someting went wrong with your data. Please check the input and make sure to run assignToGenes() or BSFind() before plotting. \n")
+        msg1 = paste0("It seems like you used options `remove` or `keep` in assignToGenes(). The plot you try to make is only present for options `frequency` and `hierarchy`. \n")
         stop(msg1)
     }
 
@@ -656,7 +656,7 @@ targetGeneSpectrumPlot <- function(object,
     }
     if (is.null(object@plotData$assignToGenes$dataOverlaps) |
         is.null(object@plotData$assignToGenes$dataSpectrum) ) {
-        msg1 = paste0("It seems like someting went wrong with your data. Please check the input and make sure to run assignToGenes() or BSFind() before plotting. \n")
+        msg1 = paste0("It seems like you used options `remove` or `keep` in assignToGenes(). The plot you try to make is only present for options `frequency` and `hierarchy`. \n")
         stop(msg1)
     }
 
@@ -1633,7 +1633,7 @@ rangeCoveragePlot <-
 
             df = coverageOverRanges(
                 newObj, returnOptions = "merge_ranges_keep_positions",
-                silent = TRUE)
+                quiet = TRUE)
             df = as.data.frame(df)
 
             df = data.frame(
@@ -1688,7 +1688,7 @@ rangeCoveragePlot <-
 
                 df = coverageOverRanges(
                     newObject, returnOptions = "merge_ranges_keep_positions",
-                    silent = TRUE)
+                    quiet = TRUE)
                 df = as.data.frame(df)
 
                 df = data.frame(
@@ -1964,7 +1964,7 @@ reproducibilityCutoffPlot <-
         cond = getMeta(object)$condition
         df = coverageOverRanges(
             object, returnOptions = "merge_positions_keep_replicates",
-            silent = TRUE)
+            quiet = TRUE)
         df = as.data.frame(mcols(df))
 
         if (length(cutoff) == 1) {
@@ -2166,7 +2166,7 @@ reproducibilityScatterPlot <- function(object,
         msg2 = paste0("Correlations are shown AFTER reproducibility filtering.\n")
         if (!quiet) message(c(msg1, msg2))
     }
-    cov = coverageOverRanges(object, returnOptions = "merge_positions_keep_replicates", silent = quiet)
+    cov = coverageOverRanges(object, returnOptions = "merge_positions_keep_replicates")
     df = as.data.frame(mcols(cov))
     df = log2(df+1)
     max.value = max(df)

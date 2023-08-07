@@ -75,6 +75,15 @@
 #' is 1\% (0.01). A cutoff of 5\% will remove the lowest 5\% sites, given their
 #' score, on each gene, thus keeping the strongest 95\%.
 #'
+#' @param repro.cutoff numeric; percentage cutoff to be used for the
+#' reproducibility quantile filtering
+#' @param repro.nReps numeric; number of replicates that must meet the cutoff
+#' defined in \code{repro.cutoff} for a binding site to be called reproducible.
+#' Defaults to N-1.
+#' @param repro.minCrosslinks numeric; minimal number of crosslinks a binding
+#' site needs to have to be called reproducible. Acts as a lower boundary for
+#' \code{repro.cutoff}. Defaults to 1.
+#'
 #' @param overlaps.geneWiseFilter character; how overlaps should be handled in
 #'  \code{\link{pureClipGeneWiseFilter}}
 #' @param overlaps.geneAssignment character; how overlaps should be handled in
@@ -89,6 +98,7 @@
 #' that should be used to handle overlaps if option 'hierarchy' is selected
 #' for \code{\link{assignToTranscriptRegions}}. The order of the vector is the order of
 #' the hierarchy.
+#'
 #' @param stf.flank character; how the flanking region shoule be set. Options are
 #' 'bs', 'manual'
 #' @param stf.flank.size numeric; if flank='manual' provide the desired flanking size
@@ -162,6 +172,10 @@ BSFind <- function(
         # cutoffs
         cutoff.globalFilter = 0.01,
         cutoff.geneWiseFilter = NULL,
+        # reproducibility
+        repro.cutoff = NULL,
+        repro.nReps = NULL,
+        repro.minCrosslinks = 1,
         # overlap arguments
         overlaps.geneWiseFilter = "keepSingle",
         overlaps.geneAssignment = "frequency",
@@ -260,7 +274,9 @@ BSFind <- function(
                               sensitive.size = est.sensitive.size,
                               sensitive.minWidth = est.sensitive.minWidth,
                               anno.annoDB = anno.annoDB,
-                              anno.genes = anno.genes)
+                              anno.genes = anno.genes,
+                              quiet = quiet,
+                              veryQuiet = veryQuiet)
         if (is.null(bsSize) & !is.null(cutoff.geneWiseFilter)) {
             obj@params$geneFilter = cutoff.geneWiseFilter
         }
@@ -291,7 +307,12 @@ BSFind <- function(
                            quiet = quiet)
 
     if(!veryQuiet) message("reproducibilityFilter...")
-    obj = reproducibilityFilter(obj, returnType = "BSFDataSet", quiet = quiet, ...)
+    obj = reproducibilityFilter(obj,
+                                returnType = "BSFDataSet",
+                                cutoff = repro.cutoff,
+                                nReps = repro.nReps,
+                                minCrosslinks = repro.minCrosslinks,
+                                quiet = quiet)
 
     if(!veryQuiet) message("assignToGenes...")
     obj = assignToGenes(obj,
@@ -323,12 +344,10 @@ BSFind <- function(
                             match.option = match.option.score,
                             quiet = quiet)
 
-
     if(!veryQuiet) message("calculateSignalToFlankScore...")
     obj = calculateSignalToFlankScore(obj,
                                       flank = stf.flank,
                                       flank.size = stf.flank.size,
                                       quiet = quiet)
-
     return(obj)
 }

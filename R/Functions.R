@@ -24,15 +24,14 @@
 #' indicating the support for each condition.
 #'
 #' @param object a BSFDataSet object
-#' @param cutoff a vector of length = 1, or of length =
-#' levels(getMeta(object)$conditions) with a single number (between 0-1)
-#' indicating the quantile cutoff
-#' @param nReps a vector of length = 1, or of length = l
-#' evels(getMeta(object)$conditions) indicating how many replicates need to
-#' meet their threshold for a binding site to be called reproducible.
-#' @param minCrosslinks numeric of length = 1, defines the lower boundary for
-#' the minimum number of crosslinks a binding site has to be supported by all
-#' replicates, regardless of the replicate specific quantile threshold
+#' @param cutoff numeric; percentage cutoff to be used for the
+#' reproducibility quantile filtering
+#' @param nReps numeric; number of replicates that must meet the cutoff
+#' defined in \code{cutoff} for a binding site to be called reproducible.
+#' Defaults to N-1.
+#' @param minCrosslinks numeric; minimal number of crosslinks a binding
+#' site needs to have to be called reproducible. Acts as a lower boundary for
+#' \code{cutoff}. Defaults to 1.
 #' @param returnType one of "BSFDataSet" or "data.frame". "BSFDataSet" is the
 #' default and "matrix" can be used for easy plotting.
 #' @param n.reps deprecated -> use nReps instead
@@ -141,8 +140,7 @@ reproducibilityFilter <- function(object,
     cond = metaData$condition
     # get number of crosslinks per binding site and replicate
     df = as.data.frame(mcols(coverageOverRanges(
-        object, returnOptions = "merge_positions_keep_replicates",
-        silent = TRUE)))
+        object, returnOptions = "merge_positions_keep_replicates")))
 
     # Manage single cutoff for single condition
     if (length(defaultCutoff) == 1) {
@@ -604,7 +602,11 @@ calculateSignalToFlankScore <- function(
 
     rngNew = c(extendedRangePlus, extendedRangeMinus)
     rngNew = .sortRanges(rngNew)
-    object = setRanges(object, rngNew)
+
+    idx = match(rng$bsID, rngNew$bsID)
+    mcols(rng) = mcols(rngNew[idx])
+
+    object = setRanges(object, rng)
 
     # ---
     # Store for results
@@ -619,3 +621,5 @@ calculateSignalToFlankScore <- function(
 
     return(object)
 }
+
+
