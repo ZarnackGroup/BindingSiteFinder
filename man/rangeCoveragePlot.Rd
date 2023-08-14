@@ -2,18 +2,28 @@
 % Please edit documentation in R/PlotFunction.R
 \name{rangeCoveragePlot}
 \alias{rangeCoveragePlot}
-\title{Plot crosslink events coverage over range}
+\title{Plot crosslink event coverage over binding site range}
 \usage{
-rangeCoveragePlot(object, width, name = "Coverage Plot", ...)
+rangeCoveragePlot(
+  object,
+  width = 20,
+  show.samples = FALSE,
+  subset.chromosome = "chr1",
+  quiet = TRUE
+)
 }
 \arguments{
 \item{object}{a BSFDataSet, or a list of BSFDataSet}
 
-\item{width}{a numeric value that defines the plotting ranges}
+\item{width}{numeric; set the plotting range to show (in nt)}
 
-\item{name}{plot title}
+\item{show.samples}{logical; to show individual samples as lines}
 
-\item{...}{further arguments passed to ggplot}
+\item{subset.chromosome}{character; subset by a all ranges on the indicated
+chromosome. Can also be a vector with multiple chromosomes. If NULL then all
+ranges are being used.}
+
+\item{quiet}{logical; whether to print messages}
 }
 \value{
 a plot of type \code{ggplot2} displaying the crosslink coverage over
@@ -37,7 +47,7 @@ load(list.files(files, pattern = ".rda$", full.names = TRUE))
 # plotting a single object
 bds <- makeBindingSites(object = bds, bsSize = 9, minWidth = 2,
 minCrosslinks = 2, minClSites = 1)
-rangeCoveragePlot(bds, width = 20)
+rangeCoveragePlot(bds, subset.chromosome = "chr22")
 
 # plotting multiple objects
 bds1 <- makeBindingSites(object = bds, bsSize = 3, minWidth = 2,
@@ -45,7 +55,7 @@ minCrosslinks = 2, minClSites = 1, sub.chr = "chr22")
 bds2 <- makeBindingSites(object = bds, bsSize = 9, minWidth = 2,
 minCrosslinks = 2, minClSites = 1, sub.chr = "chr22")
 l = list(`1. bsSize = 3` = bds1, `2. bsSize = 9` = bds2)
-rangeCoveragePlot(l, width = 20)
+rangeCoveragePlot(l, subset.chromosome = "chr22")
 
 }
 \seealso{
