@@ -182,62 +182,80 @@ exportToBED <- function(object, con) {
     lastFun = substr(lastFun, start = 1, stop = nchar(lastFun)-2)
     optionStr = tail(object@results, 1) %>% pull(options)
 
-    if(lastFun == "pureClipGlobalFilter") {
+    allFunctions = c("pureClipGlobalFilter", "estimateBsWidth",
+                     "pureClipGeneWiseFilter", "makeBindingSites",
+                     "reproducibilityFilter", "assignToGenes",
+                     "assignToTranscriptRegions", "annotateWithScore",
+                     "calculateSignalToFlankScore")
+
+    if(lastFun == allFunctions[1]) {
         mcols(expRng)$name = paste0("IDX", ":", seq_along(expRng))
         mcols(expRng)$score = NULL
         rtracklayer::export(object = expRng, con = con, format = "BED",
                             trackLine = new("BasicTrackLine", name = "CLS_pureClipGlobalfilter",
                                             description = paste0("pureClipGlobalFilter; options: ", optionStr), useScore = FALSE))
     }
-    if(lastFun == "estimateBsWidth") {
+    if(lastFun == allFunctions[2]) {
         mcols(expRng)$name = paste0("IDX", ":", seq_along(expRng))
         mcols(expRng)$score = NULL
         rtracklayer::export(object = expRng, con = con, format = "BED",
                             trackLine = new("BasicTrackLine", name = "CLS_estimateBsWidth",
                                             description = paste0("estimateBsWidth; options: ", optionStr), useScore = FALSE))
     }
-    if(lastFun == "pureClipGeneWiseFilter") {
+    if(lastFun == allFunctions[3]) {
         mcols(expRng)$name = paste0("IDX", ":", seq_along(expRng), "_", expRng$geneID)
         mcols(expRng)$score = NULL
         rtracklayer::export(object = expRng, con = con, format = "BED",
                             trackLine = new("BasicTrackLine", name = "CLS_pureClipGeneWiseFilter",
                                             description = paste0("pureClipGeneWiseFilter; options: ", optionStr), useScore = FALSE))
     }
-    if(lastFun == "makeBindingSites"){
+    if(lastFun == allFunctions[4]){
         mcols(expRng)$name = paste0(expRng$bsID)
         mcols(expRng)$score = NULL
         rtracklayer::export(object = expRng, con = con, format = "BED",
                             trackLine = new("BasicTrackLine", name = "BS_makeBindingsites",
                                             description = paste0("makeBindingSites; options: ", optionStr), useScore = FALSE))
     }
-    if(lastFun == "reproducibilityFilter"){
+    if(lastFun == allFunctions[5]){
         mcols(expRng)$name = paste0(expRng$bsID)
         mcols(expRng)$score = NULL
         rtracklayer::export(object = expRng, con = con, format = "BED",
                             trackLine = new("BasicTrackLine", name = "BS_reproducibilityFilter",
                                             description = paste0("reproducibilityFilter; options: ", optionStr), useScore = FALSE))
     }
-    if(lastFun == "assignToGenes"){
+    if(lastFun == allFunctions[6]){
         mcols(expRng)$name = paste0(expRng$bsID, "_", expRng$geneID, "_", expRng$geneType)
         mcols(expRng)$score = NULL
         rtracklayer::export(object = expRng, con = con, format = "BED",
                             trackLine = new("BasicTrackLine", name = "BS_assignToGenes",
                                             description = paste0("assignToGenes; options: ", optionStr), useScore = FALSE))
     }
-    if(lastFun == "assignToTranscriptRegions"){
+    if(lastFun == allFunctions[7]){
         mcols(expRng)$name = paste0(expRng$bsID, "_", expRng$geneID, "_", expRng$geneType, "_", expRng$transcriptRegion)
         mcols(expRng)$score = NULL
         rtracklayer::export(object = expRng, con = con, format = "BED",
                             trackLine = new("BasicTrackLine", name = "BS_assignToTranscriptRegions",
                                             description = paste0("assignToTranscriptRegions; options: ", optionStr), useScore = FALSE))
     }
-    if(lastFun == "annotateWithScore"){
+    if(lastFun == allFunctions[8]){
         mcols(expRng)$name = paste0("BsID", ":", expRng$bsID, "_", expRng$geneID, "_", expRng$geneType, "_", expRng$transcriptRegion, "_score:", expRng$score)
         mcols(expRng)$score = NULL
         rtracklayer::export(object = expRng, con = con, format = "BED",
                             trackLine = new("BasicTrackLine", name = "BS_annotateWithScore",
                                             description = paste0("annotateWithScore; options: ", optionStr), useScore = FALSE))
     }
+    if(lastFun == allFunctions[9]){
+        mcols(expRng)$name = paste0("BsID", ":", expRng$bsID, "_", expRng$geneID, "_", expRng$geneType, "_", expRng$transcriptRegion, "_score:", expRng$score, "_flankScore:", expRng$signalToFlankRatio)
+        mcols(expRng)$score = NULL
+        rtracklayer::export(object = expRng, con = con, format = "BED",
+                            trackLine = new("BasicTrackLine", name = "BS_calculateSignalToFlankScore",
+                                            description = paste0("annotateWithScore; options: ", optionStr), useScore = FALSE))
+    }
+    lastFun = "assignToGenaes"
+    if(!lastFun %in% allFunctions) {
+        stop("Function names not matching. Please check your data or export manually with `rtracklayer::export(getRanges(myObj))`.\n")
+    }
+
 }
 
 
