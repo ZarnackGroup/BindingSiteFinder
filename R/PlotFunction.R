@@ -1571,7 +1571,7 @@ bindingSiteDefinednessPlot <- function(
 
 
 
-#' Plot crosslink events coverage over range
+#' Plot crosslink event coverage over binding site range
 #'
 #' A diagnostic plot function that allows to check the coverage of crosslink
 #' events over different merged regions. The coverage is shown as mean over all
@@ -1582,9 +1582,12 @@ bindingSiteDefinednessPlot <- function(
 #' make a plot for each list element.
 #'
 #' @param object a BSFDataSet, or a list of BSFDataSet
-#' @param width a numeric value that defines the plotting ranges
-#' @param name plot title
-#' @param ... further arguments passed to ggplot
+#' @param width numeric; set the plotting range to show (in nt)
+#' @param show.samples logical; to show individual samples as lines
+#' @param subset.chromosome character; subset by a all ranges on the indicated
+#' chromosome. Can also be a vector with multiple chromosomes. If NULL then all
+#' ranges are being used.
+#' @param quiet logical; whether to print messages
 #'
 #' @return a plot of type \code{ggplot2} displaying the crosslink coverage over
 #' the ranges of the given \code{\link{BSFDataSet}}
@@ -1602,7 +1605,7 @@ bindingSiteDefinednessPlot <- function(
 #' # plotting a single object
 #' bds <- makeBindingSites(object = bds, bsSize = 9, minWidth = 2,
 #' minCrosslinks = 2, minClSites = 1)
-#' rangeCoveragePlot(bds, width = 20)
+#' rangeCoveragePlot(bds, subset.chromosome = "chr22")
 #'
 #' # plotting multiple objects
 #' bds1 <- makeBindingSites(object = bds, bsSize = 3, minWidth = 2,
@@ -1610,144 +1613,201 @@ bindingSiteDefinednessPlot <- function(
 #' bds2 <- makeBindingSites(object = bds, bsSize = 9, minWidth = 2,
 #' minCrosslinks = 2, minClSites = 1, sub.chr = "chr22")
 #' l = list(`1. bsSize = 3` = bds1, `2. bsSize = 9` = bds2)
-#' rangeCoveragePlot(l, width = 20)
+#' rangeCoveragePlot(l, subset.chromosome = "chr22")
 #'
 #' @export
-rangeCoveragePlot <-
-    function(object, width, name = "Coverage Plot", ...) {
-        # bind locally used variables
-        position <- sd <- xmin <- xmax <- ymin <- ymax <- NULL
+rangeCoveragePlot <- function(object,
+                              width = 20,
+                              show.samples = FALSE,
+                              subset.chromosome = "chr1",
+                              quiet = TRUE
+) {
 
-        # make plot if only a single object is given
-        if (!is(object, "list")) {
-            stopifnot(is(object, "BSFDataSet"))
+    # bind locally used variables
+    position <- sd <- xmin <- xmax <- ymin <- ymax <- NULL
+    Sample <- value <- name <- NULL
 
-            if (!is.numeric(width)) {
-                stop("width has to be numeric")
-            }
+    # make plot for individual object
+    if (!is(object, "list")) {
+        stopifnot(is(object, "BSFDataSet"))
+        if (!is.numeric(width)) {
+            stop("Plotting width has to be numeric")
+        }
 
-            bsSize = unique(width(getRanges(object)))
-            rng = getRanges(object)
-            rngResize = resize(rng, width = 1, fix = "center") + width
-            newObj = setRanges(object, rngResize)
+        # check if subset is part of the seqnames from ranges
+        checkRng = getRanges(object)
+        if (!all(subset.chromosome %in% levels(seqnames(checkRng)))){
+            msg = paste0("Chromosome to estimate on (", subset.chromosome, "), is not included in the ranges: ", paste(levels(seqnames(checkRng)), collapse = ", "))
+            stop(msg)
+        }
 
-            df = coverageOverRanges(
-                newObj, returnOptions = "merge_ranges_keep_positions",
-                quiet = TRUE)
-            df = as.data.frame(df)
+        # limit estimation to a specific chromosome
+        if (!is.null(subset.chromosome)) {
+            redObj = .subsetByChr(object, chr = subset.chromosome, quiet = quiet)
+        } else {
+            redObj = object
+        }
 
+
+        nSamples = nrow(getMeta(redObj))
+        nBs = length(getRanges(redObj))
+        bsSize = unique(width(getRanges(redObj)))
+        rng = getRanges(redObj)
+        rngResize = resize(rng, width = 1, fix = "center") + width
+        newObj = setRanges(redObj, rngResize)
+
+        optstrNice = paste0("#BS=", format(nBs, big.mark = ","), ", bsSize=", bsSize, ", chr=", subset.chromosome)
+
+        # compute coverage
+        cov = clipCoverage(newObj, samples.merge = FALSE, ranges.merge = FALSE,
+                           positions.merge = TRUE, out.format = "data.frame", quiet = quiet)
+
+        # main data frame to show
+        suppressWarnings({
             df = data.frame(
-                mean = colMeans(df),
-                sd = colSds(as.matrix(df)),
+                mean = colMeans(cov),
+                sd = colSds(as.matrix(cov)),
                 position = c(rev(-seq_len(width)), 0, seq_len(width))
             )
-            p = ggplot(...) +
-                annotate(
-                    "rect",
-                    xmin = (-floor(bsSize / 2)),
-                    xmax = (floor(bsSize / 2)),
-                    ymin = -Inf,
-                    ymax = Inf,
-                    alpha = 0.2,
-                    color = "grey"
-                ) +
-                geom_ribbon(
-                    data = df,
-                    aes(
-                        x = position,
-                        ymin = mean - sd,
-                        ymax = mean + sd
-                    ),
-                    fill = "#8cb3d9"
-                ) +
-                geom_line(
-                    data = df,
-                    aes(x = position, y = mean),
-                    size = 1,
-                    color = "#2d5986"
-                ) +
-                theme_classic() +
-                ggtitle(name) +
-                xlab("Position (nt)") +
-                ylab("Crosslink events (mean of replicates)")
+        })
 
+        # make main plot
+        p = ggplot() +
+            annotate("rect", xmin = (-floor(bsSize / 2)), xmax = (floor(bsSize / 2)),
+                     ymin = -Inf, ymax = Inf, alpha = 0.3, color = "grey") +
+            geom_ribbon(data = df, aes(x = position, ymin = mean - sd, ymax = mean + sd),
+                        fill = "#8cb3d9") +
+            geom_line(data = df, aes(x = position, y = mean), size = 1, color = "#2d5986") +
+            theme_classic() +
+            labs(
+                title = "rangeCoveragePlot()",
+                subtitle = optstrNice,
+                x = "Position relative to binding site center (nt)",
+                y = "Number of crosslink events\n(dark blue = mean of replicates)"
+            ) +
+            theme(legend.position = "none")
+
+        # add replicates to plot
+        if (isTRUE(show.samples)) {
+            # add sample
+            dfReps = cov %>% tibble::rownames_to_column("Sample") %>%
+                pivot_longer(-Sample) %>%
+                mutate(position = rep(c(rev(-seq_len(width)), 0, seq_len(width)), nSamples))
+
+            # annotate with sample names
+            dfNames = dfReps %>% group_by(Sample) %>%
+                filter(position == max(position))
+            # set color scheme
+            colfunc = colorRampPalette(c("#FFC3A1", "#A75D5D"))
+            cols = colfunc(n = nSamples)
+
+            p = p +
+                scale_color_manual(values = cols) +
+                geom_line(data = dfReps, aes(x = position, y = value, color = Sample)) +
+                geom_text(data = dfNames, aes(x = position, y = value, label = Sample, color = Sample), nudge_x = 3) +
+                theme(legend.position = "none")
         }
-        # make plot if a list of BSFDataSet objects is given
-        if (is(object, "list")) {
-            stopifnot(vapply(object, function(x) {
-                is(x, "BSFDataSet")},
-                FUN.VALUE = logical(1))
-            )
 
-            objectNames = names(object)
-            df = lapply(seq_along(object), function(x) {
-                rngResize = resize(getRanges(object[[x]]),
-                                   width = 1,
-                                   fix = "center") + width
-                newObject = setRanges(object[[x]], rngResize)
+    }
+    # make plot for a list of BSFDataSet objects
+    if (is(object, "list")) {
+        stopifnot(vapply(object, function(x) {
+            is(x, "BSFDataSet")},
+            FUN.VALUE = logical(1))
+        )
 
-                df = coverageOverRanges(
-                    newObject, returnOptions = "merge_ranges_keep_positions",
-                    quiet = TRUE)
-                df = as.data.frame(df)
+        objectNames = names(object)
+        df = lapply(seq_along(object), function(x) {
 
+            # check if subset is part of the seqnames from ranges
+            checkRng = getRanges(object[[x]])
+            if (!all(subset.chromosome %in% levels(seqnames(checkRng)))){
+                msg = paste0("Chromosome to estimate on (", subset.chromosome, "), is not included in the ranges: ", paste(levels(seqnames(checkRng)), collapse = ", "))
+                stop(msg)
+            }
+
+            # limit estimation to a specific chromosome
+            if (!is.null(subset.chromosome)) {
+                redObj = .subsetByChr(object[[x]], chr = subset.chromosome, quiet = quiet)
+            } else {
+                redObj = object[[x]]
+            }
+
+            # set correct ranges
+            rngResize = resize(getRanges(redObj), width = 1, fix = "center") + width
+            newObj = setRanges(redObj, rngResize)
+
+            # compute coverage
+            cov = clipCoverage(newObj, samples.merge = FALSE, ranges.merge = FALSE, positions.merge = TRUE, out.format = "data.frame")
+
+            # main data frame to show
+            suppressWarnings({
                 df = data.frame(
-                    mean = colMeans(df),
-                    sd = colSds(as.matrix(df)),
+                    mean = colMeans(cov),
+                    sd = colSds(as.matrix(cov)),
                     position = c(rev(-seq_len(width)), 0, seq_len(width)),
                     name = objectNames[[x]]
                 )
-
-                return(df)
             })
-            df = do.call(rbind, df)
-            bsSize = vapply(object, function(x) {
-                unique(width(getRanges(x)))
-            }, FUN.VALUE = integer(1))
+            # add sample
+            dfReps = cov %>% tibble::rownames_to_column("Sample") %>%
+                pivot_longer(-Sample) %>%
+                select(-name)
 
-            dfFrame = data.frame(
-                name = names(bsSize),
-                xmin = (-floor(bsSize / 2)),
-                xmax = (floor(bsSize / 2)),
-                ymin = -Inf,
-                ymax = Inf
-            )
+            rownames(df) = NULL
+            rownames(dfReps) = NULL
 
-            p = ggplot(...) +
-                geom_rect(
-                    data = dfFrame,
-                    aes(
-                        xmin = xmin,
-                        xmax = xmax,
-                        ymin = ymin,
-                        ymax = ymax
-                    ),
-                    alpha = 0.2,
-                    color = "grey"
-                ) +
-                geom_ribbon(
-                    data = df,
-                    aes(
-                        x = position,
-                        ymin = mean - sd,
-                        ymax = mean + sd
-                    ),
-                    fill = "#8cb3d9"
-                ) +
-                geom_line(
-                    data = df,
-                    aes(x = position, y = mean),
-                    size = 1,
-                    color = "#2d5986"
-                ) +
-                theme_classic() +
-                facet_wrap( ~ name) +
-                xlab("Position (nt)") +
-                ylab("Crosslink events (mean of replicates)")
+            df = cbind(df, dfReps)
+
+            return(df)
+        })
+        dfPlot = do.call(rbind, df)
+        # annotate with sample names
+        dfNames = dfPlot %>% group_by(Sample) %>%
+            filter(position == max(position))
+
+        bsSize = vapply(object, function(x) {
+            unique(width(getRanges(x)))
+        }, FUN.VALUE = integer(1))
+
+        dfFrame = data.frame(
+            name = names(bsSize),
+            xmin = (-floor(bsSize / 2)),
+            xmax = (floor(bsSize / 2)),
+            ymin = -Inf,
+            ymax = Inf
+        )
+
+        p = ggplot() +
+            geom_rect(data = dfFrame, aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
+                      alpha = 0.2, color = "grey") +
+            geom_ribbon(data = dfPlot, aes(x = position, ymin = mean - sd, ymax = mean + sd),
+                        fill = "#8cb3d9") +
+            geom_line(data = dfPlot, aes(x = position, y = mean), size = 1, color = "#2d5986") +
+            theme_classic() +
+            labs(
+                title = "rangeCoveragePlot()",
+                x = "Position relative to binding site center (nt)",
+                y = "Number of crosslink events\n(dark blue = mean of replicates)"
+            ) +
+            facet_wrap( ~name) +
+            theme(legend.position = "none")
+
+
+        if(isTRUE(show.samples)) {
+            # set color scheme
+            colfunc = colorRampPalette(c("#FFC3A1", "#A75D5D"))
+            cols = colfunc(n = length(unique(dfPlot$Sample)))
+
+            p = p +
+                geom_line(data = dfPlot, aes(x = position, y = value, color = Sample)) +
+                geom_text(data = dfNames, aes(x = position, y = value, label = Sample, color = Sample), nudge_x = 3, size = 3) +
+                scale_color_manual(values = cols)+
+                theme(legend.position = "none")
         }
-        return(p)
     }
-
+    return(p)
+}
 
 #' Plot summarized results of the different binding site merging and filtering
 #' steps
@@ -1790,7 +1850,7 @@ rangeCoveragePlot <-
 #' bds2 <- makeBindingSites(object = bds, bsSize = 9, minWidth = 2,
 #' minCrosslinks = 2, minClSites = 3, sub.chr = "chr22")
 #' l = list(`1. bsSize = 3` = bds1, `2. bsSize = 9` = bds2)
-#' rangeCoveragePlot(l, width = 20)
+#' mergeSummaryPlot(l, width = 20)
 #'
 #' @export
 mergeSummaryPlot <- function(object,

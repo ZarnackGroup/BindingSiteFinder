@@ -19,13 +19,13 @@ bibliography: references.bib
 ---
 
 ```{r setup, echo=FALSE, results="hide"}
+knitr::knit_hooks$set(optipng = knitr::hook_optipng)
 knitr::opts_chunk$set(tidy = FALSE,
                       cache = FALSE,
                       dev = "png",
-                      message = FALSE, error = FALSE, warning = TRUE)
+                      message = FALSE, error = FALSE, warning = TRUE,
+                      optipng = '-o7')
 this.dpi = 100
-library(knitr)
-knit_hooks$set(optipng = '-o7')
 ```	
 
 ```{r, echo=FALSE, results="hide", warning=FALSE}
@@ -569,7 +569,7 @@ l = list(`1. bsSize = 3` = bds1, `2. bsSize = 9` = bds2,
 The combined coverage over these different binding sites can help to quickly judge if the selected size does fit the data appropriately (`rangeCoveragePlot()`). Here, each plot is centered around the binding site’s midpoint and the computed width is indicated by the gray frame.
 
 ```{r, fig.retina = 1, dpi = this.dpi, fig.cap="rangeCoveragePlot. Crosslink coverage summarized at potential binding sites, with current size given by the grey area."}
-rangeCoveragePlot(l, width = 20) 
+rangeCoveragePlot(l, width = 20, show.samples = TRUE, subset.chromosome = "chr22") 
 ```
 
 In our example, size = 3 appears too small, since not all of the relevant peak signal seems to be captured. On the contrary, size = 29 appears extremely large. Here, we decided for size = 9 because it seems to capture the central coverage peak best. 
@@ -730,6 +730,22 @@ sgn = getSignal(bdsMerge)
 export(sgn$signalPlus$WT, con = "./sgn_plus.bw", format = "bigwig")
 export(sgn$signalPlus$WT, con = "./sgn_minus.bw", format = "bigwig")
 ```
+
+## Calculate coverage
+
+Each `BSFDataSet` contains the binding sites as ranges as well as the individual crosslinks per sample. With the `clipCoverage()` function one can easily compute all sorts of coverage over these ranges. 
+
+In the purest form this would result in a matrix with the number of columns being equal to the number of nucleotides in the binding sites (`bsSize`) and the number of rows being equal to the number of binding sites. If this matrix is computed for all samples the result is a list of matrices with the described dimensions. 
+
+To simplify this output three parameter options exist to merge either of the three dimensions (`samples.merge`, `positions.merge`, `ranges.merge`). Merging samples will combine the coverage signal from individual samples^[Notes: Samples can also be combined by condition if multiple conditions are present.]. Merging positions combine all single nucleotide positions of the binding sites into a single value. Merging ranges will combine all ranges. For each merging operation one can choose between using the `sum` or `mean`. Depending on the shape of the result it can either be attached to the ranges present in the `BSFDataSet` which results in a `granges` type of output, or it can be returned as a `data.frame`. 
+
+```{r}
+cov = clipCoverage(bdsOut, ranges.merge = TRUE, samples.merge = FALSE, positions.merge = FALSE)
+cov
+```
+
+Here we added the number of crosslinks per binding site and replicate to the `granges` object of the bindnig sites. 
+
 
 # Session info
 
