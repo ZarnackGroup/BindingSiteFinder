@@ -209,6 +209,15 @@ BSFind <- function(
     stopifnot(is.logical(quiet))
     stopifnot(is.logical(veryQuiet))
 
+    # check meta data
+    this.meta = getMeta(object)
+    if (length(levels(this.meta$condition)) > 1) {
+        msg0 = paste0("Found ", length(levels(this.meta$condition)), " different conditions in the input object.\n")
+        msg1 = paste0("BSFind can only be used on data from a single condition.\n")
+        msg2 = paste0("Please run BSFind sparately for each condition, then combine both objects with combineBSF.\n ")
+        stop(c(msg0,msg1,msg2))
+    }
+
     # Check annotation source
     # ---
     if (is.null(anno.annoDB) & is.null(anno.genes) & is.null(anno.transcriptRegionList)) {

@@ -623,3 +623,238 @@ calculateSignalToFlankScore <- function(
 }
 
 
+
+#' Combine multiple \code{\link{BSFDataSet}} objects
+#'
+#' This function combines all \code{\link{BSFDataSet}} objects from the input
+#' list into a single \code{\link{BSFDataSet}} object.
+#'
+#' Meta-data tables are added to each other by performing a row-wise bind,
+#' basically adding all meta data tables underneath each other.
+#'
+#' The default way of signal combination is merging all signal lists on the level
+#' of the indivdual samples. One can also force a re-load of the signal list
+#' component by using \code{force.reload=TRUE}.
+#' The signal can be combined by
+#'
+#' The ranges are combined by adding both granges objects together. With option
+#' \code{overlaps.fix} one can decide if partially overlapping ranges should be
+#' combined into a single range or not. If this option is FALSE one is likely to
+#' have overlapping binding sites after the merge. If this option is TRUE, then
+#' the combined coverage is used to guide the new center point for these cases.
+#'
+#' The \code{combine.bsSize} option allows one to set a unique bsSize for all
+#' objects that should be combined. Although it is recommended to combine only
+#' objects with the same bsSize this option can be used to ensure that the
+#' merged result has the same bsSize for all ranges.
+#'
+#' @param list list; a list of objects from class \code{\link{BSFDataSet}} that
+#' should be combined
+#' @param overlaps.fix logical; if partially overlapping binding sites should be
+#' re-centered
+#' @param combine.bsSize numeric; the binding site size that the merged sites
+#' should have. Default=NULL, then bsSize is taken from the input objects
+#' in \code{list}.
+#' @param combine.name character; meta table name of the combined object.
+#' Default=NULL; then name is set to 'combined'
+#' @param force.reload logical; whether the signal should be derived from the
+#' merge of the input objects given in \code{list} or if the signal should be
+#' re-loaded from the path given in the meta data.
+#' @param quiet logical; whether to print messages or not
+#' @param veryQuiet logical; whether to print status messages or not
+#'
+#' @return an object of class \code{\link{BSFDataSet}} with ranges, signal and
+#' meta data resulting from the merge of the input objects.
+#'
+#' @examples
+#' # load clip data
+#' files <- system.file("extdata", package="BindingSiteFinder")
+#' load(list.files(files, pattern = ".rda$", full.names = TRUE))
+#'
+#' # make binding sites
+#' bds = makeBindingSites(bds, bsSize = 7)
+#'
+#' # split ranges in two groups
+#' allRanges = getRanges(bds)
+#' set.seed(1234)
+#' idx = sample(1:length(allRanges), size = length(allRanges)/2, replace = FALSE)
+#' r1 = allRanges[idx]
+#' r2 = allRanges[-idx]
+#'
+#' # splite meta data
+#' allMeta = getMeta(bds)
+#' m1 = allMeta[1:2,]
+#' m2 = allMeta[3:4,]
+#'
+#' # create new objects
+#' bds1 = setRanges(bds, r1)
+#' bds2 = setRanges(bds, r2)
+#' bds1 = setMeta(bds1, m1)
+#' bds2 = setMeta(bds2, m2)
+#' bds1 = setName(bds1, "test1")
+#' bds2 = setName(bds2, "test2")
+#'
+#' # merge two objects with '+' operator
+#' c1 = bds1 + bds2
+#'
+#' # merge two objects from list
+#' list = list(bds1, bds2)
+#' c1 = combineBSF(list = list, overlaps.fix = TRUE,
+#'  combine.bsSize = NULL, combine.name = NULL, quiet = TRUE)
+#'
+#' @export
+combineBSF <- function(list, # list of class BSFDataSet
+                       overlaps.fix = TRUE,
+                       combine.bsSize = NULL,
+                       combine.name = NULL,
+                       force.reload = FALSE,
+                       quiet = TRUE,
+                       veryQuiet = FALSE
+){
+    # initialize local variables
+    this.bsSize <- NULL
+
+    # INPUT CHECKS
+    # --------------------------------------------------------------------------
+    stopifnot(all(unlist(lapply(list, is, "BSFDataSet"))))
+    if (!is.null(combine.bsSize)){
+        stopifnot(is(combine.bsSize, "numeric"))
+    }
+
+    # Combine meta
+    # --------------------------------------------------------------------------
+    comb.meta = do.call(rbind, lapply(list, getMeta))
+
+    # check for duplicated path
+    if (any(duplicated(comb.meta$clPlus))) {
+        msg = paste0("Duplicated path for plus strand found. Please check input.\n")
+        if (!quiet) warning(c(msg))
+    }
+    if (any(duplicated(comb.meta$clMinus))) {
+        msg = paste0("Duplicated path for minus strand found. Please check input.\n")
+        if (!quiet) warning(c(msg))
+    }
+    # set ids
+    comb.meta$id = 1:nrow(comb.meta)
+
+    # set name
+    comb.meta$datasets = comb.meta$name
+    if (is.null(combine.name)) {
+        comb.meta$name = "combined"
+    } else {
+        comb.meta$name = combine.name
+    }
+
+    # Combine signal
+    # --------------------------------------------------------------------------
+    # combine signal if user wants it or not
+    if (!isTRUE(force.reload)) {
+        # combine plus strand
+        signal.plus = lapply(list, function(x){
+            this.signal = getSignal(x)
+            this.signal.plus = this.signal$signalPlus
+            return(this.signal.plus)
+        })
+        signal.plus = unlist(signal.plus)
+        names(signal.plus) = paste0(comb.meta$id, "_", comb.meta$condition)
+        # combine minus strand
+        signal.minus = lapply(list, function(x){
+            this.signal = getSignal(x)
+            this.signal.minus = this.signal$signalMinus
+            return(this.signal.minus)
+        })
+        signal.minus = unlist(signal.minus)
+        names(signal.minus) = paste0(comb.meta$id, "_", comb.meta$condition)
+
+        comb.signal = list(signalPlus = signal.plus,
+                           signalMinus = signal.minus)
+    }
+
+    # Combine ranges
+    # --------------------------------------------------------------------------
+    comb.ranges = lapply(seq_along(list), function(x){
+        this.range = getRanges(list[[x]])
+        mcols(this.range)$dataset = getName(list[[x]])
+        return(this.range)
+    })
+    comb.ranges = do.call(c, comb.ranges)
+
+    # fix overlaps or not
+    if (!isTRUE(overlaps.fix)) {
+        msg = paste0("Overlaps are not resoloved. This could lead to overlapping binding site.\n")
+        if (!quiet) warning(msg)
+    }
+
+    # check for identical bsSize
+    if (!length(unique(width(comb.ranges))) == 1) {
+        # not all ranges have the same size
+        msg0 = paste0("Not all ranges are of the same size. \n")
+        msg1 = paste0("Found ranges of bsSize = c(", paste(unique(width(comb.ranges)), collapse = ","), ").\n")
+        # do not fix ranges
+        if (!isTRUE(overlaps.fix)) {
+            if (!quiet) warning(c(msg0, msg1))
+        } else {
+            # ranges should be fixed
+            if (is.null(combine.bsSize)) {
+                msg2 = paste0("Use 'combine.bsSize' to set a reference size for all ranges.\n")
+                stop (c(msg0, msg1, msg2))
+            } else {
+                msg2 = paste0("Manual size of ", combine.bsSize, "nt is used for merging.\n")
+                this.bsSize = combine.bsSize
+            }
+            if (!quiet) warning(c(msg0, msg1, msg2))
+        }
+    } else {
+        # all ranges have equal size
+        if (unique(width(comb.ranges)) == 1) {
+            # ranges to combine are of 1 nt range
+            msg0 = paste0("Range to combine have width of 1nt.\n")
+            msg1 = paste0("Make sure to run binding site definition first; see `BSFind()`.\n")
+            msg2 = paste0("Alternativly set `overlaps.fix=FALSE` to simply add ranges.\n")
+            if (!quiet) warning(c(msg0,msg1,msg2))
+        }
+        if (!is.null(combine.bsSize)) {
+            # set combined bsSize manually
+            this.bsSize = combine.bsSize
+        } else {
+            # set combined bsSize from data
+            this.bsSize = unique(width(comb.ranges))
+        }
+    }
+
+    # Resize ranges overlaps
+    # --------------------------------------------------------------------------
+    # don't fix overlaps, keep as it is
+    if (!isTRUE(overlaps.fix)) {
+        # apply new bsSize for all ranges if needed
+        if (!is.null(this.bsSize)) {
+            # turn ranges into midpoint representations
+            comb.ranges = resize(comb.ranges, fix = "center", width = this.bsSize)
+        }
+        # create combined BSFDataSet
+        if (!veryQuiet) message("Creating merged object...")
+        # use reload option or not
+        if (isTRUE(force.reload)){
+            comb.bds = BSFDataSetFromBigWig(ranges = comb.ranges, meta = comb.meta, silent = quiet)
+        } else {
+            comb.bds = BSFDataSet(ranges = comb.ranges, meta = comb.meta, signal = comb.signal, silent = quiet)
+        }
+    } else {
+        # turn ranges into midpoint representations
+        comb.ranges = resize(comb.ranges, fix = "center", width = 1)
+        # create combined BSFDataSet
+        if (!veryQuiet) message("Creating merged object...")
+        # use reload option or not
+        if (isTRUE(force.reload)) {
+            comb.bds = BSFDataSetFromBigWig(ranges = comb.ranges, meta = comb.meta, silent = quiet)
+        } else {
+            comb.bds = BSFDataSet(ranges = comb.ranges, meta = comb.meta, signal = comb.signal, silent = quiet)
+        }
+        # resolve overlaps by merging
+        if (!veryQuiet) message("Fixing overlapps...")
+        comb.bds = makeBindingSites(object = comb.bds, bsSize = this.bsSize,
+                                    minWidth = 0, minCrosslinks = 0, minClSites = 0,
+                                    centerIsSummit = FALSE, centerIsClSite = FALSE)
+    }
+    return(comb.bds)
+}

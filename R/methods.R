@@ -585,3 +585,67 @@ setMethod("[", signature(x = "BSFDataSet", i = "ANY", j = "ANY", drop = "ANY"),
               initialize(x, ranges = rngSub, signal = sgnSub)
           }
 )
+
+
+
+#' Add two \code{\link{BSFDataSet}} objects
+#'
+#' Use '+' to add two objects of type \code{\link{BSFDataSet}} to each other.
+#'
+#' Meta data is extended by binding both input tables together. Ranges are
+#' added by re-centering partially overlapping ranges according to their combined
+#' coverage maximum.
+#'
+#' Input ranges must be of the same size. Differently size objects cannot be
+#' added. For this and other usecases please see \code{\link{combineBSF}}.
+#'
+#' @param e1 BSFDataSet; the first dataset
+#' @param e2 BSFDataSet; the second dataset
+#'
+#' @return A \link{BSFDataSet} object with ranges, signal and meta data from
+#' both inputs.
+#'
+#' @examples
+#' # load clip data
+#' files <- system.file("extdata", package="BindingSiteFinder")
+#' load(list.files(files, pattern = ".rda$", full.names = TRUE))
+#'
+#' # make binding sites
+#' bds = makeBindingSites(bds, bsSize = 7)
+#'
+#' # split ranges in two groups
+#' allRanges = getRanges(bds)
+#' set.seed(1234)
+#' idx = sample(1:length(allRanges), size = length(allRanges)/2, replace = FALSE)
+#' r1 = allRanges[idx]
+#' r2 = allRanges[-idx]
+#'
+#' # splite meta data
+#' allMeta = getMeta(bds)
+#' m1 = allMeta[1:2,]
+#' m2 = allMeta[3:4,]
+#'
+#' # create new objects
+#' bds1 = setRanges(bds, r1)
+#' bds2 = setRanges(bds, r2)
+#' bds1 = setMeta(bds1, m1)
+#' bds2 = setMeta(bds2, m2)
+#' bds1 = setName(bds1, "test1")
+#' bds2 = setName(bds2, "test2")
+#'
+#' # merge two objects with '+' operator
+#' c1 = bds1 + bds2
+#'
+#' @name add-BSFDataSet
+NULL
+
+#' @rdname add-BSFDataSet
+#' @export
+setMethod(
+    f = "+",
+    signature = c("BSFDataSet","BSFDataSet"),
+    definition = function(e1, e2) {
+        object = combineBSF(list(e1,e2))
+        return(object)
+    }
+)

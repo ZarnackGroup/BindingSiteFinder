@@ -101,6 +101,15 @@ makeBindingSites <- function(object,
     # INPUT CHECKS
     # --------------------------------------------------------------------------
 
+    # check meta data
+    this.meta = getMeta(object)
+    if (length(levels(this.meta$condition)) > 1) {
+        msg0 = paste0("Found ", length(levels(this.meta$condition)), " different conditions in the input object.\n")
+        msg1 = paste0("It is recommended to only use data from a single condition.\n")
+        msg2 = paste0("Please run makeBindingSite sparately for each condition, then combine both objects with combineBSF.\n ")
+        if(!quiet) warning((c(msg0,msg1,msg2)))
+    }
+
     # check if bsSize was estimated before or if input is needed
     if (!is.null(object@params$bsSize) & !is.null(object@params$geneFilter)) {
         bsSize = object@params$bsSize
