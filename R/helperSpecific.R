@@ -383,3 +383,75 @@
     return(w.total)
 }
 
+
+.matchMetaData <- function(d){
+    # assign local variables
+    geneID <- geneName <- geneType <- transcriptRegion <- NULL
+    dataset <- signalToFlankRatio <- NULL
+
+
+    # assign meta data if present
+    if ("geneID" %in% colnames(d)) {
+        merge.geneID = d %>%
+            summarize(
+                geneID = toString(unique(geneID))
+            )
+    } else {
+        merge.geneID = NA
+    }
+    if ("geneName" %in% colnames(d)) {
+        merge.geneName = d %>%
+            summarize(
+                geneName = toString(unique(geneName))
+            )
+    } else {
+        merge.geneName = NA
+    }
+    if ("geneType" %in% colnames(d)) {
+        merge.geneType = d %>%
+            summarize(
+                geneType = toString(unique(geneType))
+            )
+    } else {
+        merge.geneType = NA
+    }
+    if ("transcriptRegion" %in% colnames(d)) {
+        merge.transcriptRegion = d %>%
+            summarize(
+                transcriptRegion = toString(unique(transcriptRegion))
+            )
+    } else {
+        merge.transcriptRegion = NA
+    }
+    if ("dataset" %in% colnames(d)) {
+        merge.dataset = d %>%
+            summarize(
+                dataset = toString(unique(dataset))
+            )
+    } else {
+        merge.dataset = NA
+    }
+    if ("score" %in% colnames(d)) {
+        merge.score = d %>%
+            summarize(
+                score = max(score)
+            )
+    } else {
+        merge.score = NA
+    }
+    if ("signalToFlankRatio" %in% colnames(d)) {
+        merge.signalToFlankRatio = d %>%
+            summarize(
+                signalToFlankRatio = max(signalToFlankRatio)
+            )
+    } else {
+        merge.signalToFlankRatio = NA
+    }
+
+    total.meta = cbind(merge.geneID, merge.geneName, merge.geneType,
+                       merge.transcriptRegion, merge.dataset,
+                       merge.score, merge.signalToFlankRatio) %>%
+        dplyr::distinct_all() %>%
+        dplyr::select_if(~sum(!is.na(.)) > 0)
+    return(total.meta)
+}

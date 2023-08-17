@@ -7,6 +7,8 @@
 BSFind(
   object,
   bsSize = NULL,
+  cutoff.geneWiseFilter = NULL,
+  cutoff.globalFilter = 0.01,
   est.bsResolution = "medium",
   est.geneResolution = "medium",
   est.maxBsWidth = 13,
@@ -23,8 +25,6 @@ BSFind(
   merge.minClSites = 1,
   merge.CenterIsClSite = TRUE,
   merge.CenterIsSummit = TRUE,
-  cutoff.globalFilter = 0.01,
-  cutoff.geneWiseFilter = NULL,
   repro.cutoff = NULL,
   repro.nReps = NULL,
   repro.minCrosslinks = 1,
@@ -44,7 +44,7 @@ BSFind(
   anno.annoDB = NULL,
   anno.genes = NULL,
   anno.transcriptRegionList = NULL,
-  quiet = TRUE,
+  quiet = FALSE,
   veryQuiet = FALSE,
   ...
 )
@@ -54,6 +54,15 @@ BSFind(
 
 \item{bsSize}{an odd integer value specifying the size of the output
 binding sites}
+
+\item{cutoff.geneWiseFilter}{numeric; defines the cutoff for which sites to
+remove in in function \code{\link{pureClipGeneWiseFilter}}. The smallest step
+is 1\% (0.01). A cutoff of 5\% will remove the lowest 5\% sites, given their
+score, on each gene, thus keeping the strongest 95\%.}
+
+\item{cutoff.globalFilter}{numeric; defines the cutoff for which sites to
+keep, the smallest step is 1\% (0.01) in function
+\code{\link{pureClipGlobalFilter}}}
 
 \item{est.bsResolution}{character; level of resolution of the binding site
 width in function \code{\link{estimateBsWidth}}}
@@ -101,15 +110,6 @@ site must be covered by an initial crosslink site}
 
 \item{merge.CenterIsSummit}{logical, whether the center of a final binding
 site must exhibit the highest number of crosslink events}
-
-\item{cutoff.globalFilter}{numeric; defines the cutoff for which sites to
-keep, the smallest step is 1\% (0.01) in function
-\code{\link{pureClipGlobalFilter}}}
-
-\item{cutoff.geneWiseFilter}{numeric; defines the cutoff for which sites to
-remove in in function \code{\link{pureClipGeneWiseFilter}}. The smallest step
-is 1\% (0.01). A cutoff of 5\% will remove the lowest 5\% sites, given their
-score, on each gene, thus keeping the strongest 95\%.}
 
 \item{repro.cutoff}{numeric; percentage cutoff to be used for the
 reproducibility quantile filtering}

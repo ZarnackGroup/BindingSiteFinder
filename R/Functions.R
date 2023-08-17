@@ -712,7 +712,7 @@ combineBSF <- function(list, # list of class BSFDataSet
                        veryQuiet = FALSE
 ){
     # initialize local variables
-    this.bsSize <- NULL
+    this.bsSize <- resizedHit <- NULL
 
     # INPUT CHECKS
     # --------------------------------------------------------------------------
@@ -822,6 +822,11 @@ combineBSF <- function(list, # list of class BSFDataSet
         }
     }
 
+    # ---
+    # Store function parameters in list
+    optstr = list(overlaps.fix = overlaps.fix, combine.bsSize = this.bsSize,
+                  combine.name = combine.name, force.reload = force.reload)
+
     # Resize ranges overlaps
     # --------------------------------------------------------------------------
     # don't fix overlaps, keep as it is
@@ -835,26 +840,81 @@ combineBSF <- function(list, # list of class BSFDataSet
         if (!veryQuiet) message("Creating merged object...")
         # use reload option or not
         if (isTRUE(force.reload)){
-            comb.bds = BSFDataSetFromBigWig(ranges = comb.ranges, meta = comb.meta, silent = quiet)
+            resize.bds = BSFDataSetFromBigWig(ranges = comb.ranges, meta = comb.meta, silent = quiet)
         } else {
-            comb.bds = BSFDataSet(ranges = comb.ranges, meta = comb.meta, signal = comb.signal, silent = quiet)
+            resize.bds = BSFDataSet(ranges = comb.ranges, meta = comb.meta, signal = comb.signal, silent = quiet)
         }
     } else {
         # turn ranges into midpoint representations
-        comb.ranges = resize(comb.ranges, fix = "center", width = 1)
+        resize.ranges = resize(comb.ranges, fix = "center", width = 1)
         # create combined BSFDataSet
         if (!veryQuiet) message("Creating merged object...")
         # use reload option or not
         if (isTRUE(force.reload)) {
-            comb.bds = BSFDataSetFromBigWig(ranges = comb.ranges, meta = comb.meta, silent = quiet)
+            resize.bds = BSFDataSetFromBigWig(ranges = resize.ranges, meta = comb.meta, silent = quiet)
         } else {
-            comb.bds = BSFDataSet(ranges = comb.ranges, meta = comb.meta, signal = comb.signal, silent = quiet)
+            resize.bds = BSFDataSet(ranges = resize.ranges, meta = comb.meta, signal = comb.signal, silent = quiet)
         }
         # resolve overlaps by merging
-        if (!veryQuiet) message("Fixing overlapps...")
-        comb.bds = makeBindingSites(object = comb.bds, bsSize = this.bsSize,
-                                    minWidth = 0, minCrosslinks = 0, minClSites = 0,
-                                    centerIsSummit = FALSE, centerIsClSite = FALSE)
+        if (!veryQuiet) message("Fixing partial overlaps...")
+        resize.bds = makeBindingSites(object = resize.bds, bsSize = this.bsSize,
+                                      minWidth = 0, minCrosslinks = 0, minClSites = 0,
+                                      centerIsSummit = FALSE, centerIsClSite = FALSE,
+                                      quiet = TRUE)
+        # remove stats from makeBiningSites
+        resize.bds@results = data.frame()
+        resize.bds@params = list()
+        resize.bds@plotData = list()
     }
+
+    # Add meta information from original ranges
+    # --------------------------------------------------------------------------
+    # match resized binding sites with all input binding sites
+    if (!veryQuiet) message("Merging meta info...")
+
+    resized.ranges = getRanges(resize.bds)
+    ols = findOverlaps(resized.ranges, comb.ranges)
+
+    matched.ranges = resized.ranges[queryHits(ols)]
+    matched.ranges$combHit = subjectHits(ols)
+    matched.ranges$resizedHit = queryHits(ols)
+
+    mcols(matched.ranges) = cbind(combHit = matched.ranges$combHit,
+                                  resizedHit = matched.ranges$resizedHit,
+                                  mcols(comb.ranges[matched.ranges$combHit]))
+
+    # group by matching
+    grouped.meta = mcols(matched.ranges) %>%
+        as.data.frame(, row.names = NULL) %>%
+        group_by(resizedHit)
+
+    # match meta data from overlapping binding sites
+    total.meta = .matchMetaData(grouped.meta)
+
+    # attach meta data to ranges
+    fix.ranges = resized.ranges
+    mcols(fix.ranges) = cbind(mcols(fix.ranges), total.meta)
+
+    # manage other columns
+    mcols(fix.ranges)$bsID = paste0("BS", seq_along(fix.ranges))
+    if ("bsSize" %in% colnames(mcols(resized.ranges))) {
+        mcols(fix.ranges)$bsSize = max(resized.ranges$bsSize)
+    }
+    mcols(fix.ranges)$resizedHit = NULL
+
+    # set final object
+    comb.bds = setRanges(resize.bds, fix.ranges)
+
+    # ---
+    # Store for results
+    resultLine = data.frame(
+        funName = "combineBSF()", class = "transform",
+        nIn = length(comb.ranges), nOut = length(fix.ranges),
+        per = paste0(round(length(fix.ranges)/ length(comb.ranges), digits = 2)*100,"%"),
+        options = paste0("overlaps.fix=", optstr$overlaps.fix, ", combine.bsSize=", optstr$combine.bsSize)
+    )
+    comb.bds@results = rbind(comb.bds@results, resultLine)
+    comb.bds@params$combineBSF = optstr
+
     return(comb.bds)
 }

@@ -34,6 +34,14 @@
 #' @param bsSize an odd integer value specifying the size of the output
 #' binding sites
 #'
+#' @param cutoff.geneWiseFilter numeric; defines the cutoff for which sites to
+#' remove in in function \code{\link{pureClipGeneWiseFilter}}. The smallest step
+#' is 1\% (0.01). A cutoff of 5\% will remove the lowest 5\% sites, given their
+#' score, on each gene, thus keeping the strongest 95\%.
+#' @param cutoff.globalFilter numeric; defines the cutoff for which sites to
+#' keep, the smallest step is 1\% (0.01) in function
+#' \code{\link{pureClipGlobalFilter}}
+#'
 #' @param est.bsResolution character; level of resolution of the binding site
 #' width in function \code{\link{estimateBsWidth}}
 #' @param est.geneResolution character; level of resolution of the gene-wise
@@ -66,14 +74,6 @@
 #' site must be covered by an initial crosslink site
 #' @param merge.CenterIsSummit logical, whether the center of a final binding
 #' site must exhibit the highest number of crosslink events
-#'
-#' @param cutoff.globalFilter numeric; defines the cutoff for which sites to
-#' keep, the smallest step is 1\% (0.01) in function
-#' \code{\link{pureClipGlobalFilter}}
-#' @param cutoff.geneWiseFilter numeric; defines the cutoff for which sites to
-#' remove in in function \code{\link{pureClipGeneWiseFilter}}. The smallest step
-#' is 1\% (0.01). A cutoff of 5\% will remove the lowest 5\% sites, given their
-#' score, on each gene, thus keeping the strongest 95\%.
 #'
 #' @param repro.cutoff numeric; percentage cutoff to be used for the
 #' reproducibility quantile filtering
@@ -151,6 +151,9 @@ BSFind <- function(
         object,
         # binding site size
         bsSize = NULL,
+        # cutoffs
+        cutoff.geneWiseFilter = NULL,
+        cutoff.globalFilter = 0.01,
         # binding site size estimation
         est.bsResolution = "medium",
         est.geneResolution = "medium",
@@ -169,9 +172,6 @@ BSFind <- function(
         merge.minClSites = 1,
         merge.CenterIsClSite = TRUE,
         merge.CenterIsSummit = TRUE,
-        # cutoffs
-        cutoff.globalFilter = 0.01,
-        cutoff.geneWiseFilter = NULL,
         # reproducibility
         repro.cutoff = NULL,
         repro.nReps = NULL,
@@ -197,7 +197,7 @@ BSFind <- function(
         anno.genes = NULL,
         anno.transcriptRegionList = NULL,
         # controls
-        quiet = TRUE,
+        quiet = FALSE,
         veryQuiet = FALSE,
         ...
 ) {
@@ -213,9 +213,9 @@ BSFind <- function(
     this.meta = getMeta(object)
     if (length(levels(this.meta$condition)) > 1) {
         msg0 = paste0("Found ", length(levels(this.meta$condition)), " different conditions in the input object.\n")
-        msg1 = paste0("BSFind can only be used on data from a single condition.\n")
-        msg2 = paste0("Please run BSFind sparately for each condition, then combine both objects with combineBSF.\n ")
-        stop(c(msg0,msg1,msg2))
+        msg1 = paste0("BSFind should only be used on data from a single condition.\n")
+        msg2 = paste0("Run BSFind sparately for each condition, then combine both objects with combineBSF.\n ")
+        if(!quiet) warning(c(msg0,msg1,msg2))
     }
 
     # Check annotation source
