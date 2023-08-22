@@ -393,57 +393,50 @@
     # assign meta data if present
     if ("geneID" %in% colnames(d)) {
         merge.geneID = d %>%
-            summarize(
-                geneID = toString(unique(geneID))
-            )
+            summarize(geneID = toString(unique(geneID))) %>%
+            mutate(geneID = ifelse(geneID == "NA", NA, geneID))
     } else {
         merge.geneID = NA
     }
     if ("geneName" %in% colnames(d)) {
         merge.geneName = d %>%
-            summarize(
-                geneName = toString(unique(geneName))
-            )
+            summarize(geneName = toString(unique(geneName))) %>%
+            mutate(geneName = ifelse(geneName == "NA", NA, geneName))
     } else {
         merge.geneName = NA
     }
     if ("geneType" %in% colnames(d)) {
         merge.geneType = d %>%
-            summarize(
-                geneType = toString(unique(geneType))
-            )
+            summarize(geneType = toString(unique(geneType))) %>%
+            mutate(geneType = ifelse(geneType == "NA", NA, geneType))
     } else {
         merge.geneType = NA
     }
     if ("transcriptRegion" %in% colnames(d)) {
         merge.transcriptRegion = d %>%
-            summarize(
-                transcriptRegion = toString(unique(transcriptRegion))
-            )
+            summarize(transcriptRegion = toString(unique(transcriptRegion))) %>%
+            mutate(transcriptRegion = ifelse(transcriptRegion == "NA", NA, transcriptRegion))
     } else {
         merge.transcriptRegion = NA
     }
     if ("dataset" %in% colnames(d)) {
         merge.dataset = d %>%
-            summarize(
-                dataset = toString(unique(dataset))
-            )
+            summarize(dataset = toString(unique(dataset))) %>%
+            mutate(dataset = ifelse(dataset == "NA", NA, dataset))
     } else {
         merge.dataset = NA
     }
     if ("score" %in% colnames(d)) {
         merge.score = d %>%
-            summarize(
-                score = max(score)
-            )
+            summarize(score = max(score)) %>%
+            mutate(score = ifelse(score == "NA", NA, score))
     } else {
         merge.score = NA
     }
     if ("signalToFlankRatio" %in% colnames(d)) {
         merge.signalToFlankRatio = d %>%
-            summarize(
-                signalToFlankRatio = max(signalToFlankRatio)
-            )
+            summarize(signalToFlankRatio = max(signalToFlankRatio)) %>%
+            mutate(signalToFlankRatio = ifelse(signalToFlankRatio == "NA", NA, signalToFlankRatio))
     } else {
         merge.signalToFlankRatio = NA
     }
@@ -455,3 +448,17 @@
         dplyr::select_if(~sum(!is.na(.)) > 0)
     return(total.meta)
 }
+
+
+.coverageForDifferential <- function(object, ranges, prefix, quiet, match.rangeID){
+    this.object = setRanges(object, ranges, quiet = quiet)
+    cov = clipCoverage(this.object,
+                       match.rangeID = match.rangeID,
+                       ranges.merge = TRUE, positions.merge = FALSE,
+                       samples.merge = FALSE, out.format = "granges",
+                       out.format.overwrite = TRUE, quiet = quiet)
+    colnames(mcols(cov)) = paste0(prefix, colnames(mcols(cov)))
+    mcols(cov) = cbind(mcols(ranges), mcols(cov))
+    return(cov)
+}
+
