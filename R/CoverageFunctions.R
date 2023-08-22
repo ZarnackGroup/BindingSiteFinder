@@ -50,7 +50,8 @@
 #' @param out.format.overwrite logical; if \code{out.format='granges'}, then
 #' decide wheter the meta columns should be extended by the coverage information
 #' or be overwritten
-#' @param match.rangeID character; name of the meta column of the input ranges
+#' @param match.rangeID character; unique internal identifier.
+#' Name of the meta column of the input ranges
 #' that should be used as identifier to match the coverage back to the input
 #' ranges. Is 'bsID' as default, since that ID exists for all binding sites
 #' after \code{makeBindingSites} was called.
