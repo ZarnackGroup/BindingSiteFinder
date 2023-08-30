@@ -45,7 +45,8 @@ output coverage is of the same rows as the input ranges.}
 decide wheter the meta columns should be extended by the coverage information
 or be overwritten}
 
-\item{match.rangeID}{character; name of the meta column of the input ranges
+\item{match.rangeID}{character; unique internal identifier.
+Name of the meta column of the input ranges
 that should be used as identifier to match the coverage back to the input
 ranges. Is 'bsID' as default, since that ID exists for all binding sites
 after \code{makeBindingSites} was called.}

@@ -108,7 +108,7 @@ pureClipGlobalFilter <- function(object, # bindingSiteFinder
 #' gene level. This allows to filter for those sites with the strongest signal
 #' on each gene. Since scores are tied to the expression level of the hosting
 #' transcript this function allows a fair filter for all genes partially
-#' independet of the expression level.
+#' independent of the expression level.
 #'
 #' The \code{\link{GenomicRanges}} contained in the \code{\link{BSFDataSet}} need to
 #' have a meta-column that holds a numeric score value, which is used for filtering.
