@@ -536,7 +536,16 @@ assignToGenes <- function(object,
     # split ranges in duplicated event and non duplicated events
     rngInitial = getRanges(object)
     rngInitial$currIdx = seq_along(rngInitial)
-    ols = findOverlaps(anno.genes, rngInitial)
+
+    # remove possibility of partial overlaps by setting `minoverlap` parameter
+    # to the size of the binding sites
+    # -> use the minimum of the size for uneven binding sites sizes
+    # -> this is not optimal since partial overlaps can be re-introduced
+    # -> does not affect ranges that are true binding sites
+    bs.set.range = min(unique(width(rngInitial)))
+    ols = findOverlaps(anno.genes, rngInitial, minoverlap = bs.set.range)
+    # ols = findOverlaps(anno.genes, rngInitial)
+
     # Deal with multiple loci
     # --------------------------------------------------------------------------
     # Count out how many cases there are
