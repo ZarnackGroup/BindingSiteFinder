@@ -535,43 +535,43 @@ calculateBsBackground <- function(object,
 #' not be applied to, using count coverage information on the binding sites
 #' and background regions per gene, through the following steps:
 #' \enumerate{
-#' \item Remove genes with overall not enough crosslinks: \code{filter.minCounts}
+#' \item Remove genes with overall not enough crosslinks: \code{minCounts}
 #' \item Remove genes with a disproportion of counts in binding sites vs. the
-#' background: \code{filter.ratio}
+#' background: \code{balanceBackground}
 #' \item Remove genes where the expression between conditions is too much off
-#' balance: \code{filter.balance}
+#' balance: \code{balanceCondition}
 #' }
 #'
-#' To remove genes with overall not enough crosslinks (\code{filter.minCounts})
+#' To remove genes with overall not enough crosslinks (\code{minCounts})
 #' all counts are summed up per gene across all samples and compared to the
-#' minimal count threshold (\code{filter.minCounts.cutoff}).
+#' minimal count threshold (\code{minCounts.cutoff}).
 #'
 #' To remove genes with a count disproportion between binding sites and
 #' background regions crosslinks are summed up for binding sites and background
 #' per gene. These sums are combined in a ratio. Genes where eg. 50\% of all
 #' counts are within binding sites would be removed
-#' (see \code{filter.ratio.cutoff.bs} and \code{filter.ratio.cutoff.bg}).
+#' (see \code{balanceBackground.cutoff.bs} and \code{balanceBackground.cutoff.bg}).
 #'
 #' To remove genes with very large expression differences between conditions,
 #' crosslinks are summed up per gene for each condition. If now eg. the total
 #' number of crosslinks is for 98\% in one condition and only 2\% of the
 #' combined signal is in the second condition, expression levels are too
-#' different for a reliable comparisson (see \code{filter.balance.cutoff}).
+#' different for a reliable comparisson (see \code{balanceCondition.cutoff}).
 #'
 #' @param object a \code{\link{BSFDataSet}} object with computed count data
 #' for binding sites and background regions
-#' @param filter.minCounts logical; whether to use the minimum count filter
-#' @param filter.minCounts.cutoff numeric; the minimal number of crosslink
+#' @param minCounts logical; whether to use the minimum count filter
+#' @param minCounts.cutoff numeric; the minimal number of crosslink
 #' per gene over all samples for the gene to be retained (default = 100)
-#' @param filter.ratio logical; whether to use the counts balancing filter
+#' @param balanceBackground logical; whether to use the counts balancing filter
 #' between binding sites and background
-#' @param filter.ratio.cutoff.bs numeric; the maximum fraction of the total signal
+#' @param balanceBackground.cutoff.bs numeric; the maximum fraction of the total signal
 #' per gene that can be within binding sites (default = 0.2)
-#' @param filter.ratio.cutoff.bg numeric; the minimum fraction of the total signal
+#' @param balanceBackground.cutoff.bg numeric; the minimum fraction of the total signal
 #' per gene that can be within the background (default = 0.8)
-#' @param filter.balance logical; whether to use the counts balancing filter
+#' @param balanceCondition logical; whether to use the counts balancing filter
 #' between conditions
-#' @param filter.balance.cutoff numeric; the maximum fraction of the total signal
+#' @param balanceCondition.cutoff numeric; the maximum fraction of the total signal
 #' that can be attributed to only one condition
 #' @param match.geneID character; the name of the column with the gene ID
 #' in the binding sites meta columns used for matching binding sites to genes
@@ -599,22 +599,22 @@ calculateBsBackground <- function(object,
 #' f0 = filterBsBackground(bds)
 #'
 #' # do not use the condition balancing filter
-#' f1 = filterBsBackground(bds, filter.balance = FALSE)
+#' f1 = filterBsBackground(bds, balanceCondition = FALSE)
 #'
 #' # use only the minimum count filter and flag binding sites instead of
 #' # removing them
-#' f3 = filterBsBackground(bds, flag = TRUE, filter.balance = FALSE,
-#'  filter.ratio = FALSE)
+#' f3 = filterBsBackground(bds, flag = TRUE, balanceCondition = FALSE,
+#'  balanceBackground = FALSE)
 #'
 #' @export
 filterBsBackground <- function(object,
-                               filter.minCounts = TRUE,
-                               filter.minCounts.cutoff = 100,
-                               filter.ratio = TRUE,
-                               filter.ratio.cutoff.bs = 0.2,
-                               filter.ratio.cutoff.bg = 0.8,
-                               filter.balance = TRUE,
-                               filter.balance.cutoff = 0.02,
+                               minCounts = TRUE,
+                               minCounts.cutoff = 100,
+                               balanceBackground = TRUE,
+                               balanceBackground.cutoff.bs = 0.3,
+                               balanceBackground.cutoff.bg = 0.7,
+                               balanceCondition = TRUE,
+                               balanceCondition.cutoff = 0.05,
                                match.geneID = "geneID",
                                flag = FALSE,
                                quiet = FALSE,
@@ -629,9 +629,9 @@ filterBsBackground <- function(object,
     stopifnot(is(object, "BSFDataSet"))
     stopifnot(is.logical(quiet))
     stopifnot(is.logical(veryQuiet))
-    stopifnot(is.logical(filter.minCounts))
-    stopifnot(is.logical(filter.ratio))
-    stopifnot(is.logical(filter.balance))
+    stopifnot(is.logical(minCounts))
+    stopifnot(is.logical(balanceBackground))
+    stopifnot(is.logical(balanceCondition))
     stopifnot(is.logical(flag))
 
     # get ranges
@@ -678,7 +678,7 @@ filterBsBackground <- function(object,
     # --------------------------------------------------------------------------
 
     # filter for genes with less counts than cutoff
-    if (isTRUE(filter.minCounts)) {
+    if (isTRUE(minCounts)) {
         # the gene-wise count filter should be used
         # -> group counts by gene and sample and filter
         all.counts = as.data.frame(mcols(this.ranges)) %>%
@@ -687,14 +687,19 @@ filterBsBackground <- function(object,
             summarise(dplyr::across(everything(), sum)) %>%
             mutate(s = select(., contains("counts")) %>% rowSums(.)) %>%
             select(all_of(match.geneID), s)
-        idx = which(all.counts < filter.minCounts.cutoff, arr.ind = TRUE)
+        idx = which(all.counts < minCounts.cutoff, arr.ind = TRUE)
+
+        # ---
+        # Store for plotting
+        object@plotData$filterBsBackground$data.minCounts = all.counts
+
 
         if (length(idx) > 0) {
             if (!veryQuiet) message("Count filter ")
             # found positions with counts less than cutoff
             # remove these counts
             msg0 = paste0("Found ", format(nrow(idx), big.mark = ",", decimal.mark = "."),
-                          " genes with less total counts than ", filter.minCounts.cutoff, ".\n")
+                          " genes with less total counts than ", minCounts.cutoff, ".\n")
             # remove genes below threshold
             genesToRemove = all.counts[idx[,1],] %>% pull(match.geneID)
             allGenes = mcols(this.ranges)[colnames(mcols(this.ranges)) == match.geneID][[1]]
@@ -725,7 +730,7 @@ filterBsBackground <- function(object,
     }
 
     # filter for genes with binding site vs background ratio being off
-    if (isTRUE(filter.ratio)) {
+    if (isTRUE(balanceBackground)) {
         if (!veryQuiet) message("Ratio filter ")
         # binding site to background ratio filter is used
         # -> calculate ratios per gene over all samples
@@ -743,11 +748,15 @@ filterBsBackground <- function(object,
             select(all_of(match.geneID), ratio.bg, ratio.bs) %>%
             pivot_longer(-all_of(match.geneID))
 
+        # ---
+        # Store for plotting
+        object@plotData$filterBsBackground$data.balanceBackground = df.ratio
+
         # apply filter cutoffs
         df.filter = df.ratio %>% ungroup() %>%
             pivot_wider(names_from = name, values_from = value) %>%
-            mutate(f.bg = ifelse(ratio.bg < filter.ratio.cutoff.bs, TRUE, FALSE),
-                   f.bs = ifelse(ratio.bs > filter.ratio.cutoff.bs, TRUE, FALSE))
+            mutate(f.bg = ifelse(ratio.bg < balanceBackground.cutoff.bs, TRUE, FALSE),
+                   f.bs = ifelse(ratio.bs > balanceBackground.cutoff.bs, TRUE, FALSE))
 
         msg0 = paste0("Found ", format(sum(df.filter$f.bg | df.filter$f.bs), big.mark = ".", decimal.mark = ","),
                       " genes with bs to bg ratio not meeting thresholds.\n")
@@ -780,7 +789,7 @@ filterBsBackground <- function(object,
     }
 
     # filter for genes with large count imbalances between both conditions
-    if (isTRUE(filter.balance)) {
+    if (isTRUE(balanceCondition)) {
         if (!veryQuiet) message("Balance filter ")
         # genes should be filtered for count differences between conditions
         # -> calculate sum of counts per gene and condition
@@ -798,10 +807,14 @@ filterBsBackground <- function(object,
             ungroup() %>%
             dplyr::relocate(all_of(match.geneID), total, all_of(this.condition.reference), all_of(this.condition.comp))
 
+        # ---
+        # Store for plotting
+        object@plotData$filterBsBackground$data.balanceCondition = df.ratio
+
         df.filter = data.frame(
             geneID = df.ratio %>% select(all_of(match.geneID)),
-            this.condition.reference = ifelse(c(df.ratio[,3][[1]] / df.ratio[,2][[1]]) < filter.balance.cutoff, TRUE, FALSE),
-            his.condition.comp = ifelse(c(df.ratio[,4][[1]] / df.ratio[,2][[1]]) < filter.balance.cutoff, TRUE, FALSE)
+            this.condition.reference = ifelse(c(df.ratio[,3][[1]] / df.ratio[,2][[1]]) < balanceCondition.cutoff, TRUE, FALSE),
+            his.condition.comp = ifelse(c(df.ratio[,4][[1]] / df.ratio[,2][[1]]) < balanceCondition.cutoff, TRUE, FALSE)
         )
         df.filter$both = df.filter[,2] | df.filter[,3]
 
@@ -840,13 +853,13 @@ filterBsBackground <- function(object,
     # ---
     # Store function parameters in list
     optstr = list(
-        filter.minCounts = filter.minCounts,
-        filter.minCounts.cutoff = filter.minCounts.cutoff,
-        filter.ratio = filter.ratio,
-        filter.ratio.cutoff.bs = filter.ratio.cutoff.bs,
-        filter.ratio.cutoff.bg = filter.ratio.cutoff.bg,
-        filter.balance = filter.balance,
-        filter.balance.cutoff = filter.balance.cutoff,
+        minCounts = minCounts,
+        minCounts.cutoff = minCounts.cutoff,
+        balanceBackground = balanceBackground,
+        balanceBackground.cutoff.bs = balanceBackground.cutoff.bs,
+        balanceBackground.cutoff.bg = balanceBackground.cutoff.bg,
+        balanceCondition = balanceCondition,
+        balanceCondition.cutoff = balanceCondition.cutoff,
         match.geneID = match.geneID,
         flag = flag)
     object@params$filterBsBackground = optstr
@@ -857,14 +870,14 @@ filterBsBackground <- function(object,
         funName = "filterBsBackground()", class = "transform",
         nIn = length(this.ranges.initial), nOut = length(this.ranges),
         per = paste0(round(length(this.ranges)/ length(this.ranges.initial), digits = 2)*100,"%"),
-        options = paste0("filter.minCounts=", optstr$filter.minCounts,
+        options = paste0("minCounts=", optstr$minCounts,
                          ", source=", optstr$datasource,
-                         ", filter.minCounts.cutoff=", optstr$filter.minCounts.cutoff,
-                         ", filter.ratio=", optstr$filter.ratio,
-                         ", filter.ratio.cutoff.bs=", optstr$filter.ratio.cutoff.bs,
-                         ", filter.ratio.cutoff.bg=", optstr$filter.ratio.cutoff.bg,
-                         ", filter.balance=", optstr$filter.balance,
-                         ", filter.balance.cutoff=", optstr$filter.balance.cutoff,
+                         ", minCounts.cutoff=", optstr$minCounts.cutoff,
+                         ", balanceBackground=", optstr$balanceBackground,
+                         ", balanceBackground.cutoff.bs=", optstr$balanceBackground.cutoff.bs,
+                         ", balanceBackground.cutoff.bg=", optstr$balanceBackground.cutoff.bg,
+                         ", balanceCondition=", optstr$balanceCondition,
+                         ", balanceCondition.cutoff=", optstr$balanceCondition.cutoff,
                          ", match.geneID=", optstr$generate.genmatch.geneIDeID.bs,
                          ", flag=", optstr$flag)
     )
@@ -937,6 +950,8 @@ filterBsBackground <- function(object,
 #' in the binding sites meta columns used for matching binding sites to genes
 #' @param quiet logical; whether to print messages or not
 #' @param veryQuiet logical; whether to print messages or not
+#' @param forceThis logical; enable testing mode that works even when input
+#' counts contain NA or negative values. For testing purposes only. Be careful!
 #'
 #' @return a \code{\link{BSFDataSet}} object, with results from the
 #' \code{\link[DESeq2]{DESeq}} analysis added to the meta columns of the
@@ -985,7 +1000,8 @@ calculateBsFoldChange <- function(object,
                                   # general
                                   match.geneID = "geneID",
                                   quiet = TRUE,
-                                  veryQuiet = FALSE
+                                  veryQuiet = FALSE,
+                                  forceThis = FALSE
 ){
     # Bind locale variables
     geneID <- NULL
@@ -1070,21 +1086,36 @@ calculateBsFoldChange <- function(object,
     }
 
 
-    # TODO check if there are negative counts
-    # -> temporary hack to replace negative counts with 0
-    # -> this happens in rare instances where offset ranges of neighboring
-    #    binding sites overlap, which cause crosslinks to be counted twice.
-    #    On genes with low counts this could result in negative values for the
-    #    background.
-    # -> Optimal solution is to use a combination of `reduce + with.revmap` and
-    #    `disjoin` to split overlapping offset ranges, which avoids the problem
-    idx = which(this.counts < 0, arr.ind = TRUE)
-    if (length(idx) > 0) {
-        this.counts[idx] = 0
-        msg0 = paste0(format(nrow(idx), big.mark = ",", decimal.mark = "."),
-                      " ranges found with negative counts, replacing them with 0.\n")
-        if (!veryQuiet) warning(c(msg0))
+
+    if (isTRUE(forceThis)) {
+        # TODO check if there are negative counts
+        # -> temporary hack to replace negative counts with 0
+        # -> this happens in rare instances where offset ranges of neighboring
+        #    binding sites overlap, which cause crosslinks to be counted twice.
+        #    On genes with low counts this could result in negative values for the
+        #    background.
+        # -> Optimal solution is to use a combination of `reduce + with.revmap` and
+        #    `disjoin` to split overlapping offset ranges, which avoids the problem
+        idx = which(this.counts < 0, arr.ind = TRUE)
+        if (nrow(idx) > 0) {
+            this.counts[idx] = 0
+            msg0 = paste0(format(nrow(idx), big.mark = ",", decimal.mark = "."),
+                          " ranges found with negative counts, replacing them with 0.\n")
+            if (!veryQuiet) warning(c(msg0))
+        }
+
+        # TODO
+        # quick fix for NA values
+        idx = which(is.na(this.counts), arr.ind = TRUE)
+        if (nrow(idx) > 0) {
+            this.counts = this.counts[-idx[,1],]
+            this.ranges = this.ranges[-idx[,1]]
+            msg0 = paste0(format(nrow(idx), big.mark = ",", decimal.mark = "."),
+                          " ranges found with NA values, removing them.\n")
+            if (!veryQuiet) warning(c(msg0))
+        }
     }
+
 
 
     # --------------------------------------------------------------------------

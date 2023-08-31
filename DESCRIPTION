@@ -25,7 +25,8 @@ Imports: tidyr, tibble, plyr, matrixStats, stats, ggplot2, methods, rtracklayer,
     rlang, forcats, dplyr, GenomicFeatures, IRanges, kableExtra, ggdist
 Depends: GenomicRanges, R (>= 4.2)
 Suggests: testthat, BiocStyle, knitr, rmarkdown, GenomicAlignments, scales, Gviz,
-    xlsx, GGally, patchwork, viridis, ggplotify, SummarizedExperiment, DESeq2
+    xlsx, GGally, patchwork, viridis, ggplotify, SummarizedExperiment, DESeq2,
+    ggpointdensity, ggrastr
 RoxygenNote: 7.2.3
 Collate: 
     'AllClasses.R'
@@ -43,6 +44,7 @@ Collate:
     'bsfind.R'
     'helperPlots.R'
     'differentialFunctions.R'
+    'differentialPlots.R'
 biocViews: Sequencing, GeneExpression, GeneRegulation, FunctionalGenomics, 
     Coverage, DataImport
 BugReports: https://github.com/ZarnackGroup/BindingSiteFinder/issues

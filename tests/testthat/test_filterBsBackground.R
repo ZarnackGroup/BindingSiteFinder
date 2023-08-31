@@ -18,15 +18,16 @@ test_that("filterBsBackground works", {
     expect_equal(length(getRanges(c1)), length(getRanges(bds)))
     expect_equal(ncol(mcols(getRanges(c1))), ncol(mcols(getRanges(bds)))+3)
 
-    c2 = expect_warning(filterBsBackground(bds, flag = TRUE, filter.minCounts = FALSE))
-    c3 = expect_warning(filterBsBackground(bds, flag = TRUE, filter.ratio = FALSE))
-    c4 = expect_warning(filterBsBackground(bds, flag = TRUE, filter.balance = FALSE))
+    c2 = expect_warning(filterBsBackground(bds, flag = TRUE, minCounts = FALSE))
+    c3 = expect_warning(filterBsBackground(bds, flag = TRUE, balanceBackground = FALSE))
+    c4 = expect_warning(filterBsBackground(bds, flag = TRUE, balanceCondition = FALSE))
 
     expect_equal(ncol(mcols(getRanges(bds)))+2, ncol(mcols(getRanges(c2))))
     expect_equal(ncol(mcols(getRanges(bds)))+2, ncol(mcols(getRanges(c3))))
     expect_equal(ncol(mcols(getRanges(bds)))+2, ncol(mcols(getRanges(c4))))
 
-    c5 = filterBsBackground(bds, flag = TRUE, filter.balance = FALSE,
-                            filter.ratio = FALSE, filter.minCounts = FALSE)
+    c5 = filterBsBackground(bds, flag = TRUE, balanceCondition = FALSE,
+                            balanceBackground = FALSE, minCounts = FALSE)
     expect_equal(ncol(mcols(getRanges(bds))), ncol(mcols(getRanges(c5))))
 })
+

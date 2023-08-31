@@ -6,13 +6,13 @@
 \usage{
 filterBsBackground(
   object,
-  filter.minCounts = TRUE,
-  filter.minCounts.cutoff = 100,
-  filter.ratio = TRUE,
-  filter.ratio.cutoff.bs = 0.2,
-  filter.ratio.cutoff.bg = 0.8,
-  filter.balance = TRUE,
-  filter.balance.cutoff = 0.02,
+  minCounts = TRUE,
+  minCounts.cutoff = 100,
+  balanceBackground = TRUE,
+  balanceBackground.cutoff.bs = 0.3,
+  balanceBackground.cutoff.bg = 0.7,
+  balanceCondition = TRUE,
+  balanceCondition.cutoff = 0.05,
   match.geneID = "geneID",
   flag = FALSE,
   quiet = FALSE,
@@ -23,24 +23,24 @@ filterBsBackground(
 \item{object}{a \code{\link{BSFDataSet}} object with computed count data
 for binding sites and background regions}
 
-\item{filter.minCounts}{logical; whether to use the minimum count filter}
+\item{minCounts}{logical; whether to use the minimum count filter}
 
-\item{filter.minCounts.cutoff}{numeric; the minimal number of crosslink
+\item{minCounts.cutoff}{numeric; the minimal number of crosslink
 per gene over all samples for the gene to be retained (default = 100)}
 
-\item{filter.ratio}{logical; whether to use the counts balancing filter
+\item{balanceBackground}{logical; whether to use the counts balancing filter
 between binding sites and background}
 
-\item{filter.ratio.cutoff.bs}{numeric; the maximum fraction of the total signal
+\item{balanceBackground.cutoff.bs}{numeric; the maximum fraction of the total signal
 per gene that can be within binding sites (default = 0.2)}
 
-\item{filter.ratio.cutoff.bg}{numeric; the minimum fraction of the total signal
+\item{balanceBackground.cutoff.bg}{numeric; the minimum fraction of the total signal
 per gene that can be within the background (default = 0.8)}
 
-\item{filter.balance}{logical; whether to use the counts balancing filter
+\item{balanceCondition}{logical; whether to use the counts balancing filter
 between conditions}
 
-\item{filter.balance.cutoff}{numeric; the maximum fraction of the total signal
+\item{balanceCondition.cutoff}{numeric; the maximum fraction of the total signal
 that can be attributed to only one condition}
 
 \item{match.geneID}{character; the name of the column with the gene ID
@@ -62,29 +62,29 @@ This function removes genes where the differential testing protocol can
 not be applied to, using count coverage information on the binding sites
 and background regions per gene, through the following steps:
 \enumerate{
-\item Remove genes with overall not enough crosslinks: \code{filter.minCounts}
+\item Remove genes with overall not enough crosslinks: \code{minCounts}
 \item Remove genes with a disproportion of counts in binding sites vs. the
-background: \code{filter.ratio}
+background: \code{balanceBackground}
 \item Remove genes where the expression between conditions is too much off
-balance: \code{filter.balance}
+balance: \code{balanceCondition}
 }
 }
 \details{
-To remove genes with overall not enough crosslinks (\code{filter.minCounts})
+To remove genes with overall not enough crosslinks (\code{minCounts})
 all counts are summed up per gene across all samples and compared to the
-minimal count threshold (\code{filter.minCounts.cutoff}).
+minimal count threshold (\code{minCounts.cutoff}).
 
 To remove genes with a count disproportion between binding sites and
 background regions crosslinks are summed up for binding sites and background
 per gene. These sums are combined in a ratio. Genes where eg. 50\% of all
 counts are within binding sites would be removed
-(see \code{filter.ratio.cutoff.bs} and \code{filter.ratio.cutoff.bg}).
+(see \code{balanceBackground.cutoff.bs} and \code{balanceBackground.cutoff.bg}).
 
 To remove genes with very large expression differences between conditions,
 crosslinks are summed up per gene for each condition. If now eg. the total
 number of crosslinks is for 98\% in one condition and only 2\% of the
 combined signal is in the second condition, expression levels are too
-different for a reliable comparisson (see \code{filter.balance.cutoff}).
+different for a reliable comparisson (see \code{balanceCondition.cutoff}).
 }
 \examples{
 # load clip data
@@ -102,11 +102,11 @@ bds = calculateBsBackground(bds, anno.genes = gns, use.offset = FALSE)
 f0 = filterBsBackground(bds)
 
 # do not use the condition balancing filter
-f1 = filterBsBackground(bds, filter.balance = FALSE)
+f1 = filterBsBackground(bds, balanceCondition = FALSE)
 
 # use only the minimum count filter and flag binding sites instead of
 # removing them
-f3 = filterBsBackground(bds, flag = TRUE, filter.balance = FALSE,
- filter.ratio = FALSE)
+f3 = filterBsBackground(bds, flag = TRUE, balanceCondition = FALSE,
+ balanceBackground = FALSE)
 
 }

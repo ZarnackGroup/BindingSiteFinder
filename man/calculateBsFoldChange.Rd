@@ -21,7 +21,8 @@ calculateBsFoldChange(
   apeMethod = "nbinomCR",
   match.geneID = "geneID",
   quiet = TRUE,
-  veryQuiet = FALSE
+  veryQuiet = FALSE,
+  forceThis = FALSE
 )
 }
 \arguments{
@@ -77,6 +78,9 @@ in the binding sites meta columns used for matching binding sites to genes}
 \item{quiet}{logical; whether to print messages or not}
 
 \item{veryQuiet}{logical; whether to print messages or not}
+
+\item{forceThis}{logical; enable testing mode that works even when input
+counts contain NA or negative values. For testing purposes only. Be careful!}
 }
 \value{
 a \code{\link{BSFDataSet}} object, with results from the
