@@ -1,7 +1,7 @@
 Package: BindingSiteFinder
 Type: Package
 Title: Binding site defintion based on iCLIP data
-Version: 1.7.9
+Version: 1.7.10
 Authors@R: c(
     person("Mirko", "Brüggemann",
         email="mirko.brueggemann@mail.de",
@@ -26,7 +26,7 @@ Imports: tidyr, tibble, plyr, matrixStats, stats, ggplot2, methods, rtracklayer,
 Depends: GenomicRanges, R (>= 4.2)
 Suggests: testthat, BiocStyle, knitr, rmarkdown, GenomicAlignments, scales, Gviz,
     xlsx, GGally, patchwork, viridis, ggplotify, SummarizedExperiment, DESeq2,
-    ggpointdensity, ggrastr
+    ggpointdensity, ggrastr, ashr, apeglm
 RoxygenNote: 7.2.3
 Collate: 
     'AllClasses.R'
