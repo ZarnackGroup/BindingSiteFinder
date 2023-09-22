@@ -251,9 +251,11 @@ exportToBED <- function(object, con) {
                             trackLine = new("BasicTrackLine", name = "BS_calculateSignalToFlankScore",
                                             description = paste0("annotateWithScore; options: ", optionStr), useScore = FALSE))
     }
-    lastFun = "assignToGenaes"
     if(!lastFun %in% allFunctions) {
-        stop("Function names not matching. Please check your data or export manually with `rtracklayer::export(getRanges(myObj))`.\n")
+        warning("Function names not matching. Please check your data or export manually with `rtracklayer::export(getRanges(myObj))`.\n")
+
+        rtracklayer::export(object = expRng, con = con, format = "BED",
+                            trackLine = new("BasicTrackLine", name = "BS", useScore = FALSE))
     }
 
 }
