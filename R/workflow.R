@@ -436,84 +436,52 @@ assignToGenes <- function(object,
         } else {
             datasource = "anno.genes"
             # extract relevant annotation
-            anno.genes = anno.genes
             # check correct annotation columns
             inNames = c(match.geneID, match.geneName, match.geneType)
             annoColNames = colnames(mcols(anno.genes))
+            presentNames = inNames[inNames %in% annoColNames]
 
-            if (!all(inNames %in% annoColNames)) {
-                # one annotation column not present
-                # -> check for combinations
-                notIn = inNames[!inNames %in% annoColNames]
+            # extract columns from annotaiton based on available names
+            present.cols = lapply(presentNames, function(x){
+                match.col = mcols(anno.genes)[match(x, colnames(mcols(anno.genes)))][[1]]
+                return(match.col)
+            })
+            names(present.cols) = presentNames
 
-                if (notIn %in% match.geneType) {
-                    # gene type not present
-                    match.missing = match.geneType
-                    # -> set options
-                    # this.choices = c("remove", "keep")
-                    # -> inform user
-                    msg = paste0("No meta column for ", match.geneType, " present.")
-                    if (!quiet) message(msg)
-                    # -> make matching vector for rest
-                    selectID = mcols(anno.genes)[match(match.geneID, colnames(mcols(anno.genes)))][[1]]
-                    selectName = mcols(anno.genes)[match(match.geneName, colnames(mcols(anno.genes)))][[1]]
-                }
-                if (notIn %in% match.geneName) {
-                    # gene name not present
-                    match.missing = match.geneName
-                    # -> set options
-                    # this.choices = c("frequency", "hierarchy", "remove", "keep")
-                    # -> inform user
-                    msg = paste0("No meta column for ", match.geneName, " present.")
-                    if (!quiet) message(msg)
-                    # -> make matching vector for rest
-                    selectID = mcols(anno.genes)[match(match.geneID, colnames(mcols(anno.genes)))][[1]]
-                    selectType = mcols(anno.genes)[match(match.geneType, colnames(mcols(anno.genes)))][[1]]
-                }
-                if (notIn %in% match.geneID) {
-                    # gene id not present
-                    # -> make artificial gene_id
-                    match.missing = match.geneID
-                    # -> set options
-                    # this.choices = c("frequency", "hierarchy", "remove", "keep")
-                    # -> inform user
-                    msg = paste0("No meta column for ", match.geneID, " present. Creating custom ID.")
-                    if (!quiet) message(msg)
-                    # -> make matching vector for rest
-                    selectID = paste0("CUSTOM", seq_along(anno.genes))
-                    selectName = mcols(anno.genes)[match(match.geneName, colnames(mcols(anno.genes)))][[1]]
-                    selectType = mcols(anno.genes)[match(match.geneType, colnames(mcols(anno.genes)))][[1]]
-                }
+            # extract values from annotation for all present columns
+            if (match.geneID %in% names(present.cols)) {
+                selectID = present.cols[[match(match.geneID, names(present.cols))]]
             } else {
-                # all annotations are present
-                # this.choices = c("frequency", "hierarchy", "remove", "keep")
-                # Create matching vectors for columns from input annotation
-                # --------------------------------------------------------------------------
-                selectID = mcols(anno.genes)[match(match.geneID, colnames(mcols(anno.genes)))][[1]]
-                selectName = mcols(anno.genes)[match(match.geneName, colnames(mcols(anno.genes)))][[1]]
-                selectType = mcols(anno.genes)[match(match.geneType, colnames(mcols(anno.genes)))][[1]]
+                msg = paste0("No meta column for ", match.geneID, " present. Creating custom ID.\n")
+                if (!quiet) message(msg)
+                selectID = paste0("CUSTOM", seq_along(anno.genes))
             }
-
-
+            if (match.geneName %in% names(present.cols)) {
+                selectName = present.cols[[match(match.geneName, names(present.cols))]]
+            } else {
+                msg = paste0("No meta column for ", match.geneName, " present.\n")
+                if (!quiet) message(msg)
+            }
+            if (match.geneType %in% names(present.cols)) {
+                selectType = present.cols[[match(match.geneType, names(present.cols))]]
+            } else {
+                msg = paste0("No meta column for ", match.geneType, " present.\n")
+                if (!quiet) message(msg)
+            }
         }
     }
 
     # handle options (hierarchy, frequency, remove, keep)
-    # overlaps = match.arg(overlaps, choices = this.choices)
     overlaps = match.arg(overlaps, choices = c("frequency", "hierarchy", "remove", "keep"))
-    if (!is.null(match.missing)) {
-        # something is missing
-        if (match.missing == match.geneType) {
-            # gene type is missing
-            # -> check for correct overlap option
-            if (overlaps == "frequency" | overlaps == "hierarchy") {
-                msg0 = paste0(match.geneType, " is missing in the annotation. Options 'frequency' and 'hierarchy' are not available.\n")
-                msg1 = paste0("Select one of: 'remove' or 'keep'.\n")
-                stop(c(msg0, msg1))
-            }
+    if (is.null(selectType)) {
+        # gene type is missing
+        # -> check for correct overlap option
+        if (overlaps == "frequency" | overlaps == "hierarchy") {
+            msg0 = paste0(match.geneType, " is missing in the annotation. Options 'frequency' and 'hierarchy' are not available.\n")
+            msg1 = paste0("Select one of: 'remove' or 'keep'.\n")
+            stop(c(msg0, msg1))
         }
     }
-
     # Check multiple loci options
     if (overlaps == "hierarchy" & is.null(overlaps.rule)) {
         msg1 = paste0("Binding sites on anno.genes with overlapping annotaitons is set to be handled by 'hierarchy', but no rule is provided. \n")
@@ -550,14 +518,21 @@ assignToGenes <- function(object,
     # --------------------------------------------------------------------------
     # Count out how many cases there are
     countOlsSize = as.data.frame(table(duplicated(subjectHits(ols))))
-    totalBS = countOlsSize$Freq[1]
-    duplicatedBS = countOlsSize$Freq[2]
+    if (nrow(countOlsSize) == 1){
+        # no duplications are present
+        # -> no overlaps have to be resolved
+        totalBS = countOlsSize$Freq[1]
+        duplicatedBS = 0
+    } else {
+        totalBS = countOlsSize$Freq[1]
+        duplicatedBS = countOlsSize$Freq[2]
+    }
     duplicatedFraction = paste0(round(duplicatedBS / totalBS * 100, digits = 2), "%")
 
     # ----
     # Store results for plotting
     # -> select data
-    if (is.null(match.missing)) {
+    if (all(!is.null(selectID) & !is.null(selectType) & !is.null(selectName))) {
         # nothing is missing
         dfPlot = data.frame(geneIndex = queryHits(ols), bsIndex = subjectHits(ols),
                             geneType = selectType[queryHits(ols)]) %>% #TODO type
@@ -568,7 +543,7 @@ assignToGenes <- function(object,
             dplyr::mutate_all(~ ifelse(. > 1, 1, .))
     } else {
         # check what is missing
-        if (! match.missing %in% match.geneType) {
+        if (!is.null(selectType)) {
             # anything other than gene type is missing
             dfPlot = data.frame(geneIndex = queryHits(ols), bsIndex = subjectHits(ols),
                                 geneType = selectType[queryHits(ols)]) %>% #TODO type
@@ -595,103 +570,74 @@ assignToGenes <- function(object,
         if(!quiet) message(c(msg, msg2))
     }
     # Cases where there are multiple overlaps
-    if (length(duplicatedBS) > 0) {
-        msg0 = paste0(duplicatedFraction, " (", duplicatedBS,"/", totalBS, ")",
-                      " of binding sites overlap with multiple anno.genes in the given gene annotation. \n")
-        if (overlaps == "hierarchy") {
-            # apply hierarchy solution
-            msg1 = paste0("Apply 'hierarchy' solution")
-            if(!quiet) message(c(msg0, msg1))
-            ruleMod = data.frame(gene_type = overlaps.rule, idx = seq_along(overlaps.rule))
-            rngResolved = .resolveGeneOverlapsWithRule(rng = rngInitial, ols = ols, rule = ruleMod,
-                                                       selectID = selectID, selectName = selectName,
-                                                       selectType = selectType)
-            if (length(rngInitial) != length(rngResolved)) {
-                if(!quiet) message(paste0(format(length(rngInitial)-length(rngResolved), big.mark = ",", decimal.mark = "."),
-                                          " binding sites could not be assigned to a gene range.\n"))
-            }
+    msg0 = paste0(duplicatedFraction, " (", duplicatedBS,"/", totalBS, ")",
+                  " of binding sites overlap with multiple anno.genes in the given gene annotation. \n")
+    if (overlaps == "hierarchy") {
+        # apply hierarchy solution
+        msg1 = paste0("Apply 'hierarchy' solution")
+        if(!quiet) message(c(msg0, msg1))
+        ruleMod = data.frame(gene_type = overlaps.rule, idx = seq_along(overlaps.rule))
+        rngResolved = .resolveGeneOverlapsWithRule(rng = rngInitial, ols = ols, rule = ruleMod,
+                                                   selectID = selectID, selectName = selectName,
+                                                   selectType = selectType)
+        if (length(rngInitial) != length(rngResolved)) {
+            if(!quiet) message(paste0(format(length(rngInitial)-length(rngResolved), big.mark = ",", decimal.mark = "."),
+                                      " binding sites could not be assigned to a gene range.\n"))
+        }
 
+    }
+    if (overlaps == "frequency") {
+        # apply frequency solution
+        msg1 = paste0("Apply 'frequency' solution")
+        if (!quiet) message(c(msg0, msg1))
+        ruleFreq = selectType %>% table() %>% as.data.frame() %>%
+            rename(gene_type = 1) %>% arrange(desc(Freq)) %>%
+            mutate(idx = row_number())  %>% rename(n = 2)
+        rngResolved = .resolveGeneOverlapsWithRule(rng = rngInitial, ols = ols, rule = ruleFreq,
+                                                   selectID = selectID, selectName = selectName, selectType = selectType)
+        if (length(rngInitial) != length(rngResolved)) {
+            if (!quiet) message(paste0(format(length(rngInitial)-length(rngResolved), big.mark = ",", decimal.mark = "."),
+                                       " binding sites could not be assigned to a gene range.\n"))
         }
-        if (overlaps == "frequency") {
-            # apply frequency solution
-            msg1 = paste0("Apply 'frequency' solution")
-            if (!quiet) message(c(msg0, msg1))
-            ruleFreq = selectType %>% table() %>% as.data.frame() %>%
-                rename(gene_type = 1) %>% arrange(desc(Freq)) %>%
-                mutate(idx = row_number())  %>% rename(n = 2)
-            rngResolved = .resolveGeneOverlapsWithRule(rng = rngInitial, ols = ols, rule = ruleFreq,
-                                                       selectID = selectID, selectName = selectName, selectType = selectType)
-            if (length(rngInitial) != length(rngResolved)) {
-                if (!quiet) message(paste0(format(length(rngInitial)-length(rngResolved), big.mark = ",", decimal.mark = "."),
-                                           " binding sites could not be assigned to a gene range.\n"))
-            }
 
+    }
+    if (overlaps == "remove") {
+        # apply remove option
+        msg1 = "Binding sites from overlapping loci are removed. This is not recommended. Please see options 'heirarchy' and 'frequency'. \n"
+        warning(c(msg0, msg1))
+        rngResolved = rngInitial[subjectHits(ols)]
+        # manage meta columns
+        if (!is.null(selectID)) {
+            mcols(rngResolved) = cbind(mcols(rngResolved), geneID = selectID[queryHits(ols)])
         }
-        if (overlaps == "remove") {
-            # apply remove option
-            msg1 = "Binding sites from overlapping loci are removed. This is not recommended. Please see options 'heirarchy' and 'frequency'. \n"
-            warning(c(msg0, msg1))
-            rngResolved = rngInitial[subjectHits(ols)]
-            # manage meta columns
-            if (is.null(match.missing)) {
-                mcols(rngResolved) = cbind(mcols(rngResolved),
-                                           geneID = selectID[queryHits(ols)],
-                                           geneType = selectType[queryHits(ols)],
-                                           geneName = selectName[queryHits(ols)] )
-            } else {
-                if (match.missing == match.geneID) {
-                    mcols(rngResolved) = cbind(mcols(rngResolved),
-                                               geneID = selectID[queryHits(ols)],
-                                               geneType = selectType[queryHits(ols)],
-                                               geneName = selectName[queryHits(ols)] )
-                }
-                if (match.missing == match.geneName) {
-                    mcols(rngResolved) = cbind(mcols(rngResolved),
-                                               geneID = selectID[queryHits(ols)],
-                                               geneType = selectType[queryHits(ols)] )
-                }
-                if (match.missing == match.geneType) {
-                    mcols(rngResolved) = cbind(mcols(rngResolved),
-                                               geneID = selectID[queryHits(ols)],
-                                               geneName = selectName[queryHits(ols)] )
-                }
-            }
-            # remove duplicates
-            rngResolved = rngResolved[countOverlaps(rngResolved) == 1]
+        if (!is.null(selectType)) {
+            mcols(rngResolved) = cbind(mcols(rngResolved), geneType = selectType[queryHits(ols)])
         }
-        if (overlaps == "keep") {
-            msg1 = "Binding sites from overlapping loci are kept. This is not recommended. Please see options 'heirarchy' and 'frequency'. \n"
-            warning(c(msg0, msg1))
-            rngResolved = rngInitial[subjectHits(ols)]
-            # manage meta columns
-            if (is.null(match.missing)) {
-                mcols(rngResolved) = cbind(mcols(rngResolved),
-                                           geneID = selectID[queryHits(ols)],
-                                           geneType = selectType[queryHits(ols)],
-                                           geneName = selectName[queryHits(ols)] )
-            } else {
-                if (match.missing == match.geneID) {
-                    mcols(rngResolved) = cbind(mcols(rngResolved),
-                                               geneID = selectID[queryHits(ols)],
-                                               geneType = selectType[queryHits(ols)],
-                                               geneName = selectName[queryHits(ols)] )
-                }
-                if (match.missing == match.geneName) {
-                    mcols(rngResolved) = cbind(mcols(rngResolved),
-                                               geneID = selectID[queryHits(ols)],
-                                               geneType = selectType[queryHits(ols)] )
-                }
-                if (match.missing == match.geneType) {
-                    mcols(rngResolved) = cbind(mcols(rngResolved),
-                                               geneID = selectID[queryHits(ols)],
-                                               geneName = selectName[queryHits(ols)] )
-                }
-            }
+        if (!is.null(selectName)) {
+            mcols(rngResolved) = cbind(mcols(rngResolved), geneName = selectName[queryHits(ols)])
+        }
+        # remove duplicates
+        rngResolved = rngResolved[countOverlaps(rngResolved) == 1]
+    }
+    if (overlaps == "keep") {
+        msg1 = "Binding sites from overlapping loci are kept. This is not recommended. Please see options 'heirarchy' and 'frequency'. \n"
+        warning(c(msg0, msg1))
+        rngResolved = rngInitial[subjectHits(ols)]
+        # manage meta columns
+        if (!is.null(selectID)) {
+            mcols(rngResolved) = cbind(mcols(rngResolved), geneID = selectID[queryHits(ols)])
+        }
+        if (!is.null(selectType)) {
+            mcols(rngResolved) = cbind(mcols(rngResolved), geneType = selectType[queryHits(ols)])
+        }
+        if (!is.null(selectName)) {
+            mcols(rngResolved) = cbind(mcols(rngResolved), geneName = selectName[queryHits(ols)])
         }
     }
+
     # ---
     # Store results for plotting
-    if (is.null(match.missing)) {
+    if (all(!is.null(selectID) & !is.null(selectType) & !is.null(selectName))) {
         # nothing is missing
         nCountGenes = rngResolved %>% mcols() %>% as.data.frame() %>%
             group_by(geneID) %>% dplyr::count(geneType) %>% ungroup() %>%
@@ -702,7 +648,7 @@ assignToGenes <- function(object,
             rename("nBs" = "n.x", "nGenes" = "n.y")
     } else {
         # check what is missing
-        if (! match.missing %in% match.geneType) {
+        if (!is.null(selectType)) {
             # anything other than gene type is missing
             nCountGenes = rngResolved %>% mcols() %>% as.data.frame() %>%
                 group_by(geneID) %>% dplyr::count(geneType) %>% ungroup() %>%
@@ -882,9 +828,7 @@ assignToTranscriptRegions <- function(object, # bindingSiteFinder
     rngInitial = getRanges(object)
     rng = getRanges(object)
 
-    currBsSize = object@params$bsSize
-
-    cRange = rng - unique(floor(currBsSize / 2))
+    cRange = resize(rng, width = 1, fix = "center")
     countDf = lapply(anno.transcriptRegionList, function(x) {
         countOverlaps(cRange, x)
     }) %>% as.data.frame() %>% rename_with(toupper)
