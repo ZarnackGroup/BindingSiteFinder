@@ -721,6 +721,25 @@ combineBSF <- function(list, # list of class BSFDataSet
         stopifnot(is(combine.bsSize, "numeric"))
     }
 
+    # check dataset names
+    list = lapply(seq_along(list), function(x){
+        this.dataset = list[[x]]
+        this.name = getName(list[[x]])
+        if (length(this.name) == 0) {
+            # No name was given to this dataset
+            # -> make name and set
+            new.name = paste0("bds", x)
+            this.dataset = setName(list[[x]], new.name)
+
+            # Inform user
+            msg0 = paste0("No name present for dataset No: ", x, ".\n")
+            msg1 = paste0("Name is set to: ", new.name, ".\n")
+            msg2 = paste0("Prevent this message by setting a name using 'setNames()'.\n")
+            if (!quiet) warning(c(msg0, msg1, msg2))
+        }
+        return(this.dataset)
+    })
+
     # Combine meta
     # --------------------------------------------------------------------------
     comb.meta = do.call(rbind, lapply(list, getMeta))
