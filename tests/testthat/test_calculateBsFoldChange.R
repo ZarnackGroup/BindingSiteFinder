@@ -48,4 +48,20 @@ test_that("calculateBsFoldChange works", {
     expect_equal(resNormal$bs.log2FoldChange, resChanged$bs.log2FoldChange)
     expect_equal(resNormal$bg.pvalue, resChanged$bg.pvalue)
     expect_equal(resNormal$bg.log2FoldChange, resChanged$bg.log2FoldChange)
+
+    # negative counts
+    rng = getRanges(bds)
+    rng$counts.bs.1_WT[1] = -10
+    bdsNeg = setRanges(bds, rng)
+    expect_error(calculateBsFoldChange(bdsNeg))
+    expect_error(calculateBsFoldChange(bdsNeg, removeNA = TRUE))
+    expect_warning(calculateBsFoldChange(bdsNeg, replaceNegative = TRUE))
+
+    # NA counts
+    rng = getRanges(bds)
+    rng$counts.bs.1_WT[1] = NA
+    bdsNA = setRanges(bds, rng)
+    expect_error(calculateBsFoldChange(bdsNA))
+    expect_error(calculateBsFoldChange(bdsNA, replaceNegative = TRUE))
+    expect_warning(calculateBsFoldChange(bdsNA, removeNA = TRUE))
 })

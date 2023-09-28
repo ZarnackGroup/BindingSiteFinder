@@ -22,7 +22,8 @@ calculateBsFoldChange(
   match.geneID = "geneID",
   quiet = TRUE,
   veryQuiet = FALSE,
-  forceThis = FALSE
+  replaceNegative = FALSE,
+  removeNA = FALSE
 )
 }
 \arguments{
@@ -79,8 +80,13 @@ in the binding sites meta columns used for matching binding sites to genes}
 
 \item{veryQuiet}{logical; whether to print messages or not}
 
-\item{forceThis}{logical; enable testing mode that works even when input
-counts contain NA or negative values. For testing purposes only. Be careful!}
+\item{replaceNegative}{logical; force negative counts to be replaces by 0.
+Be careful when using this, having negative counts can point towards problems
+with the gene annotation in use.}
+
+\item{removeNA}{logical; force binding sites with any NA value to be removed.
+Be careful when using this, having negative counts can point towards problems
+with the gene annotation in use.}
 }
 \value{
 a \code{\link{BSFDataSet}} object, with results from the

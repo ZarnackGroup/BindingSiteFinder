@@ -252,7 +252,7 @@ calculateBsBackground <- function(object,
                 # -> think about which parameters for assignToGenes need to be available to the user
                 object.blacklist = setRanges(object, blacklist, quiet = quiet)
                 object.blacklist = assignToGenes(object.blacklist, anno.genes = anno.genes, quiet = quiet, ...)
-                blacklist = getRanges(blacklist)
+                blacklist = getRanges(object.blacklist)
             }
         }
         if (!uniqueID.blacklist %in% colnames(mcols(blacklist))) {
@@ -950,8 +950,12 @@ filterBsBackground <- function(object,
 #' in the binding sites meta columns used for matching binding sites to genes
 #' @param quiet logical; whether to print messages or not
 #' @param veryQuiet logical; whether to print messages or not
-#' @param forceThis logical; enable testing mode that works even when input
-#' counts contain NA or negative values. For testing purposes only. Be careful!
+#' @param replaceNegative logical; force negative counts to be replaces by 0.
+#' Be careful when using this, having negative counts can point towards problems
+#' with the gene annotation in use.
+#' @param removeNA logical; force binding sites with any NA value to be removed.
+#' Be careful when using this, having negative counts can point towards problems
+#' with the gene annotation in use.
 #'
 #' @return a \code{\link{BSFDataSet}} object, with results from the
 #' \code{\link[DESeq2]{DESeq}} analysis added to the meta columns of the
@@ -1001,7 +1005,9 @@ calculateBsFoldChange <- function(object,
                                   match.geneID = "geneID",
                                   quiet = TRUE,
                                   veryQuiet = FALSE,
-                                  forceThis = FALSE
+                                  replaceNegative = FALSE,
+                                  removeNA = FALSE
+                                  # forceThis = FALSE
 ){
     # Bind locale variables
     geneID <- NULL
@@ -1085,36 +1091,81 @@ calculateBsFoldChange <- function(object,
         stop(c(msg0, msg1))
     }
 
-
-
-    if (isTRUE(forceThis)) {
-        # TODO check if there are negative counts
-        # -> temporary hack to replace negative counts with 0
-        # -> this happens in rare instances where offset ranges of neighboring
-        #    binding sites overlap, which cause crosslinks to be counted twice.
-        #    On genes with low counts this could result in negative values for the
-        #    background.
-        # -> Optimal solution is to use a combination of `reduce + with.revmap` and
-        #    `disjoin` to split overlapping offset ranges, which avoids the problem
-        idx = which(this.counts < 0, arr.ind = TRUE)
-        if (nrow(idx) > 0) {
-            this.counts[idx] = 0
-            msg0 = paste0(format(nrow(idx), big.mark = ",", decimal.mark = "."),
-                          " ranges found with negative counts, replacing them with 0.\n")
-            if (!veryQuiet) warning(c(msg0))
-        }
-
-        # TODO
-        # quick fix for NA values
-        idx = which(is.na(this.counts), arr.ind = TRUE)
-        if (nrow(idx) > 0) {
+    # TODO
+    # ----------------------------------------------------------------
+    # check for NA values
+    idx = which(is.na(this.counts), arr.ind = TRUE)
+    if (nrow(idx) > 0) {
+        # found rows with NA values as counts in matrix
+        # -> prompt user towards removing or checking
+        msg0 = paste0(format(nrow(idx), big.mark = ",", decimal.mark = "."),
+                      " ranges found with NA values.\n")
+        if (isTRUE(removeNA)) {
+            # force remove NA cases
             this.counts = this.counts[-idx[,1],]
             this.ranges = this.ranges[-idx[,1]]
-            msg0 = paste0(format(nrow(idx), big.mark = ",", decimal.mark = "."),
-                          " ranges found with NA values, removing them.\n")
-            if (!veryQuiet) warning(c(msg0))
+            msg1 = paste0("Removed all cases.\n")
+            if (!veryQuiet) warning(c(msg0, msg1))
+        } else {
+            msg1 = paste0("This can point towards problems with the gene annoation.\n")
+            msg2 = paste0("You can either
+                      (1) find problematic genes and fix the cause, or
+                      (2) set 'removeNA=TRUE' to force remove those cases.\n")
+            stop(c(msg0,msg1,msg2))
         }
     }
+
+    # check for negative values
+    idx = which(this.counts < 0, arr.ind = TRUE)
+    if (nrow(idx) > 0) {
+        # found rows with negative values as counts in matrix
+        # -> prompt user towards removing or checking
+        msg0 = paste0(format(nrow(idx), big.mark = ",", decimal.mark = "."),
+                      " ranges found with negative values.\n")
+        if (isTRUE(replaceNegative)) {
+            # force replace negative counts
+            this.counts[idx] = 0
+            msg1 = paste0("Replaced all cases with 0.\n")
+            if (!veryQuiet) warning(c(msg0, msg1))
+        } else {
+            msg1 = paste0("This can point towards problems with the gene annoation.\n")
+            msg2 = paste0("You can either
+                      (1) find problematic genes and fix the cause, or
+                      (2) set 'replaceNegative=TRUE' to force them to 0.\n")
+            stop(c(msg0,msg1,msg2))
+        }
+    }
+
+    # if (isTRUE(forceThis)) {
+    #     # TODO check if there are negative counts
+    #     # -> temporary hack to replace negative counts with 0
+    #     # -> this happens in rare instances where offset ranges of neighboring
+    #     #    binding sites overlap, which cause crosslinks to be counted twice.
+    #     #    On genes with low counts this could result in negative values for the
+    #     #    background.
+    #     # -> Optimal solution is to use a combination of `reduce + with.revmap` and
+    #     #    `disjoin` to split overlapping offset ranges, which avoids the problem
+    #     idx = which(this.counts < 0, arr.ind = TRUE)
+    #     if (nrow(idx) > 0) {
+    #         this.counts[idx] = 0
+    #         msg0 = paste0(format(nrow(idx), big.mark = ",", decimal.mark = "."),
+    #                       " ranges found with negative counts, replacing them with 0.\n")
+    #         if (!veryQuiet) warning(c(msg0))
+    #     }
+    #
+    #     # TODO
+    #     # quick fix for NA values
+    #     idx = which(is.na(this.counts), arr.ind = TRUE)
+    #     if (nrow(idx) > 0) {
+    #         this.counts = this.counts[-idx[,1],]
+    #         this.ranges = this.ranges[-idx[,1]]
+    #
+    #         if (!veryQuiet) warning(c(msg0))
+    #     }
+    # }
+
+    # ----------------------------------------------------------------
+    # TODO
 
 
 
