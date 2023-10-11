@@ -1,50 +1,165 @@
-CHANGES IN VERSION 1.4
-+ major re-work of the vignette
-+ implemented bindingSiteCoveragePlot() function
-+ added subsetting by index functionalities
-+ parameters minCrosslinks and minClSites can be deactivated when set to 0
-+ coverageOverRanges() function fails with error message on subscript out of
-bounds
-+ fixed bug in ReproducibilityFilter() function
-+ fix silent option in BSFDataSet constructor
+CHANGES IN VERSION 1.7.12
+-------------------------
 
-CHANGES IN VERSION 1.1.2
-+ coverageOverRanges() can be allowed to produce NAs for uneven ranges in the
+ - Updated the vignette to feature differential binding analysis
+
+CHANGES IN VERSION 1.7.11
+-------------------------
+
+ - assignToGenes() no requires binding sites to fully overlapp the gene range to be
+ assigned to that gene
+ - added plotBsMA() and plotBsVolcano() to visualize differential binding output
+
+ CHANGES IN VERSION 1.7.10
+--------------------------
+
+ - added calculateBsBackground() and calculateBsFoldChange() core function for
+ differntial binding analysis
+
+
+  CHANGES IN VERSION 1.7.9
+--------------------------
+
+ - fixed a bug in combineBSF() where meta data was not correctly merged
+
+  CHANGES IN VERSION 1.7.8
+--------------------------
+
+ - added combineBSF() function to combine two or more object of type BSFDataSet
+
+  CHANGES IN VERSION 1.7.7
+--------------------------
+
+ - Fixed a bug in exportToBED() which caused the export to fail if the last function
+ exectuted was calculateSignalToFlankScore()
+ - Updated rangeCoveragePlot() to work with clipCoverage() function
+ - Added the clipCoverage() function as improoved function calculate coverage
+
+  CHANGES IN VERSION 1.7.6
+--------------------------
+
+ - Update assignToGenes() to not require a gene annotation when options 'remove'
+ or 'keep' is selected
+
+  CHANGES IN VERSION 1.7.5
+--------------------------
+
+ - Update vignette to include all new options
+ - Exchanged default test object to fit new class definition
+ - Let estimateBsWidth() fail more gracefull when no maximum can be found
+ - Fix name space dependencies
+
+  CHANGES IN VERSION 1.7.4
+--------------------------
+
+ - Added region length based normalization to transcriptRegionSpectrumPlot()
+ - Changed minWidth default from (3 -> 2) in makeBindingSites()
+ - Allow object subsetByChr() to handle multiple chromosomes
+ - Added calculateSignalToFlankScore() function
+ - Added binding site definedness plot
+ - Added a 'local' version to estimateBsWidth() if no maximum can be found on
+ global level
+ - Added a 'sensitivity' mode to estimateBsWidth()
+
+  CHANGES IN VERSION 1.7.3
+--------------------------
+
+ - Started major rework
+ - Restructuring of class definition
+ - Added BSFind() as core function
+ - Added workflow functions pureClipGlobalFilter(), estimateBsWidth(),
+ pureClipGeneWiseFilter(), assignToGenes(), assignToTranscriptRegions()
+ - Reworked makeBindingSites(), reproducibilityFilter(), annotateWithScore()
+ - Added plotting functions processingStepsFlowChart(), pureClipGlobalFilterPlot(),
+ estimateBsWidthPlot(), duplicatedSitesPlot(), mergeCrosslinkDiagnosticsPlot(),
+ makeBsSummaryPlot(), reproducibilityFilterPlot(), reproducibilitySamplesPlot(),
+ reproducibilityScatterPlot(), geneOverlapsPlot(), targetGeneSpectrumPlot(),
+ transcriptRegionOverlapsPlot(), transcriptRegionSpectrumPlot(),
+ bindingSiteDefinednessPlot()
+
+  CHANGES IN VERSION 1.7.2
+--------------------------
+
+ - Added further input checks to reproducibilityFilter() function
+
+  CHANGES IN VERSION 1.7.1
+--------------------------
+
+ - Fix Namesspace issues
+
+
+  CHANGES IN VERSION 1.6.1
+--------------------------
+
+ - Fix bugs in colorPalette option
+ - Added custom coloring
+
+  CHANGES IN VERSION 1.5.1
+--------------------------
+
+ - Fix Namesspace issues to prepare BioC 3.16 release
+
+  CHANGES IN VERSION 1.4.2
+--------------------------
+
+ - Added additional examples for multiple conditions
+ - Added bindingSiteDetailsPlot() function
+
+  CHANGES IN VERSION 1.4.1
+--------------------------
+ - re-work of the vignette
+ - implemented bindingSiteCoveragePlot() function
+ - added subsetting by index functionalities
+ - parameters minCrosslinks and minClSites can be deactivated when set to 0
+ - coverageOverRanges() function fails with error message on subscript out of
+bounds
+ - fixed bug in ReproducibilityFilter() function
+ - fix silent option in BSFDataSet constructor
+
+  CHANGES IN VERSION 1.1.2
+--------------------------
+ - coverageOverRanges() can be allowed to produce NAs for uneven ranges in the
 output
 
-CHANGES IN VERSION 1.1.1
-+ coverageOverRanges() matches the order of input ranges and output matrix for
+  CHANGES IN VERSION 1.1.1
+--------------------------
+ - coverageOverRanges() matches the order of input ranges and output matrix for
 options merge_all_replicates and merge_replicates_per_condition
 
-CHANGES IN VERSION 1.0.0
-+ Released to Bioconductor version 3.14
+  CHANGES IN VERSION 1.0.0
+--------------------------
+ - Released to Bioconductor version 3.14
 
-CHANGES IN VERSION 0.99.10
-+ coverageOverRanges() now supports mean and sum as combination method. Dpending
+  CHANGES IN VERSION 0.99.10
+----------------------------
+ - coverageOverRanges() now supports mean and sum as combination method. Dpending
 on the returnOption, mean/ sum are computed over ranges or replicates.
 
-CHANGES IN VERSION 0.99.9
-+ BSFDataSet() and BSFDataSetFromBigWig() now check the path to the bigwig
+  CHANGES IN VERSION 0.99.9
+---------------------------
+ - BSFDataSet() and BSFDataSetFromBigWig() now check the path to the bigwig
 files in the meta data for potential duplicates
-+ coverageOverRanges() now supports also ranges with different width, if
+ - coverageOverRanges() now supports also ranges with different width, if
 returnOption = `merge_positions_keep_replicates`
-+ Fix bug in makeBindingSites(); The minWidth parameter is now implemented as
+ - Fix bug in makeBindingSites(); The minWidth parameter is now implemented as
 true lower boundary (>= instead of >). The default has changed from 2 to 3.
-+ Fix description in makeBindingSites(); The minCrosslinks parameter describes
+ - Fix description in makeBindingSites(); The minCrosslinks parameter describes
 the number of positions covered by crosslink events, instead of the total
 number of crosslinks.
-+ Updated color scheme in rangeCoveragePlot(); and changed position of indicator
+ - Updated color scheme in rangeCoveragePlot(); and changed position of indicator
 box
-+ Updated visual of reproducibiliyCutoffPlot() function
+ - Updated visual of reproducibiliyCutoffPlot() function
 
-
-CHANGES IN VERSION 0.99.8
-+ Updated coverageOverRange(), Function now does support different output
+  CHANGES IN VERSION 0.99.8
+---------------------------
+ - Updated coverageOverRange(), Function now does support different output
 formats, summarizing the coverage differently over range, replicates and
 condition
 
-CHANGES IN VERSION 0.99.1 - 0.99.7
-+ Fix bugs for Bioconductor submission
+  CHANGES IN VERSION 0.99.7
+---------------------------
+ - Fix bugs for Bioconductor submission
 
-CHANGES IN VERSION 0.99.0 (2021-05-15)
-+ Submitted to Bioconductor
+  CHANGES IN VERSION 0.99.0
+--------------------------- (2021-05-15)
+ - Submitted to Bioconductor
