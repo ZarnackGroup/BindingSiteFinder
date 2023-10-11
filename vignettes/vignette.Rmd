@@ -239,7 +239,7 @@ cdseq = cds(annoDb)
 intrns = unlist(intronsByTranscript(annoDb)) 
 utrs3 = unlist(threeUTRsByTranscript(annoDb)) 
 utrs5 = unlist(fiveUTRsByTranscript(annoDb)) 
-regions = list(CDS = cdseq, Intron = intrns, UTR3 = utrs3, UTR5 = utrs5)
+regions = GRangesList(CDS = cdseq, Intron = intrns, UTR3 = utrs3, UTR5 = utrs5)
 ```
 
 ```{r}
@@ -744,8 +744,272 @@ cov = clipCoverage(bdsOut, ranges.merge = TRUE, samples.merge = FALSE, positions
 cov
 ```
 
-Here we added the number of crosslinks per binding site and replicate to the `granges` object of the bindnig sites. 
+Here we added the number of crosslinks per binding site and replicate to the `granges` object of the binding sites. 
 
+
+
+# Differential binding analysis
+
+In this section we go beyond basic binding site definition and demonstrate how binding sites of a given RBP can be compared between conditions. For example one might be interested in how the binding pattern on of an RBP changes upon a specific mutation or condition. 
+
+Comparing two sets of binding sites from different biological conditions to each other is not straight forward, since a change observed between any two binding sites can also be caused by expression level changes of the hosting transcript. For that reason the following computational approach will correct for this effect resulting in a log2 fold-change for each binding site that is corrected for a potential transcript expression level change.
+
+## Concept and idea
+
+The main idea of the approach is to divide given iCLIP crosslinks into two bins for each gene. The first bin holds all crosslinks that are overlapping defined binding sites and thus can be attributed to the binding affinity of the RBP. We call this bin the *binding-bin*. The second bin holds all other crosslinks, which can be attributed to the expression level of the hosting RNA. We call this bin the *background-bin*. 
+
+We now make use of the condition specific changes in the *background-bin* to correct all fold-changes for each binding site in the *binding-bin*. This is done using the `DESeq2` likelihood ratio test, by comparing a "full" model to a reduced "null" model. 
+
+![**Overview of differential binding model and workflow.**](images/model.png){#model}
+## Preparation of the input data
+
+In the most basic approach one wants to compute fold-changes for each binding site for the same RBP found in of two conditions. For the following example we name our conditions *WT* and *KO*. 
+
+### Define binding sites for each condition
+
+At first binding sites have to be defined for each condition separately. This ensures that regardless of sequencing depth or expression levels not binding site can be missed or masked by either condition ^[Note: This requires that both data sets need to be handled strict separately, from pre-processing to peak-calling and binding site definition.]. 
+
+Here we load two pre-computed data sets, each having two replicates for *WT* and two for the *KO* ^[Note: Both data-sets were artificially created from the same condition for demonstration purposes.]. To learn how these sets can be generated from two individual data set, see the [Starting from scratch](### Starting from scratch) section.
+
+```{r, eval=TRUE, echo=FALSE}
+makeExampleDataSets <- function() {
+    # load clip data
+    files <- system.file("extdata", package="BindingSiteFinder")
+    load(list.files(files, pattern = ".rda$", full.names = TRUE))
+    # make binding sites
+    bds = makeBindingSites(bds, bsSize = 5, quiet = TRUE)
+    bds = assignToGenes(bds, anno.genes = gns, quiet = TRUE)
+    # create artificial changes between binding sites
+    bds = imputeBsDifferencesForTestdata(bds)
+    
+    # handle ranges
+    bs.all = getRanges(bds)
+    set.seed(1234)
+    idx = sample(c(TRUE,FALSE), size = length(bs.all), replace = TRUE)       
+    bs.wt = bs.all[idx]
+    bs.ko = bs.all[!idx]
+    
+    # handle meta
+    meta.all = getMeta(bds)
+    meta.wt = meta.all[c(1:2),]
+    meta.ko = meta.all[c(3:4),]
+    meta.ko$id = 1:2
+    
+    # handle signal
+    signal.all = getSignal(bds)
+    signal.wt.p = signal.all$signalPlus[1:2]
+    signal.wt.m = signal.all$signalMinus[1:2]
+    signal.wt = list(signalPlus = signal.wt.p, signalMinus = signal.wt.m)
+    
+    signal.all = getSignal(bds)
+    signal.ko.p = signal.all$signalPlus[3:4]
+    signal.ko.m = signal.all$signalMinus[3:4]
+    signal.ko = list(signalPlus = signal.ko.p, signalMinus = signal.ko.m)
+    
+    # set objects
+    bds.wt = setRanges(bds, bs.wt)
+    bds.wt = setMeta(bds.wt, meta.wt)
+    bds.wt = setSignal(bds.wt, signal.wt)
+    bds.wt = setName(bds.wt, "Example.WT")
+    
+    bds.ko = setRanges(bds, bs.ko)
+    bds.ko = setMeta(bds.ko, meta.ko)
+    bds.ko = setSignal(bds.ko, signal.ko)
+    bds.ko = setName(bds.ko, "Example.KO")
+    
+    # return
+    l = list(wt = bds.wt, ko = bds.ko)
+    return(l)
+}
+```
+
+```{r}
+# make artifical data sets
+myDataSets = makeExampleDataSets()
+
+bds.wt = myDataSets$wt
+bds.ko = myDataSets$ko
+
+bds.wt
+bds.ko
+```
+
+### Merge binding sites into a single object for testing
+
+We follow up on the separate binding site definition by combining both binding site sets into a single set on which we then perform the differential binding testing. Merging two `BSFDataSets` can be done using the `+` operator as shown below or by using the `combineBSF()` function.
+
+```{r}
+bds.comb = bds.wt + bds.ko
+getRanges(bds.comb)
+```
+
+## Count matrix generation
+
+To perform the differential testing we first need to extract crosslink counts for each binding site and *background-bin* per gene. It is all crosslinks that are attributed for the *background-bin* that are used for the expression change correction. This makes the differentiation of the iCLIP signal in *binding-bin* and *background-bin* one of the must critical steps. 
+
+To fine-tune this step a variety of options exist. First each binding site can be extend by an *offset* region. All crosslinks overlapping the *offset* will be removed. This means they are not counted towards the *background-bin* or the *binding-bin*. The same holds true for the *blacklist-region* which is an additional container which can be used to remove counts from certain ranges from the *background-bin*^[Note: The background counts per replicate is identical for binding sites on the same hosting gene.].
+
+![**Background-bin generation options.**](images/background.png){#background}
+
+### Calculate binding sites and background counts
+
+Calculating the background counts requires a gene annotation information to be present in the form of a `GRanges` object. For more details on how to generate this object from a .gtf/.gff3 file please see the section [Create annotation for genes](### Create annotation for genes). The final counts are added to the meta columns of the binding site `GRanges` objects ^[Note: Binding sites that do not overlap a distinct gene may end with NA values as background counts and can be removed in the next step.].
+
+```{r, warning=FALSE, message=FALSE}
+bds.diff = calculateBsBackground(bds.comb, anno.genes = gns)
+getRanges(bds.diff)
+```
+
+### Filter binding site and background counts
+
+Depending on the crosslink signal at hand some genes might not be suitable for differential testing. This is for example when there is overall not enough signal per gene, if the distribution between conditions is heavily tailored towards one side or if there is a strong imbalance between the *background-bin* and *binding-bin* per gene. The following function can be used to remove such cases to create a more reliable test set^[Note: The `plotBsBackgroundFilter()` function can be used to visualize each filtering option.].
+
+```{r}
+bds.diff = filterBsBackground(bds.diff)
+```
+
+## Perform differential testing
+
+Finally differential testing can be carried out using the `calculateBsFoldChange()` function. This function computes fold-changes for each binding site using the *background-bin* for correction and the likelihood ratio test for significance testing (for details on these test see the `DESeq2` user manual). Additionally, gene-level fold-changes are computed for each hosting gene using the standard Wald test (again see the `DESeq2` user manual for further details)^[Note: Depending on the data one might have to use the `removeNA` argument to remove edge cases where no `background-bin` counts could be computed. It is worth to manually look at such cases.]. 
+
+```{r}
+bds.diff = calculateBsFoldChange(bds.diff)
+getRanges(bds.diff)
+```
+
+Resulting fold-chagnes and P values are again added to the meta columns of the binding sites (`GRanges` format). As a quick visualisation of the results the functions `plotBsMA()` and `plotBsVolcano()` can be used, each of which can produce a plot either for the binding sites (`what = "bs"`) or for the background (`what = "bg"`).
+
+```{r, fig.retina = 1, dpi = this.dpi, fig.cap="plotBsMA. MA plot for binding site changes.", fig.small=TRUE}
+plotBsMA(bds.diff, what = "bs")
+```
+
+
+## Differential binding variations
+
+### Starting from scratch
+
+The following code chunks show how one can start fully from scratch with the binding site definition for the purpose of a downstream differential binding analysis. In the following example we will demonstrate the binding site definition for the conditions *WT* and *KO*.
+
+At first one has to construct a `BSFDataSet` for each condition with the crosslinks form the peak-calling step (PureCLIP output). This serves as input for the binding sites definition with `BSFind()` (for further details see the [Performing the main analysis](## Performing the main analysis) section). As a result one gets a set of binding sites. This has to be done for each condition (in our example these are *WT* and *KO*)^[Note: It is desired that the same binding site size is used for both conditions, which can require setting the `bsSize` argument explicitly when calling `BSFind()`.].
+
+```{r, eval=FALSE}
+############################
+# Construct WT binding sites
+############################
+# Locate peak calling result
+peaks.wt = "./myFolder/wt/pureclip.bed"
+peaks.wt = import(con = peaks.wt, format = "BED", extraCols=c("additionalScores" = "character"))
+peaks.wt = keepStandardChromosomes(peaks.wt, pruning.mode = "coarse")
+# Locate bigwig files
+clipFiles = "./myFolder/wt/bigwig/"
+clipFiles = list.files(clipFiles, pattern = ".bw$", full.names = TRUE)
+clipFiles = clipFiles[grepl("WT", clipFiles)]
+clipFilesP = clipFiles[grep(clipFiles, pattern = "plus")]
+clipFilesM = clipFiles[grep(clipFiles, pattern = "minus")]
+# Organize clip data in dataframe
+colData = data.frame(
+    name = "Example.WT", id = c(1:2),
+    condition = factor(c("WT", "WT"), levels = c("WT")),
+    clPlus = clipFilesP, clMinus = clipFilesM)
+# Construct BSFDataSet object
+bdsWT.initial = BSFDataSetFromBigWig(ranges = peaksInitial, meta = colData)
+# Define binding sites
+bdsWT = BSFind(bdsWT.initial, anno.genes = gns, anno.transcriptRegionList = trl)
+```
+
+```{r, eval=FALSE}
+############################
+# Construct KO binding sites
+############################
+# Locate peak calling result
+peaks.ko = "./myFolder/ko/pureclip.bed"
+peaks.ko = import(con = peaks.ko, format = "BED", extraCols=c("additionalScores" = "character"))
+peaks.ko = keepStandardChromosomes(peaks.ko, pruning.mode = "coarse")
+# Locate bigwig files
+clipFiles = "./myFolder/ko/bigwig/"
+clipFiles = list.files(clipFiles, pattern = ".bw$", full.names = TRUE)
+clipFiles = clipFiles[grepl("KO", clipFiles)]
+clipFilesP = clipFiles[grep(clipFiles, pattern = "plus")]
+clipFilesM = clipFiles[grep(clipFiles, pattern = "minus")]
+# Organize clip data in dataframe
+colData = data.frame(
+    name = "Example.KO", id = c(1:2),
+    condition = factor(c("KO", "KO"), levels = c("KO")),
+    clPlus = clipFilesP, clMinus = clipFilesM)
+# Construct BSFDataSet object
+bdsKO.initial = BSFDataSetFromBigWig(ranges = peaksInitial, meta = colData)
+# Define binding sites
+bdsKO = BSFind(bdsKO.initial, anno.genes = gns, anno.transcriptRegionList = trl)
+```
+
+### Starting from existing binding sites
+
+Sometimes one already has a set of binding sites computed and just wants to perform the differential binding analysis part for the specific set at hand. In this case the pre-computed binding sites can be directly imported alongside the bigwig files from both conditions into a single `BSFDataSet`. This set can then directly be used for background generation (see section [Count matrix generation](## Count matrix generation)).
+
+```{r, eval=FALSE}
+# Locate bigwig files - KO
+clipFilesKO = "./myFolder/ko/bigwig/"
+clipFilesKO = list.files(clipFilesKO, pattern = ".bw$", full.names = TRUE)
+clipFilesKO = clipFilesKO[grepl("KO", clipFilesKO)]
+# Locate bigwig files - WT
+clipFilesWT = "./myFolder/wt/bigwig/"
+clipFilesWT = list.files(clipFilesWT, pattern = ".bw$", full.names = TRUE)
+clipFilesWT = clipFilesWT[grepl("WT", clipFilesWT)]
+# Merge both conditions
+clipFiles = c(clipFilesWT, clipFilesKO)
+# Split by strand
+clipFilesP = clipFiles[grep(clipFiles, pattern = "plus")]
+clipFilesM = clipFiles[grep(clipFiles, pattern = "minus")]
+# Organize clip data in dataframe
+colData = data.frame(
+    name = "Example.KO", id = c(1:2),
+    condition = factor(c("KO", "KO"), levels = c("KO")),
+    clPlus = clipFilesP, clMinus = clipFilesM)
+# Construct BSFDataSet object from pre-defined binding sites
+# -> myBindingSites must be a GRanges object
+bds.comb = BSFDataSetFromBigWig(ranges = myBindingSites, meta = colData)
+```
+
+### How to deal with multiple comparisons? 
+
+In the case of a more complex experimental design that requires the comparison of more than two conditions, we recommend to compute as many pair-wise comparison as necessary. If one for example wants to incorporate an additional control condition (named *CTRL*) to the above setup, we would split the comparisons into three pair-wise designs (*CTRL-WT*, *CTRL-KO* and *WT-KO*). To ensure that all sets contain all binding sites found in either of the three conditions a merge over all three conditions has to be done prior to the testing. 
+
+Assuming that binding sites were defined for each condition, one would merge all binding sites doing the following:^[Note: This also merges the meta data which we have to revert for the specific comparison that we want to compute.].
+
+```{r, eval=FALSE}
+bds.complex = combineBSF(list(ctrl = bds.ctrl, wt = bds.wt, ko = bds.ko))
+```
+
+Next all binding site ranges from this set can be extracted and used to create a new `BSFDataSet` object for each comparison that should be computed (here we compare WT-vs-KO). This is very similar to starting a differential binding analysis from an existing set of binding sites (see chapter [Starting from existing binding sites](### Starting from existing binding sites)).
+
+```{r, eval=FALSE}
+# extract binding site ranges from complex merge
+bindingSites.complex = getRanges(bds.complex)
+# Locate bigwig files - KO
+clipFilesKO = "./myFolder/ko/bigwig/"
+clipFilesKO = list.files(clipFilesKO, pattern = ".bw$", full.names = TRUE)
+clipFilesKO = clipFilesKO[grepl("KO", clipFilesKO)]
+# Locate bigwig files - WT
+clipFilesWT = "./myFolder/wt/bigwig/"
+clipFilesWT = list.files(clipFilesWT, pattern = ".bw$", full.names = TRUE)
+clipFilesWT = clipFilesWT[grepl("WT", clipFilesWT)]
+# Merge both conditions
+clipFiles = c(clipFilesWT, clipFilesKO)
+# Split by strand
+clipFilesP = clipFiles[grep(clipFiles, pattern = "plus")]
+clipFilesM = clipFiles[grep(clipFiles, pattern = "minus")]
+# Organize clip data in dataframe
+colData = data.frame(
+    name = "Example.KO", id = c(1:2),
+    condition = factor(c("KO", "KO"), levels = c("KO")),
+    clPlus = clipFilesP, clMinus = clipFilesM)
+# Construct BSFDataSet object from pre-defined binding sites
+bds.comb = BSFDataSetFromBigWig(ranges = bindingSites.complex, meta = colData)
+```
+
+### use blacklist regions when gene-wise filter was high
+
+In the case that the binding site definition was performed using a particularly high gene-wise level filter or if differential testing should be performed only on a subset of all defined binding sites, we recommend to use this information for the background generation by making use of the `blacklist` argument. This ensures that counts from all ranges that were at some point in the analysis identified as either a peak or a binding site will be removed from the *background-bin*.
 
 # Session info
 
