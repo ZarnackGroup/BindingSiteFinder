@@ -500,7 +500,7 @@ bindingSiteCoveragePlot(bdsRemovedRanges, plotIdx = 2, flankPos = 50)
 
 We could also look at the final binding site definition and see how they were derived from the initial *PureCLIP sites*. To achieve this, we make use of the `customRange` slot to add these sites at the bottom of the coverage plot.
 
-```{r, fig.retina = 1, dpi = this.dpi}
+```{r, fig.retina = 1, dpi = this.dpi, eval=FALSE}
 pSites = getRanges(bds)
 bindingSiteCoveragePlot(bdsOut, plotIdx = 8, flankPos = 20, autoscale = TRUE,
                         customRange = pSites, customRange.name = "pSites", shiftPos = -10)
@@ -511,7 +511,7 @@ bindingSiteCoveragePlot(bdsOut, plotIdx = 8, flankPos = 20, autoscale = TRUE,
 
 Another use case would be to check the coverage on some example genes, or as we do here on the binding site with the highest number of crosslinks: 
 
-```{r, fig.retina = 1, dpi = this.dpi}
+```{r, fig.retina = 1, dpi = this.dpi, eval=FALSE}
 bindingSiteCoverage = coverageOverRanges(bdsOut, returnOptions = "merge_positions_keep_replicates")
 idxMaxCountsBs = which.max(rowSums(as.data.frame(mcols(bindingSiteCoverage))))
 bindingSiteCoveragePlot(bdsOut, plotIdx = idxMaxCountsBs, flankPos = 100, mergeReplicates = FALSE, shiftPos = 50)
@@ -519,7 +519,7 @@ bindingSiteCoveragePlot(bdsOut, plotIdx = idxMaxCountsBs, flankPos = 100, mergeR
 
 It is also possible to anchor the plot on any other `GenomicRange`. Here, we take annotated CDS regions and ask for the one with the most overlapping binding sites. We then use this ranges as center for the plot and further zoom in to a particular range. We then make use of the `customRange` slot to re-include the binding site ranges as additional annotation shown underneath the signal. Additionally, one could also add a custom annotation track in the form of a `GenomicRanges` or `TxDB` object. 
 
-```{r, fig.retina = 1, dpi = this.dpi}
+```{r, fig.retina = 1, dpi = this.dpi, eval=FALSE}
 bdsCDS = setRanges(bdsOut, regions$CDS)
 cdsWithMostBs = which.max(countOverlaps(regions$CDS, getRanges(bdsOut)))
 
@@ -540,11 +540,11 @@ The normalization scheme we provide is based on the hosting region length of eac
 
 Here we show the transcript region spectrum on a percentage scale once normalized and once un-normalized.
 
-```{r, fig.retina = 1, dpi = this.dpi, fig.cap="transcriptRegionSpectrumPlot. Without region size normalization.", fig.small=TRUE}
+```{r, fig.retina = 1, dpi = this.dpi, fig.cap="transcriptRegionSpectrumPlot. Without region size normalization.", fig.small=TRUE, eval=FALSE}
 transcriptRegionSpectrumPlot(bdsOut, normalize = FALSE, values = "percentage")
 ```
 
-```{r, fig.retina = 1, dpi = this.dpi, fig.cap="transcriptRegionSpectrumPlot. With region size normalization.", fig.small=TRUE}
+```{r, fig.retina = 1, dpi = this.dpi, fig.cap="transcriptRegionSpectrumPlot. With region size normalization.", fig.small=TRUE, eval=FALSE}
 transcriptRegionSpectrumPlot(bdsOut, normalize = TRUE, values = "percentage", normalize.factor = "median")
 ```
 
@@ -634,12 +634,12 @@ Since no gene or transcript level assignment was performed (`assignToGenes()` an
 
 In order to visualize how the reproducibility filtering function improves pairwise replicate reproducibility, the `reproducibilityScatterPlot()` function can be called before and after reproducibility filtering. 
 
-```{r, fig.retina = 1, dpi = this.dpi, fig.cap="reproducibilityScatterPlot. Before reproducibility filter."}
+```{r, fig.retina = 1, dpi = this.dpi, fig.cap="reproducibilityScatterPlot. Before reproducibility filter.", eval=FALSE}
 bds.before = makeBindingSites(bds, bsSize = 9)
 reproducibilityScatterPlot(bds.before)
 ```
 
-```{r, fig.retina = 1, dpi = this.dpi, fig.cap="reproducibilityScatterPlot. After reproducibility filter."}
+```{r, fig.retina = 1, dpi = this.dpi, fig.cap="reproducibilityScatterPlot. After reproducibility filter.", eval=FALSE}
 bds.after = reproducibilityFilter(bds.before, minCrosslinks = 2)
 reproducibilityScatterPlot(bds.after)
 ```
@@ -658,7 +658,7 @@ Besides the standard workflow and main processing functions a variety of further
 
 Sub-setting a `BSFinderData` object can be useful in a variety of cases, e.g. for reducing the object size for faster parameter testing, limiting the analysis to some candidate genes etc. Here, we subset the object by a random set of 100 binding sites and plot their count distribution.
 
-```{r, fig.retina = 1, dpi = this.dpi, fig.small=TRUE}
+```{r, fig.retina = 1, dpi = this.dpi, fig.small=TRUE, eval=FALSE}
 set.seed(1234)
 bdsSub = bds[sample(seq_along(getRanges(bds)), 100, replace = FALSE)]
 
@@ -680,7 +680,7 @@ ggplot(df, aes(x = name, y = log2(value+1), fill = name)) +
 
 Depending on the task at hand, one either wants to keep the iCLIP signal separated by replicates or merge the signal over the replicates (e.g. of the same condition). Merging signal can be done using the `collapseReplicates()` function. Doing so allows for example to identify the proportion of crosslink events that each sample contributes to the total of a binding site. Here, we did this for the first 100 binding sites. We sort all binding sites by their fraction and color the plot based on the replicate. 
 
-```{r, fig.retina = 1, dpi = this.dpi, fig.small=TRUE}
+```{r, fig.retina = 1, dpi = this.dpi, fig.small=TRUE, eval=FALSE}
 bdsMerge = collapseReplicates(bds)[1:100]
 covTotal = coverageOverRanges(bdsMerge, returnOptions = "merge_positions_keep_replicates")
 
