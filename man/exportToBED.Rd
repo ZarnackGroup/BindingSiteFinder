@@ -27,3 +27,6 @@ load(list.files(files, pattern = ".rda$", full.names = TRUE))
 }
 
 }
+\seealso{
+\code{\link{BSFind}}
+}

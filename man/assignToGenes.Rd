@@ -27,7 +27,7 @@ be used to handle overlapping cases in a hierarchical manor. The order of the
 vector is the order of the hierarchy.}
 
 \item{anno.annoDB}{an object of class \code{OrganismDbi} that contains
-the gene annotation.}
+the gene annotation (!!! Experimental !!!).}
 
 \item{anno.genes}{an object of class \code{\link{GenomicRanges}} that represents
 the gene ranges directly}
@@ -63,6 +63,8 @@ keep all overlapping cases, respectively.
 Note that if an overlaps exists, but gene types are identical options
 `frequency` and `hierarchy` will cause the gene that was seen first to be
 selected as representative.
+
+The function is part of the standard workflow performed by \code{\link{BSFind}}.
 }
 \examples{
 # load clip data
@@ -73,4 +75,8 @@ load(list.files(files, pattern = ".rds$", full.names = TRUE)[1])
 bds = makeBindingSites(object = bds, bsSize = 9)
 bds = assignToGenes(bds, anno.genes = gns)
 
+}
+\seealso{
+\code{\link{BSFind}}, \code{\link{geneOverlapsPlot}},
+\code{\link{targetGeneSpectrumPlot}}
 }

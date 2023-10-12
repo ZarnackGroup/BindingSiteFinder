@@ -417,7 +417,8 @@ reproducibilityFilterPlot <- function(object, plotRange = 20) {
 #'
 #' @return a plot of type \code{\link{ggplot}}
 #'
-#' @seealso \code{\link{reproducibilityFilter}} \code{\link{reproducibilityFilterPlot}}
+#' @seealso \code{\link{reproducibilityFilter}},
+#' \code{\link{reproducibilityFilterPlot}}
 #'
 #' @import ComplexHeatmap
 #' @importFrom dplyr desc
@@ -1415,7 +1416,7 @@ processingStepsFlowChart <- function(object, size.all = 3) {
 #'
 #' @return a plot of type \code{\link{ggplot}}
 #'
-#' @seealso \code{\link{BSFind}}
+#' @seealso \code{\link{BSFind}}, \code{\link{calculateSignalToFlankScore}}
 #'
 #' @import ggplot2
 #' @importFrom ggdist stat_halfeye
@@ -1592,7 +1593,7 @@ bindingSiteDefinednessPlot <- function(
 #' @return a plot of type \code{ggplot2} displaying the crosslink coverage over
 #' the ranges of the given \code{\link{BSFDataSet}}
 #'
-#' @seealso \code{\link{BSFDataSet}}
+#' @seealso \code{\link{BSFDataSet}}, \code{\link{makeBindingSites}}
 #'
 #' @import ggplot2
 #' @importFrom matrixStats colSds
@@ -2190,6 +2191,9 @@ supportRatioPlot <- function(object, bsWidths, bsFlank = NA, ...){
 #' @param quiet logical; whether to print messages
 #'
 #' @return an object of class \code{ggplot2}
+#'
+#' @seealso \code{\link{BSFind}},
+#' \code{\link{reproducibilityFilter}}
 #'
 #' @import ggplot2
 #'

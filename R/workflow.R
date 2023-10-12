@@ -16,6 +16,8 @@
 #' have a meta-column that holds a numeric score value, which is used for filtering.
 #' The name of the column can be set with \code{match.score}.
 #'
+#' The function is part of the standard workflow performed by \code{\link{BSFind}}.
+#'
 #' @param object a \code{\link{BSFDataSet}} object with stored crosslink ranges
 #' of width=1
 #' @param cutoff numeric; defines the cutoff for which sites to keep, the
@@ -27,6 +29,8 @@
 #'
 #' @return an object of class  \code{\link{BSFDataSet}} with its ranges filtered
 #' by those that passed the threshold set with \code{cutoff}
+#'
+#' @seealso \code{\link{BSFind}}, \code{\link{pureClipGlobalFilterPlot}}
 #'
 #' @examples
 #' # load data
@@ -120,6 +124,8 @@ pureClipGlobalFilter <- function(object, # bindingSiteFinder
 #' of the site; `removeAll` will remove both sites; `keepAll` will keep both
 #' sites.
 #'
+#' The function is part of the standard workflow performed by \code{\link{BSFind}}.
+#'
 #' @param object a \code{\link{BSFDataSet}} object with stored crosslink ranges
 #' of width=1
 #' @param cutoff numeric; defines the cutoff for which sites to remove, the
@@ -127,7 +133,7 @@ pureClipGlobalFilter <- function(object, # bindingSiteFinder
 #' given their score, on each gene, thus keeping the strongest 95\%.
 #' @param overlaps character; how overlapping gene loci should be handled.
 #' @param anno.annoDB an object of class \code{OrganismDbi} that contains
-#' the gene annotation.
+#' the gene annotation (!!! Experimental !!!).
 #' @param anno.genes an object of class \code{\link{GenomicRanges}} that represents
 #' the gene ranges directly
 #' @param match.score character; meta column name of the crosslink site
@@ -139,6 +145,8 @@ pureClipGlobalFilter <- function(object, # bindingSiteFinder
 #'
 #' @return an object of class \code{\link{BSFDataSet}} with its ranges filtered
 #' by those that passed the gene-wise threshold set with \code{cutoff}
+#'
+#' @seealso \code{\link{BSFind}}, \code{\link{estimateBsWidthPlot}}
 #'
 #' @importFrom dplyr filter reframe group_by mutate mutate_all arrange row_number
 #' @importFrom GenomicFeatures genes
@@ -349,6 +357,8 @@ pureClipGeneWiseFilter <- function(object, # bindingSiteFinder
 #' `frequency` and `hierarchy` will cause the gene that was seen first to be
 #' selected as representative.
 #'
+#' The function is part of the standard workflow performed by \code{\link{BSFind}}.
+#'
 #' @param object a \code{\link{BSFDataSet}} object with stored binding sites. This
 #' means that ranges should be > 1
 #' @param overlaps character; how overlapping gene loci should be handled.
@@ -356,7 +366,7 @@ pureClipGeneWiseFilter <- function(object, # bindingSiteFinder
 #' be used to handle overlapping cases in a hierarchical manor. The order of the
 #' vector is the order of the hierarchy.
 #' @param anno.annoDB an object of class \code{OrganismDbi} that contains
-#' the gene annotation.
+#' the gene annotation (!!! Experimental !!!).
 #' @param anno.genes an object of class \code{\link{GenomicRanges}} that represents
 #' the gene ranges directly
 #' @param match.geneID character; meta column name of the gene ID
@@ -366,6 +376,9 @@ pureClipGeneWiseFilter <- function(object, # bindingSiteFinder
 #'
 #' @return an object of class \code{\link{BSFDataSet}} with binding sites having
 #' hosting gene information added to their meta columns.
+#'
+#' @seealso \code{\link{BSFind}}, \code{\link{geneOverlapsPlot}},
+#' \code{\link{targetGeneSpectrumPlot}}
 #'
 #' @importFrom dplyr select slice_head group_by count ungroup arrange desc left_join
 #' @importFrom GenomicFeatures genes
@@ -701,6 +714,8 @@ assignToGenes <- function(object,
 #' Options `flag` and `remove` will label binding sites with an ambiguous tag or
 #' remove all overlapping cases, respectively.
 #'
+#' The function is part of the standard workflow performed by \code{\link{BSFind}}.
+#'
 #' @param object a \code{\link{BSFDataSet}} object with stored binding sites. This
 #' means that ranges should be > 1
 #' @param overlaps character; how overlapping transcript regions should be handled.
@@ -708,7 +723,7 @@ assignToGenes <- function(object,
 #' names that should be used to handle overlapping cases in a hierarchical manor.
 #' The order of the vector is the order of the hierarchy.
 #' @param anno.annoDB an object of class \code{OrganismDbi} that contains
-#' the transcript region annotation.
+#' the transcript region annotation (!!! Experimental !!!).
 #' @param anno.transcriptRegionList an object of class \code{\link{CompressedGRangesList}}
 #' that holds an ranges for each transcript region
 #'
@@ -723,6 +738,10 @@ assignToGenes <- function(object,
 #'
 #' @return an object of class \code{\link{BSFDataSet}} with binding sites having
 #' hosting transcript region information added to their meta columns.
+#'
+#' @seealso \code{\link{BSFind}},
+#' \code{\link{transcriptRegionOverlapsPlot}},
+#' \code{\link{transcriptRegionSpectrumPlot}}
 #'
 #' @importFrom dplyr rename_with desc
 #' @importFrom GenomicFeatures cds intronsByTranscript threeUTRsByTranscript fiveUTRsByTranscript
@@ -990,6 +1009,7 @@ assignToTranscriptRegions <- function(object, # bindingSiteFinder
 #' The optimal geneFilter is selected as the first one that passes the merged
 #' mean of the selected optimal binding site width.
 #'
+#' The function is part of the standard workflow performed by \code{\link{BSFind}}.
 #'
 #' @param object a \code{\link{BSFDataSet}} object with stored crosslink sites.
 #' This means that ranges should have a width = 1.
@@ -1017,7 +1037,7 @@ assignToTranscriptRegions <- function(object, # bindingSiteFinder
 #' merged sensitive region
 #'
 #' @param anno.annoDB an object of class \code{OrganismDbi} that contains
-#' the gene annotation.
+#' the gene annotation (!!! Experimental !!!).
 #' @param anno.genes an object of class \code{\link{GenomicRanges}} that represents
 #' the gene ranges directly
 #' @param bsResolution.steps numeric vector; option to use a user defined threshold
@@ -1033,6 +1053,9 @@ assignToTranscriptRegions <- function(object, # bindingSiteFinder
 #'
 #' @return an object of class \code{\link{BSFDataSet}} with binding sites with
 #' the `params` slots `bsSize` and `geneFilter` being filled
+#'
+#' @seealso \code{\link{BSFind}},
+#' \code{\link{estimateBsWidthPlot}}
 #'
 #' @importFrom dplyr summarise slice_head slice_tail
 #' @importFrom utils head

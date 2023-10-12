@@ -26,7 +26,7 @@ given their score, on each gene, thus keeping the strongest 95\%.}
 \item{overlaps}{character; how overlapping gene loci should be handled.}
 
 \item{anno.annoDB}{an object of class \code{OrganismDbi} that contains
-the gene annotation.}
+the gene annotation (!!! Experimental !!!).}
 
 \item{anno.genes}{an object of class \code{\link{GenomicRanges}} that represents
 the gene ranges directly}
@@ -61,6 +61,8 @@ attributed to multiple genes. The \code{\link{overlaps}} parameter allows
 to control these cases. Option `keepSingle` will only keep a single instance
 of the site; `removeAll` will remove both sites; `keepAll` will keep both
 sites.
+
+The function is part of the standard workflow performed by \code{\link{BSFind}}.
 }
 \examples{
 # load clip data
@@ -71,4 +73,7 @@ load(list.files(files, pattern = ".rds$", full.names = TRUE)[1])
 # apply 5\% gene-wise filter
 pureClipGeneWiseFilter(object = bds, anno.genes = gns, cutoff = 0.5, overlaps = "keepSingle")
 
+}
+\seealso{
+\code{\link{BSFind}}, \code{\link{estimateBsWidthPlot}}
 }

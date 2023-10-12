@@ -63,6 +63,9 @@ The \code{combine.bsSize} option allows one to set a unique bsSize for all
 objects that should be combined. Although it is recommended to combine only
 objects with the same bsSize this option can be used to ensure that the
 merged result has the same bsSize for all ranges.
+
+This function is usually used to combine two datasets in the context of a
+differntial testing analysis.
 }
 \examples{
 # load clip data
@@ -100,4 +103,7 @@ list = list(bds1, bds2)
 c1 = combineBSF(list = list, overlaps.fix = TRUE,
  combine.bsSize = NULL, combine.name = NULL, quiet = TRUE)
 
+}
+\seealso{
+\code{\link{processingStepsFlowChart}}, \code{\link{calculateBsBackground}}
 }

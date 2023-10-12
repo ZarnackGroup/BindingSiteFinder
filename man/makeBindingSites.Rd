@@ -111,3 +111,8 @@ bds <- makeBindingSites(object = bds, bsSize = 9, minWidth = 2,
 minCrosslinks = 2, minClSites = 1, sub.chr = "chr22")
 
 }
+\seealso{
+\code{\link{BSFDataSet}}, \code{\link{BSFind}},
+\code{\link{mergeCrosslinkDiagnosticsPlot}},
+\code{\link{makeBsSummaryPlot}}
+}

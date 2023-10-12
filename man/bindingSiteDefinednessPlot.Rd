@@ -50,5 +50,5 @@ bindingSiteDefinednessPlot(bds)
 
 }
 \seealso{
-\code{\link{BSFind}}
+\code{\link{BSFind}}, \code{\link{calculateSignalToFlankScore}}
 }

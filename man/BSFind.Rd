@@ -161,7 +161,7 @@ to match in function \code{\link{annotateWithScore}}}
 in function \code{\link{annotateWithScore}}}
 
 \item{anno.annoDB}{an object of class \code{OrganismDbi} that contains
-the gene annotation.}
+the gene annotation !!! Experimental !!!}
 
 \item{anno.genes}{an object of class \code{\link{GenomicRanges}} that represents
 the gene ranges directly}
@@ -192,9 +192,24 @@ through the following steps:
 \item Assign binding sites to their hosting genes: \code{\link{assignToGenes}}
 \item Assign binding sites to their hosting transcript regions: \code{\link{assignToTranscriptRegions}}
 \item Re-assign PureCLIP scores to binding sites: \code{\link{annotateWithScore}}
+\item Calculation of signal-to-flank ratio: \code{\link{calculateSignalToFlankScore}}
 }
 }
 \details{
+If only the annotation is provided (\code{anno.genes} and
+\code{anno.transcriptRegionList}), then binding sites size (\code{bsSize})
+and gene-wise cutoff (\code{cutoff.geneWiseFilter}) are estimated using
+\code{\link{estimateBsWidth}}. To avoid this behavior one has to provide
+input values for the arguments \code{bsSize} and \code{cutoff.geneWiseFilter}.
+
+If no binding site size is provided through \code{bsSize}, then
+\code{\link{estimateBsWidth}} is called to estimate the optimal size for the
+given data-set. The result of this estimation can be looked at with
+\code{\link{estimateBsWidthPlot}} and arguments can be adjusted if needed.
+
+Use the \code{\link{processingStepsFlowChart}} function to get an overview
+of all steps carried out by the function.
+
 For complete details on each step, see the manual pages of the respective
 functions. The \code{BSFind} function returns a \code{\link{BSFDataSet}}
 with ranges merged into binding sites. A full flowchart for the entire process
@@ -202,11 +217,6 @@ can be visualized with \code{\link{processingStepsFlowChart}}. For each of the
 individual steps dedicated diagnostic plots exists. Further information can be
 found in our Bioconductor vignette:
 \url{https://www.bioconductor.org/packages/release/bioc/html/BindingSiteFinder.html}
-
-If no binding site size is provided through \code{bsSize}, then
-\code{\link{estimateBsWidth}} is called to estimate the optimal size for the
-given data-set. The result of this estimation can be looked at with
-\code{\link{estimateBsWidthPlot}} and arguments can be adjusted if needed.
 }
 \examples{
 # load clip data
@@ -224,5 +234,7 @@ BSFind(object = bds, bsSize = 9, anno.genes = gns,
 \code{\link{BSFDataSet}}, \code{\link{estimateBsWidth}},
 \code{\link{pureClipGlobalFilter}}, \code{\link{pureClipGeneWiseFilter}},
 \code{\link{assignToGenes}}, \code{\link{assignToTranscriptRegions}},
-\code{\link{annotateWithScore}}, \code{\link{reproducibilityFilter}}
+\code{\link{annotateWithScore}}, \code{\link{reproducibilityFilter}},
+\code{\link{calculateSignalToFlankScore}},
+\code{\link{processingStepsFlowChart}}
 }

@@ -145,6 +145,8 @@ exportTargetGenes <- function(object,
 #'
 #' @return a .bed file
 #'
+#' @seealso \code{\link{BSFind}}
+#'
 #' @import rtracklayer
 #' @importFrom utils tail
 #'
@@ -275,6 +277,8 @@ exportToBED <- function(object, con) {
 #' @param option character; how detailed the table should be
 #'
 #' @return a \code{kableExtra} table
+#'
+#' @seealso \code{\link{BSFind}}
 #'
 #' @importFrom kableExtra kable
 #'

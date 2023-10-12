@@ -38,6 +38,9 @@ This function can be used to annotate a \code{BSFDataSet} object with
 merged binding sites with scores from the initial ranges
 (eg. PureCLIP scores).
 }
+\details{
+The function is part of the standard workflow performed by \code{\link{BSFind}}.
+}
 \examples{
 if (.Platform$OS.type != "windows") {
     # load data
@@ -64,4 +67,7 @@ if (.Platform$OS.type != "windows") {
     # annotate with original pureCLIP score
     bdsRe = annotateWithScore(bds, cs)
 }
+}
+\seealso{
+\code{\link{BSFind}}, \code{\link{globalScorePlot}}
 }

@@ -85,6 +85,8 @@ crosslinks are summed up per gene for each condition. If now eg. the total
 number of crosslinks is for 98\% in one condition and only 2\% of the
 combined signal is in the second condition, expression levels are too
 different for a reliable comparisson (see \code{balanceCondition.cutoff}).
+
+This function is intended to be used right after a call of \code{\link{calculateBsBackground}}.
 }
 \examples{
 # load clip data
@@ -109,4 +111,7 @@ f1 = filterBsBackground(bds, balanceCondition = FALSE)
 f3 = filterBsBackground(bds, flag = TRUE, balanceCondition = FALSE,
  balanceBackground = FALSE)
 
+}
+\seealso{
+\code{\link{calculateBsBackground}}, \code{\link{plotBsBackgroundFilter}}
 }

@@ -33,3 +33,6 @@ bds = pureClipGlobalFilter(object = bds, cutoff = 0.05)
 processingStepsTable(bds)
 
 }
+\seealso{
+\code{\link{BSFind}}
+}

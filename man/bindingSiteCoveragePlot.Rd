@@ -74,3 +74,6 @@ load(list.files(files, pattern = ".rda$", full.names = TRUE))
 bindingSiteCoveragePlot(bds, plotIdx = 3, flankPos = 10)
 
 }
+\seealso{
+\code{\link{BSFDataSet}}, \code{\link{BSFind}}
+}

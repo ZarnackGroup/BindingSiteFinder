@@ -115,6 +115,8 @@ attributed to binding sites are removed from the gene level counts.
 Results from both calculation rounds can be filtered and further manipulated
 with parameters given in the DESeq2 framework
 (see \code{\link[DESeq2]{results}}, \code{\link[DESeq2]{lfcShrink}}).
+
+This function is intended to be used right after a call of \code{\link{filterBsBackground}}.
 }
 \examples{
 # load clip data
@@ -136,5 +138,8 @@ bds = calculateBsFoldChange(bds, use.lfc.shrinkage = TRUE)
 
 }
 \seealso{
-\code{\link{calculateBsBackground}} \code{\link[DESeq2]{DESeq}}
+\code{\link{calculateBsBackground}},
+\code{\link{filterBsBackground}},
+\code{\link{plotBsBackgroundFilter}},
+\code{\link[DESeq2]{DESeq}}
 }

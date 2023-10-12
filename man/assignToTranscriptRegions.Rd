@@ -26,7 +26,7 @@ names that should be used to handle overlapping cases in a hierarchical manor.
 The order of the vector is the order of the hierarchy.}
 
 \item{anno.annoDB}{an object of class \code{OrganismDbi} that contains
-the transcript region annotation.}
+the transcript region annotation (!!! Experimental !!!).}
 
 \item{anno.transcriptRegionList}{an object of class \code{\link{CompressedGRangesList}}
 that holds an ranges for each transcript region}
@@ -61,6 +61,8 @@ will take the most frequently observed transcript region, option `hierarchy`
 works in conjunction with a user defined rule (\code{overlaps.rule}).
 Options `flag` and `remove` will label binding sites with an ambiguous tag or
 remove all overlapping cases, respectively.
+
+The function is part of the standard workflow performed by \code{\link{BSFind}}.
 }
 \examples{
 # load clip data
@@ -73,4 +75,9 @@ bds = makeBindingSites(object = bds, bsSize = 9)
 bds = assignToGenes(bds, anno.genes = gns)
 bds = assignToTranscriptRegions(object = bds, anno.transcriptRegionList = regions)
 
+}
+\seealso{
+\code{\link{BSFind}},
+\code{\link{transcriptRegionOverlapsPlot}},
+\code{\link{transcriptRegionSpectrumPlot}}
 }

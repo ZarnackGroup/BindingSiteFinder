@@ -59,5 +59,5 @@ rangeCoveragePlot(l, subset.chromosome = "chr22")
 
 }
 \seealso{
-\code{\link{BSFDataSet}}
+\code{\link{BSFDataSet}}, \code{\link{makeBindingSites}}
 }

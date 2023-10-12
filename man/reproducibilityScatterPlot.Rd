@@ -32,3 +32,7 @@ minCrosslinks = 2, minClSites = 3, sub.chr = "chr22")
 reproducibilityScatterPlot(bds)
 
 }
+\seealso{
+\code{\link{BSFind}},
+\code{\link{reproducibilityFilter}}
+}

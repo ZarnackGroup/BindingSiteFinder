@@ -108,6 +108,10 @@ It is expected that all binding sites are of the same size
 (See \code{\link{BSFind}} on how to achieve this). If this is however not
 the case and one wants to keep binding sites of different with then option
 \code{force.unequalSites} can be used.
+
+This function is intended to be used for the generation of the count matrix
+used for the differential binding analysis. It is usually preceded by
+\code{\link{combineBSF}} and followed by \code{\link{filterBsBackground}}.
 }
 \examples{
 # load clip data
@@ -144,4 +148,8 @@ bds.b2 = calculateBsBackground(bds, anno.genes = gns, use.offset = FALSE)
 # make background - use blacklist
 bds.b3 = calculateBsBackground(bds, anno.genes = gns, blacklist = myBlacklist)
 
+}
+\seealso{
+\code{\link{combineBSF}},
+\code{\link{filterBsBackground}}
 }

@@ -39,5 +39,6 @@ reproducibilitySamplesPlot(bds)
 
 }
 \seealso{
-\code{\link{reproducibilityFilter}} \code{\link{reproducibilityFilterPlot}}
+\code{\link{reproducibilityFilter}},
+\code{\link{reproducibilityFilterPlot}}
 }

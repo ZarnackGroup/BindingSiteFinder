@@ -68,6 +68,10 @@
 #'
 #' @return an object of type BSFDataSet with modified ranges
 #'
+#' @seealso \code{\link{BSFDataSet}}, \code{\link{BSFind}},
+#' \code{\link{mergeCrosslinkDiagnosticsPlot}},
+#' \code{\link{makeBsSummaryPlot}}
+#'
 #' @import GenomicRanges methods
 #' @importFrom GenomeInfoDb seqlevels
 #' @importFrom dplyr bind_rows

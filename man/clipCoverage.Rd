@@ -108,3 +108,6 @@ c3 = clipCoverage(bds, out.format = "granges", positions.merge = FALSE,
  ranges.merge = TRUE, samples.merge = TRUE, samples.group = "condition")
 
 }
+\seealso{
+\code{\link{BSFDataSet}}, \code{\link{BSFind}}
+}

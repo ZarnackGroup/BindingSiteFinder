@@ -65,6 +65,8 @@ application of different thresholds for experiments of different
 experimental conditions. If the condition specific filter is applied, a meta
 column is added to the GRanges of the \code{BSFDataSet} object,
 indicating the support for each condition.
+
+The function is part of the standard workflow performed by \code{\link{BSFind}}.
 }
 \examples{
 # load data
@@ -77,4 +79,10 @@ bds <- makeBindingSites(object = bds, bsSize = 9)
 # use default return with condition specific threshold
 bds = reproducibilityFilter(bds, cutoff = 0.1, nReps = 1)
 
+}
+\seealso{
+\code{\link{BSFind}},
+\code{\link{reproducibilityFilterPlot}},
+\code{\link{reproducibilitySamplesPlot}},
+\code{\link{reproducibilityScatterPlot}}
 }

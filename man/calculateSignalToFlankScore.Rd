@@ -23,7 +23,7 @@ calculateSignalToFlankScore(
 }
 \value{
 an object of class \code{\link{BSFDataSet}} with signal-to-flank ratios
-added to the meta column of the ranges
+added to the meta column of the ranges.
 }
 \description{
 This function calculates the signal-to-flank ratio for all present binding
@@ -34,6 +34,8 @@ Each input range is treated as a binding site. For a particular binding site
 all overlapping crosslinks are summed up and divided by the normalized sum of
 the crosslinks in the two adjecent regions of the same size. This is done
 for all bining sites and the ratio is reported as a score.
+
+The function is part of the standard workflow performed by \code{\link{BSFind}}.
 }
 \examples{
 # load clip data
@@ -42,4 +44,7 @@ load(list.files(files, pattern = ".rda$", full.names = TRUE))
 bds = makeBindingSites(bds, bsSize = 5)
 bds = calculateSignalToFlankScore(bds)
 
+}
+\seealso{
+\code{\link{BSFind}}, \code{\link{bindingSiteDefinednessPlot}}
 }

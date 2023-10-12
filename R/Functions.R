@@ -23,6 +23,8 @@
 #' column is added to the GRanges of the \code{BSFDataSet} object,
 #' indicating the support for each condition.
 #'
+#' The function is part of the standard workflow performed by \code{\link{BSFind}}.
+#'
 #' @param object a BSFDataSet object
 #' @param cutoff numeric; percentage cutoff to be used for the
 #' reproducibility quantile filtering
@@ -39,6 +41,11 @@
 #' @param quiet logical; whether to print messages
 #'
 #' @return an object of type BSFDataSet
+#'
+#' @seealso \code{\link{BSFind}},
+#' \code{\link{reproducibilityFilterPlot}},
+#' \code{\link{reproducibilitySamplesPlot}},
+#' \code{\link{reproducibilityScatterPlot}}
 #'
 #' @import tidyr GenomicRanges lifecycle
 #' @importFrom dplyr count select
@@ -265,11 +272,14 @@ reproducibilityFilter <- function(object,
     return(retObj)
 }
 
+
 #' Annotation function for BSFDataSet object
 #'
 #' This function can be used to annotate a \code{BSFDataSet} object with
 #' merged binding sites with scores from the initial ranges
 #' (eg. PureCLIP scores).
+#'
+#' The function is part of the standard workflow performed by \code{\link{BSFind}}.
 #'
 #' @param object a BSFDataSet object
 #' @param match.ranges a GRanges object, with numeric column for the score to match
@@ -281,6 +291,9 @@ reproducibilityFilter <- function(object,
 #' @param MatchColScore deprecated -> use match.score instead
 #'
 #' @return an object of class BSFDataSet with updated meta columns of the ranges
+#'
+#' @seealso \code{\link{BSFind}}, \code{\link{globalScorePlot}}
+#'
 #' @import GenomicRanges
 #' @importFrom S4Vectors queryHits subjectHits
 #'
@@ -508,6 +521,8 @@ supportRatio <- function(object, bsWidths, bsFlank = NA, sub.chr = NA, ...) {
 #' the crosslinks in the two adjecent regions of the same size. This is done
 #' for all bining sites and the ratio is reported as a score.
 #'
+#' The function is part of the standard workflow performed by \code{\link{BSFind}}.
+#'
 #' @param object a BSFDataSet object
 #' @param flank character; how the flanking region shoule be set. Options are
 #' 'bs', 'manual'
@@ -515,7 +530,9 @@ supportRatio <- function(object, bsWidths, bsFlank = NA, sub.chr = NA, ...) {
 #' @param quiet logical; whether to print messages
 #'
 #' @return an object of class \code{\link{BSFDataSet}} with signal-to-flank ratios
-#' added to the meta column of the ranges
+#' added to the meta column of the ranges.
+#'
+#' @seealso \code{\link{BSFind}}, \code{\link{bindingSiteDefinednessPlot}}
 #'
 #' @examples
 #' # load clip data
@@ -648,6 +665,9 @@ calculateSignalToFlankScore <- function(
 #' objects with the same bsSize this option can be used to ensure that the
 #' merged result has the same bsSize for all ranges.
 #'
+#' This function is usually used to combine two datasets in the context of a
+#' differntial testing analysis.
+#'
 #' @param list list; a list of objects from class \code{\link{BSFDataSet}} that
 #' should be combined
 #' @param overlaps.fix logical; if partially overlapping binding sites should be
@@ -665,6 +685,8 @@ calculateSignalToFlankScore <- function(
 #'
 #' @return an object of class \code{\link{BSFDataSet}} with ranges, signal and
 #' meta data resulting from the merge of the input objects.
+#'
+#' @seealso \code{\link{processingStepsFlowChart}}, \code{\link{calculateBsBackground}}
 #'
 #' @examples
 #' # load clip data

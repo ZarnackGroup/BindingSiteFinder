@@ -59,6 +59,8 @@
 #'
 #' @return an object of class specified in \code{out.format}
 #'
+#' @seealso \code{\link{BSFDataSet}}, \code{\link{BSFind}}
+#'
 #' @examples
 #' # load data
 #' files <- system.file("extdata", package="BindingSiteFinder")

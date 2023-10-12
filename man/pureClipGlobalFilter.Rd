@@ -34,6 +34,9 @@ The \code{\link{GenomicRanges}} contained in the \code{\link{BSFDataSet}} need t
 have a meta-column that holds a numeric score value, which is used for filtering.
 The name of the column can be set with \code{match.score}.
 }
+\details{
+The function is part of the standard workflow performed by \code{\link{BSFind}}.
+}
 \examples{
 # load data
 files <- system.file("extdata", package="BindingSiteFinder")
@@ -41,4 +44,7 @@ load(list.files(files, pattern = ".rda$", full.names = TRUE))
 # apply 5\% filter
 pureClipGlobalFilter(object = bds, cutoff = 0.05)
 
+}
+\seealso{
+\code{\link{BSFind}}, \code{\link{pureClipGlobalFilterPlot}}
 }

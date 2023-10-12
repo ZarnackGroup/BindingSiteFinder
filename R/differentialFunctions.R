@@ -30,6 +30,10 @@
 #' the case and one wants to keep binding sites of different with then option
 #' \code{force.unequalSites} can be used.
 #'
+#' This function is intended to be used for the generation of the count matrix
+#' used for the differential binding analysis. It is usually preceded by
+#' \code{\link{combineBSF}} and followed by \code{\link{filterBsBackground}}.
+#'
 #' @param object a \code{\link{BSFDataSet}} object with two conditions
 #' @param anno.annoDB an object of class \code{OrganismDbi} that contains
 #' the gene annotation.
@@ -61,6 +65,9 @@
 #' @param quiet logical; whether to print messages or not
 #' @param veryQuiet logical; whether to print messages or not
 #' @param ... additional arguments; passed to \code{\link{assignToGenes}}
+#'
+#' @seealso \code{\link{combineBSF}},
+#' \code{\link{filterBsBackground}}
 #'
 #' @return an object of class \code{\link{BSFDataSet}} with counts for binding
 #' sites, background and total gene added to the meta column of the ranges
@@ -558,6 +565,8 @@ calculateBsBackground <- function(object,
 #' combined signal is in the second condition, expression levels are too
 #' different for a reliable comparisson (see \code{balanceCondition.cutoff}).
 #'
+#' This function is intended to be used right after a call of \code{\link{calculateBsBackground}}.
+#'
 #' @param object a \code{\link{BSFDataSet}} object with computed count data
 #' for binding sites and background regions
 #' @param minCounts logical; whether to use the minimum count filter
@@ -579,6 +588,8 @@ calculateBsBackground <- function(object,
 #' pass any of the filters
 #' @param quiet logical; whether to print messages or not
 #' @param veryQuiet logical; whether to print messages or not
+#'
+#' @seealso \code{\link{calculateBsBackground}}, \code{\link{plotBsBackgroundFilter}}
 #'
 #' @return an object of class \code{\link{BSFDataSet}} with biniding sites filtered
 #' or flagged by the above filter options
@@ -914,6 +925,8 @@ filterBsBackground <- function(object,
 #' with parameters given in the DESeq2 framework
 #' (see \code{\link[DESeq2]{results}}, \code{\link[DESeq2]{lfcShrink}}).
 #'
+#' This function is intended to be used right after a call of \code{\link{filterBsBackground}}.
+#'
 #' @param object a \code{\link{BSFDataSet}} object
 #' @param fitType either "parametric", "local", "mean", or "glmGamPoi" for the
 #' type of fitting of dispersions to the mean intensity.
@@ -961,7 +974,10 @@ filterBsBackground <- function(object,
 #' \code{\link[DESeq2]{DESeq}} analysis added to the meta columns of the
 #' binding site ranges.
 #'
-#' @seealso \code{\link{calculateBsBackground}} \code{\link[DESeq2]{DESeq}}
+#' @seealso \code{\link{calculateBsBackground}},
+#' \code{\link{filterBsBackground}},
+#' \code{\link{plotBsBackgroundFilter}},
+#' \code{\link[DESeq2]{DESeq}}
 #'
 #' @importFrom stats relevel
 #'

@@ -65,7 +65,7 @@ sensitive region}
 merged sensitive region}
 
 \item{anno.annoDB}{an object of class \code{OrganismDbi} that contains
-the gene annotation.}
+the gene annotation (!!! Experimental !!!).}
 
 \item{anno.genes}{an object of class \code{\link{GenomicRanges}} that represents
 the gene ranges directly}
@@ -128,6 +128,8 @@ to 1.
 
 The optimal geneFilter is selected as the first one that passes the merged
 mean of the selected optimal binding site width.
+
+The function is part of the standard workflow performed by \code{\link{BSFind}}.
 }
 \examples{
 # load clip data
@@ -138,4 +140,8 @@ load(list.files(files, pattern = ".rds$", full.names = TRUE)[2])
 estimateBsWidth(bds, anno.genes = gns, est.maxBsWidth = 19,
  geneResolution = "coarse", bsResolution = "coarse", est.subsetChromosome = "chr22")
 
+}
+\seealso{
+\code{\link{BSFind}},
+\code{\link{estimateBsWidthPlot}}
 }

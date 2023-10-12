@@ -29,11 +29,12 @@
 #'
 #' @return an object of class \code{GVIZ}
 #'
+#' @seealso \code{\link{BSFDataSet}}, \code{\link{BSFind}}
+#'
 #' @importFrom GenomicRanges findOverlaps
 #' @importFrom dplyr everything group_by summarize pull mutate rename
 #' @importFrom tibble rownames_to_column
 #' @importFrom tidyr pivot_longer
-#'
 #'
 #' @examples
 #' # load data
