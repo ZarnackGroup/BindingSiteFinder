@@ -206,7 +206,7 @@ To take advantage of the full functionality of the package one needs to provide 
 
 ### Create annotation for genes
 
-To present gene-level information we import the annotation as a .gff3 file into a `GenomicRanges` object. To combine the ranges with the available meta information for each gene (such as a `gene_id`, `gene_name` or `gene_type`), we have to read our annotation twice. First, we import the ranges into a `TxDB` database using functionalists from [GenomicFeatures](https://bioconductor.org/packages/release/bioc/html/GenomicFeatures.html). This database can be queried using the `genes()` function to retrieve the positions of all genes from our resource as `GRanges` objects. Second we use `rtracklayer` to import all ranges with the corresponding meta information. We then match both imports to create a single `GRanges` object which contains all genes from our annotation with relevant meta information added^[Note: We again only load a previously compiled object at this point to save disc space.].
+To present gene-level information we import the annotation as a .gff3 file into a `GenomicRanges` object. To combine the ranges with the available meta information for each gene (such as a `gene_id`, `gene_name` or `gene_type`), we have to read our annotation twice. First, we import the ranges into a `TxDB` database using functionalists from [GenomicFeatures](https://bioconductor.org/packages/release/bioc/html/GenomicFeatures.html). This database can be queried using the `genes()` function to retrieve the positions of all genes from our resource as `GRanges` objects^[Note: It is of particular importance that one uses a valid format for the *geneID* (ENSEMBL, UCSC, ...) at this point.]. Second we use `rtracklayer` to import all ranges with the corresponding meta information. We then match both imports to create a single `GRanges` object which contains all genes from our annotation with relevant meta information added^[Note: We again only load a previously compiled object at this point to save disc space.].
 
 ```{r, echo=TRUE, eval=FALSE}
 library(GenomicFeatures)
@@ -258,7 +258,7 @@ bdsOut = BSFind(object = bds, anno.genes = gns, anno.transcriptRegionList = regi
               est.subsetChromosome = "chr22", veryQuiet = TRUE, est.maxBsWidth = 29)
 ```
 
-It is good practice to once visualize the entire binding site definition process after `BSFind()` was executed. This helps to keep track what steps were performed and how the flow into each other. 
+It is good practice to once visualize the entire binding site definition process after `BSFind()` was executed. This helps to keep track what steps were performed and how the flow into each other^[Note: Not all binding sites can be assigned to genes or transcript regions, in these cases NA is introduced, so no binding site is lost.].
 
 ```{r, fig.retina = 1, dpi = this.dpi, fig.cap="processingStepsFlowChart"}
 processingStepsFlowChart(bdsOut)
@@ -761,6 +761,7 @@ The main idea of the approach is to divide given iCLIP crosslinks into two bins 
 We now make use of the condition specific changes in the *background-bin* to correct all fold-changes for each binding site in the *binding-bin*. This is done using the `DESeq2` likelihood ratio test, by comparing a "full" model to a reduced "null" model. 
 
 ![**Overview of differential binding model and workflow.**](images/model.png){#model}
+
 ## Preparation of the input data
 
 In the most basic approach one wants to compute fold-changes for each binding site for the same RBP found in of two conditions. For the following example we name our conditions *WT* and *KO*. 
@@ -877,7 +878,7 @@ bds.diff = calculateBsFoldChange(bds.diff)
 getRanges(bds.diff)
 ```
 
-Resulting fold-chagnes and P values are again added to the meta columns of the binding sites (`GRanges` format). As a quick visualisation of the results the functions `plotBsMA()` and `plotBsVolcano()` can be used, each of which can produce a plot either for the binding sites (`what = "bs"`) or for the background (`what = "bg"`).
+Resulting fold-changes and P values are again added to the meta columns of the binding sites (`GRanges` format). As a quick visualization of the results the functions `plotBsMA()` and `plotBsVolcano()` can be used, each of which can produce a plot either for the binding sites (`what = "bs"`) or for the background (`what = "bg"`).
 
 ```{r, fig.retina = 1, dpi = this.dpi, fig.cap="plotBsMA. MA plot for binding site changes.", fig.small=TRUE}
 plotBsMA(bds.diff, what = "bs")
@@ -944,7 +945,7 @@ bdsKO = BSFind(bdsKO.initial, anno.genes = gns, anno.transcriptRegionList = trl)
 
 ### Starting from existing binding sites
 
-Sometimes one already has a set of binding sites computed and just wants to perform the differential binding analysis part for the specific set at hand. In this case the pre-computed binding sites can be directly imported alongside the bigwig files from both conditions into a single `BSFDataSet`. This set can then directly be used for background generation (see section [Count matrix generation](## Count matrix generation)).
+Sometimes one already has a set of binding sites computed and just wants to perform the differential binding analysis part for the specific set at hand. In this case the pre-computed binding sites can be imported alongside the bigwig files from both conditions into a single `BSFDataSet`. This set can then directly be used for background generation (see section [Count matrix generation](## Count matrix generation)).
 
 ```{r, eval=FALSE}
 # Locate bigwig files - KO
@@ -962,8 +963,8 @@ clipFilesP = clipFiles[grep(clipFiles, pattern = "plus")]
 clipFilesM = clipFiles[grep(clipFiles, pattern = "minus")]
 # Organize clip data in dataframe
 colData = data.frame(
-    name = "Example.KO", id = c(1:2),
-    condition = factor(c("KO", "KO"), levels = c("KO")),
+    name = "Example.KO", id = c(1:4),
+    condition = factor(c("WT", "WT", "KO", "KO"), levels = c("WT", "KO")),
     clPlus = clipFilesP, clMinus = clipFilesM)
 # Construct BSFDataSet object from pre-defined binding sites
 # -> myBindingSites must be a GRanges object
@@ -1007,7 +1008,7 @@ colData = data.frame(
 bds.comb = BSFDataSetFromBigWig(ranges = bindingSites.complex, meta = colData)
 ```
 
-### use blacklist regions when gene-wise filter was high
+### Using the blacklist regions
 
 In the case that the binding site definition was performed using a particularly high gene-wise level filter or if differential testing should be performed only on a subset of all defined binding sites, we recommend to use this information for the background generation by making use of the `blacklist` argument. This ensures that counts from all ranges that were at some point in the analysis identified as either a peak or a binding site will be removed from the *background-bin*.
 
