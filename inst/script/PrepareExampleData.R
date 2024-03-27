@@ -1,5 +1,5 @@
 library(rtracklayer)
-library(GenomicFeatures)
+library(txdbmaker)
 
 ################################################################################
 # prepare crosslink sites

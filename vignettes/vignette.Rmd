@@ -206,13 +206,13 @@ To take advantage of the full functionality of the package one needs to provide 
 
 ### Create annotation for genes
 
-To present gene-level information we import the annotation as a .gff3 file into a `GenomicRanges` object. To combine the ranges with the available meta information for each gene (such as a `gene_id`, `gene_name` or `gene_type`), we have to read our annotation twice. First, we import the ranges into a `TxDB` database using functionalists from [GenomicFeatures](https://bioconductor.org/packages/release/bioc/html/GenomicFeatures.html). This database can be queried using the `genes()` function to retrieve the positions of all genes from our resource as `GRanges` objects^[Note: It is of particular importance that one uses a valid format for the *geneID* (ENSEMBL, UCSC, ...) at this point.]. Second we use `rtracklayer` to import all ranges with the corresponding meta information. We then match both imports to create a single `GRanges` object which contains all genes from our annotation with relevant meta information added^[Note: We again only load a previously compiled object at this point to save disc space.].
+To present gene-level information we import the annotation as a .gff3 file into a `GenomicRanges` object. To combine the ranges with the available meta information for each gene (such as a `gene_id`, `gene_name` or `gene_type`), we have to read our annotation twice. First, we import the ranges into a `TxDB` database using functionalists from [GenomicFeatures](https://bioconductor.org/packages/release/GenomicFeatures). This database can be queried using the `genes()` function to retrieve the positions of all genes from our resource as `GRanges` objects^[Note: It is of particular importance that one uses a valid format for the *geneID* (ENSEMBL, UCSC, ...) at this point.]. Second we use `rtracklayer` to import all ranges with the corresponding meta information. We then match both imports to create a single `GRanges` object which contains all genes from our annotation with relevant meta information added^[Note: We again only load a previously compiled object at this point to save disc space.].
 
 ```{r, echo=TRUE, eval=FALSE}
-library(GenomicFeatures)
+library(txdbmaker)
 # Make annotation database from gff3 file
 annoFile = "./gencode_v37_annotation.gff3"
-annoDb = GenomicFeatures::makeTxDbFromGFF(file = annoFile, format = "gff3")
+annoDb = txdbmaker::makeTxDbFromGFF(file = annoFile, format = "gff3")
 annoInfo = rtracklayer::import(annoFile, format = "gff3")
 # Get genes as GRanges
 gns = genes(annoDb)
@@ -231,7 +231,7 @@ gns
 
 ### Create annotation for transcript regions
 
-To represent all possible transcript regions, we re-use the previously created `TxDB` annotation database. The [GenomicFeatures](https://bioconductor.org/packages/release/bioc/html/GenomicFeatures.html) package provides dedicated information to retrieve specific sets of ranges from such a database object, like *CDS*, *UTRs*, etc. Here we store these ranges into a `GRangestList` and name the elements accordingly^[Note: Just like for the genes, we load a pre-compiled list to save disc space.].
+To represent all possible transcript regions, we re-use the previously created `TxDB` annotation database. The [GenomicFeatures](https://bioconductor.org/packages/release/GenomicFeatures) package provides dedicated information to retrieve specific sets of ranges from such a database object, like *CDS*, *UTRs*, etc. Here we store these ranges into a `GRangestList` and name the elements accordingly^[Note: Just like for the genes, we load a pre-compiled list to save disc space.].
 
 ```{r, eval=FALSE}
 # Count the overlaps of each binding site for each region of the transcript. 
@@ -464,7 +464,7 @@ exportTargetGenes(bdsOut, format = "xslx", split = "transcriptRegion")
 
 ### Export iCLIP signal
 
-To export iCLIP coverage directly we do not provide a dedicated function, but rather we use the `export` function from the [rtracklayer](https://www.bioconductor.org/packages/release/bioc/html/rtracklayer.html) package. For details see the section [Exporting iCLIP signal](## Exporting iCLIP signal).
+To export iCLIP coverage directly we do not provide a dedicated function, but rather we use the `export` function from the [rtracklayer](https://bioconductor.org/packages/release/rtracklayer) package. For details see the section [Exporting iCLIP signal](## Exporting iCLIP signal).
 
 
 # Diagnostic coverage polots
@@ -716,7 +716,7 @@ ggplot(df, aes(x = BsID, y = value, fill = name)) +
 
 ## Exporting iCLIP signal
 
-Similar to exporting the binding sites as *BED* file for external visualization, one can do the same with the iCLIP signal itself. Here we use the `export` function from the [rtracklayer](https://www.bioconductor.org/packages/release/bioc/html/rtracklayer.html) package. We could now first merge the signal from all replicates into a single combined signal. This signal can then be exported to *.bigwig* format for easy visualization in IGV or th UCSC genome browser.
+Similar to exporting the binding sites as *BED* file for external visualization, one can do the same with the iCLIP signal itself. Here we use the `export` function from the [rtracklayer](https://bioconductor.org/packages/release/rtracklayer) package. We could now first merge the signal from all replicates into a single combined signal. This signal can then be exported to *.bigwig* format for easy visualization in IGV or th UCSC genome browser.
 
 ```{r, eval=FALSE}
 sgn = getSignal(bds)
