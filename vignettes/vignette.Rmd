@@ -887,6 +887,15 @@ Resulting fold-changes and P values are again added to the meta columns of the b
 plotBsMA(bds.diff, what = "bs")
 ```
 
+### Display differential results on gene level
+
+To investigate differential binding results for a certain gene, the `geneRegulationPlot` can be used. The function displays the log2 fold-change of all binding sites from a given host gene. Binding sites must have been assigned to their host genes with `assignToGenes` prior to this plot. For maximum information also `assignToTranscriptRegions` should be executed as well^[Note: The present plot is made from a small example dataset due to size limitations, a plot made from real data will look more informative.].
+
+```{r}
+geneRegulationPlot(bds.diff, plot.geneID = "ENSG00000180957.18", anno.genes = gns)
+```
+
+
 
 ## Differential binding variations
 

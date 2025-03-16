@@ -173,8 +173,6 @@ plotBsBackgroundFilter <- function(object, filter = c("minCounts", "balanceBackg
             geom_point(data = subset(df, name == "ratio.ref" & value < optstr$balanceCondition.cutoff), aes(fill = name), shape = 21, alpha = 0.3) +
             geom_point(data = subset(df, name == "ratio.comp" & value < optstr$balanceCondition.cutoff), aes(fill = name), shape = 21, alpha = 0.3) +
             annotate("rect", xmin = 0.05, xmax = 2.95, ymin = 0, ymax = optstr$balanceCondition.cutoff, alpha = .3, fill = "darkgrey") +
-            # annotate("rect", xmin = 1.75, xmax = 2.25, ymin = 0, ymax = 0.02, alpha = .3, fill = "#435B66") +
-            # annotate("rect", xmin = 0.75, xmax = 1.25, ymin = 0.98, ymax = 1, alpha = .3, fill = "#A76F6F") +
             coord_flip() +
             theme_bw() +
             scale_fill_manual(values = c("#A76F6F", "#435B66")) +
@@ -450,6 +448,471 @@ plotBsVolcano <- function(object,
     }
 
     return(p)
+}
+
+
+#' Gene Regulation Plot
+#'
+#' Display the fold-change of all binding sites from a given gene on a relative
+#' per-nucleotide scale. Binding sites are displayed as dots and with increasing
+#' log2 fold-change, they deviate stronger from the center line.
+#'
+#' For this function to work, binding sites must be assigned to hosting genes
+#' using \code{\link{assignToGenes}}. It is also recommended to assing
+#' binding sites to transcript regions with \code{\link{assignToTranscriptRegions}}.
+#'
+#' It is also necessary to calculate the log2 fold-change of binding sites between
+#' two conditions using the differential binding workflow \code{\link{calculateBsFoldChange}}.
+#'
+#' If in addition the transcript regions of the binding sites are given, then
+#' shapes are changed accordingly. An edge case can arise from the merging of two
+#' \code{\link{BSFDataSet}} objects. If binding sites are overlapping and
+#' slightly offset close to the end of a particular transcript region annotation,
+#' they might be assigned to different regions in both objects. This results in
+#' some ambiguity after the merge, where for instance a binding site can be
+#' assigned to CDS and 3'UTR. To handle how such edge cases are displayed, the
+#' \code{transcript.regions.outlier.handle} exists. As default, simply the
+#' region of the object that was merged first is shown. If one is interested in
+#' showing all regions, then the options \code{both} displays both annotations
+#' at the same time and labels them accordingly.
+#'
+#' @param object object; a \code{\link{BSFDataSet}} object
+#' @param plot.geneID character;  the gene id of the gene to display. The id must
+#' match with the gene ids given in the annotation object.
+#' @param anno.annoDB object; an object of class \code{OrganismDbi} that contains
+#' the gene annotation (!!! Experimental !!!).
+#' @param anno.genes object; an object of class \code{\link{GenomicRanges}}
+#' that represents the gene ranges directly.
+#' @param match.geneID character; meta column name of the gene ID
+#' @param match.geneName character; meta column name of the gene name
+#' @param plot.gene.n.tiles numeric; number of tiles the gene should be split in
+#' @param alpha numeric; the alpha value to show significantly regulated
+#' binding sites. This should match the alpha value used in \code{\link{calculateBsFoldChange}}.
+#' @param lfc.cutoff numeric; log2 fold-change cutoff to show significantly
+#' regulated binding sites. This should match the lfc.cutoff value used in
+#' \code{\link{calculateBsFoldChange}}.
+#' @param transcript.regions.outlier.handle character; the option how to handle
+#' multiple transcript region annotations being present for the same binding
+#' site.
+#' @param quiet logical; whether to print messages
+#'
+#' @return an object of class \code{ggplot2}
+#'
+#' @seealso \code{\link{BSFind}},
+#' \code{\link{calculateBsFoldChange}}
+#' \code{\link{assignToGenes}}
+#' \code{\link{assignToTranscriptRegions}}
+#'
+#' @import ggplot2
+#'
+#' @examples
+#'
+#' # load clip data
+#' files <- system.file("extdata", package="BindingSiteFinder")
+#' load(list.files(files, pattern = ".rda$", full.names = TRUE))
+#' load(list.files(files, pattern = ".rds$", full.names = TRUE)[1])
+#' load(list.files(files, pattern = ".rds$", full.names = TRUE)[2])
+#'
+#' # make testset
+#' bds = makeBindingSites(bds, bsSize = 7)
+#' bds = assignToGenes(bds, anno.genes = gns)
+#' bds = assignToTranscriptRegions(object = bds, anno.transcriptRegionList = regions)
+#' bds = imputeBsDifferencesForTestdata(bds)
+#' bds = calculateBsBackground(bds, anno.genes = gns, use.offset = FALSE)
+#'
+#' # use all filters and remove binding sites that fail (default settings)
+#' bds = filterBsBackground(bds)
+#'
+#' # calculate fold-changes
+#' bds = calculateBsFoldChange(bds)
+#'
+#' # make example plot
+#' exampleGeneId = "ENSG00000253352.10"
+#' geneRegulationPlot(bds, plot.geneID = exampleGeneId, anno.genes = gns)
+#'
+#' @export
+geneRegulationPlot <- function(object,
+                               plot.geneID = NULL,
+                               anno.annoDB = NULL,
+                               anno.genes = NULL,
+                               match.geneID = "gene_id",
+                               match.geneName = "gene_name",
+                               plot.gene.n.tiles = 100,
+                               alpha = 0.05,
+                               lfc.cutoff = 2,
+                               transcript.regions.outlier.handle = c("first", "second", "both", "remove"),
+                               quiet = FALSE) {
+
+    # bind locally used variables
+    bs.padj <- bs.log2FoldChange <- sig <- sigDir <- plot.position <- transcriptRegion <-  NULL
+
+    # INPUT CHECKS
+    # --------------------------------------------------------------------------
+    # type checks
+    stopifnot(is(object, "BSFDataSet"))
+    stopifnot(is.logical(quiet))
+
+    # check presence of fold-changes -> must be present
+    if (is.null(object@params$calculateBsFoldChange)) {
+        msg0 = paste0("Fold-changes were not calculated yet. Run calculateBsFoldChange() first. \n")
+        stop(msg0)
+    }
+    # check presence of gene assignment -> must be present
+    if (is.null(getRanges(object)$geneID)) {
+        msg0 = paste0("Gene assignment was not calculated. Run assignToGenes() first. \n")
+        stop(msg0)
+        # TODO  ideally this should test for the param present in object@params$assignToGenes,
+        #       but this gets overwritten by the mergeing of two bds objects. Change this in the future.
+    }
+    # check presence of transcript regions -> can be missing
+    if (is.null(getRanges(object)$transcriptRegion)) {
+        msg0 = paste0("Transcript region assignment was not calculated. Run assignToTranscriptRegions() first to link binding sites to transcript regions. \n")
+        warning(msg0)
+        # TODO  ideally this should test for the param present in object@params$assignToTranscriptRegions,
+        #       but this gets overwritten by the mergeing of two bds objects. Change this in the future.
+        # TODO make a version of the plot that does not encode the transcript regions as shape information
+    }
+
+    # check presence of correct annotation resource -> one of both must be present
+    # Check if none is specified
+    if (is.null(anno.annoDB) & is.null(anno.genes)) {
+        msg = paste0("None of the required annotation sources anno.annoDB or anno.genes was specified. ")
+        stop(msg)
+    }
+    # Check if both are specified
+    if (!is.null(anno.annoDB) & !is.null(anno.genes)) {
+        msg = paste0("Both of the required annotation sources anno.annoDB or anno.genes are specified. Please provide only one of the two. ")
+        stop(msg)
+    }
+    # Checks if anno.annoDB should be used
+    if (!is.null(anno.annoDB) & is.null(anno.genes)) {
+        stopifnot(is(anno.annoDB, "OrganismDb"))
+        if (!is.null(anno.genes)) {
+            msg = paste0("Parameter anno.annoDB and anno.genes are specified at the same time. Use only one of them.")
+            stop(msg)
+        } else {
+            datasource = "anno.annoDB"
+            # extract relevant annotation
+            anno.genes = genes(anno.annoDB, columns=c("ENSEMBL", "SYMBOL", "GENEID"))
+            # Create matching vectors for columns from input annotation
+            # --------------------------------------------------------------------------
+            selectID = as.character(anno.genes$GENEID)
+            selectName = as.character(anno.genes$SYMBOL)
+        }
+    }
+    # Checks if anno.genes should be used
+    if (is.null(anno.annoDB) & !is.null(anno.genes)) {
+        stopifnot(is(anno.genes, "GenomicRanges"))
+        if (!is.null(anno.annoDB)) {
+            msg = paste0("Parameter anno.annoDB and anno.genes are specified at the same time. Use only one of them.")
+            stop(msg)
+        } else {
+            datasource = "anno.genes"
+            # extract relevant annotation
+            # check for duplicated annotation columns
+            if (sum(colnames(mcols(anno.genes)) == match.geneID) > 1) {
+                msg = paste0("The names of multiple columns of the annotation match the match.geneID parameter. Please use a unique column name for match.geneID in anno.genes.")
+                stop(msg)
+            }
+            if (sum(colnames(mcols(anno.genes)) == match.geneName) > 1) {
+                msg = paste0("The names of multiple columns of the annotation match the match.geneName parameter. Please use a unique column name for match.geneName in anno.genes.")
+                stop(msg)
+            }
+            # check correct annotation columns
+            inNames = c(match.geneID, match.geneName)
+            annoColNames = colnames(mcols(anno.genes))
+            presentNames = inNames[inNames %in% annoColNames]
+
+            # extract columns from annotation based on available names
+            present.cols = lapply(presentNames, function(x){
+                match.col = mcols(anno.genes)[match(x, colnames(mcols(anno.genes)))][[1]]
+                return(match.col)
+            })
+            names(present.cols) = presentNames
+
+            # extract values from annotation for all present columns
+            if (match.geneID %in% names(present.cols)) {
+                selectID = present.cols[[match(match.geneID, names(present.cols))]]
+            } else {
+                msg = paste0("No meta column for ", match.geneID, " present. Creating custom ID.\n")
+                if (!quiet) message(msg)
+                selectID = paste0("CUSTOM", seq_along(anno.genes))
+            }
+            if (match.geneName %in% names(present.cols)) {
+                selectName = present.cols[[match(match.geneName, names(present.cols))]]
+            } else {
+                msg = paste0("No meta column for ", match.geneName, " present.\n")
+                if (!quiet) message(msg)
+            }
+        }
+    }
+
+    # check if gene to plot is in bds object -> must be present
+    if (!(plot.geneID %in% getRanges(object)$geneID)) {
+        msg0 = stop(paste0("Selected geneID: ", plot.geneID, " is not present in the meta columns of the given bds object. \n"))
+        stop(msg0)
+    }
+    # check if gene to plot is in annotation object -> must be present
+    if (!(plot.geneID %in% selectID)) {
+        msg0 = stop(paste0("Selected geneID: ", plot.geneID, " is not present in the meta columns of the given gene annotation. \n"))
+        stop(msg0)
+    }
+
+    transcript.regions.outlier.handle = match.arg(transcript.regions.outlier.handle, choices = c("first", "second", "both", "remove"))
+
+    # --------------------------------------------------------------------------
+    # MAIN
+    # --------------------------------------------------------------------------
+
+    # get ranges of binding sites for selected gene
+    plot.bs = getRanges(object)
+    plot.bs = plot.bs[plot.bs$geneID == plot.geneID]
+    plot.bs = sort(plot.bs)
+    plot.bs = resize(plot.bs, width = 1, fix = "center")
+
+    # get gene ranges for selected gene
+    plot.gene = anno.genes[anno.genes$gene_id == plot.geneID]
+    plot.gene.name = plot.gene$gene_name
+
+    # claculate relative position of binding sites in gene
+    plot.gene.tiles = unlist(tile(plot.gene, n = plot.gene.n.tiles))
+    plot.gene.tiles$position = 1:length(plot.gene.tiles)
+
+    ols = findOverlaps(plot.bs, plot.gene.tiles)
+
+    gene.strand = unique(as.character(strand(plot.gene)))
+    if(gene.strand == "-") {
+        position = plot.gene.n.tiles-(subjectHits(ols))
+    } else {
+        position = subjectHits(ols)
+    }
+    plot.bs$plot.position = position
+
+    # --------------------------------------------------------------------------
+    # PLOTS
+    # --------------------------------------------------------------------------
+
+    # make plots without transcript region annotation
+    if (is.null(getRanges(object)$transcriptRegion)) {
+        df.plot = mcols(plot.bs) %>% as.data.frame() %>%
+            mutate(sig = (ifelse(bs.padj < alpha & abs(bs.log2FoldChange) > log2(lfc.cutoff), TRUE, FALSE))) %>%
+            mutate(dir = factor(ifelse(bs.log2FoldChange > 0, "Up", "Down"), levels = c("Up", "Down"))) %>%
+            mutate(sigDir = ifelse(sig == TRUE & dir == "Up", "Up", ifelse(sig == TRUE & dir == "Down", "Down", "Not"))) %>%
+            mutate(sigDir = factor(sigDir, levels = c("Not", "Up", "Down")))
+
+        p = ggplot(df.plot, aes(x = plot.position, y = bs.log2FoldChange, color = sigDir, fill = sigDir)) +
+            geom_hline(yintercept = 0, color = "#4d4d4d") +
+            geom_segment(aes(x=plot.position, xend=plot.position, y=0, yend=bs.log2FoldChange), size = 1, color = "#4d4d4d") +
+            geom_point(size = 4, stroke = 1, shape = 21) +
+            scale_fill_manual(values = c("Not" = "#999999", "Up" = "#68b1a5", "Down" = "#874C62")) +
+            scale_color_manual(values = c("Not" = "#4d4d4d", "Up" = "#2b544d", "Down" = "#623747")) +
+            theme_minimal() +
+            guides(color = guide_legend(override.aes = list(size = 4))) +
+            theme(legend.key.size = unit(1, 'cm'), legend.position = "top") +
+            ylim(-max(abs(df.plot$bs.log2FoldChange)), max(abs(df.plot$bs.log2FoldChange))) +
+            xlim(0,plot.gene.n.tiles) +
+            labs(
+                title = paste0(plot.gene.name, " (", plot.geneID, ")"),
+                x = "Relative position on the gene",
+                y = "Fold-change (log2)",
+                fill = "Regulation",
+                color = "Regulation"
+            )
+        return(p)
+    }
+
+    # make plots with transcript region annotation
+    if (!is.null(getRanges(object)$transcriptRegion)) {
+
+        expected.regions = c("INTRON", "CDS", "UTR3", "UTR5", "OTHER")
+        all.regions.present = unique(plot.bs$transcriptRegion)
+
+        # plot cases where no region duplication is present
+        if (all(all.regions.present %in% expected.regions)) {
+            df.plot = mcols(plot.bs) %>% as.data.frame() %>%
+                mutate(sig = (ifelse(bs.padj < alpha & abs(bs.log2FoldChange) > log2(lfc.cutoff), TRUE, FALSE))) %>%
+                mutate(dir = factor(ifelse(bs.log2FoldChange > 0, "Up", "Down"), levels = c("Up", "Down"))) %>%
+                mutate(sigDir = ifelse(sig == TRUE & dir == "Up", "Up", ifelse(sig == TRUE & dir == "Down", "Down", "Not"))) %>%
+                mutate(sigDir = factor(sigDir, levels = c("Not", "Up", "Down"))) %>%
+                mutate(duplicated = "no")
+
+            p = ggplot(df.plot, aes(x = plot.position, y = bs.log2FoldChange, color = sigDir, fill = sigDir, shape = transcriptRegion)) +
+                geom_hline(yintercept = 0, color = "#4d4d4d") +
+                geom_segment(aes(x=plot.position, xend=plot.position, y=0, yend=bs.log2FoldChange), size = 1, color = "#4d4d4d") +
+                geom_point(size = 4, stroke = 1) +
+                scale_shape_manual(values=c("INTRON" = 23, "CDS" = 22, "UTR3" = 25, "UTR5" = 24, "OTHER" = 21)) +
+                scale_fill_manual(values = c("Not" = "#999999", "Up" = "#68b1a5", "Down" = "#874C62")) +
+                scale_color_manual(values = c("Not" = "#4d4d4d", "Up" = "#2b544d", "Down" = "#623747")) +
+                theme_minimal() +
+                guides(color = guide_legend(override.aes = list(size = 4))) +
+                theme(legend.key.size = unit(1, 'cm'), legend.position = "top") +
+                ylim(-max(abs(df.plot$bs.log2FoldChange)), max(abs(df.plot$bs.log2FoldChange))) +
+                xlim(0,plot.gene.n.tiles) +
+                labs(
+                    title = paste0(plot.gene.name, " (", plot.geneID, ")"),
+                    x = "Relative position on the gene",
+                    y = "Fold-change (log2)",
+                    fill = "Regulation",
+                    color = "Regulation",
+                    shape = "Transcript Region"
+                )
+            return(p)
+        }
+
+        # plot cases where region duplication is present
+        if (any(all.regions.present %in% expected.regions)) {
+            msg0 = paste0("At least one additional transcript region type detected compared to the currently supported expected regions: ",
+                          paste(expected.regions, collapse = ", "),
+                          ". Using transcript.regions.outlier.handle=", transcript.regions.outlier.handle," to solve. \n")
+            if (!quiet) {
+                warning(msg0)
+            }
+
+            if (transcript.regions.outlier.handle == "remove") {
+                df.plot = mcols(plot.bs) %>% as.data.frame() %>%
+                    filter(transcriptRegion %in% expected.regions) %>%
+                    mutate(sig = (ifelse(bs.padj < alpha & abs(bs.log2FoldChange) > log2(lfc.cutoff), TRUE, FALSE))) %>%
+                    mutate(dir = factor(ifelse(bs.log2FoldChange > 0, "Up", "Down"), levels = c("Up", "Down"))) %>%
+                    mutate(sigDir = ifelse(sig == TRUE & dir == "Up", "Up", ifelse(sig == TRUE & dir == "Down", "Down", "Not"))) %>%
+                    mutate(sigDir = factor(sigDir, levels = c("Not", "Up", "Down"))) %>%
+                    mutate(duplicated = "no")
+
+                p = ggplot(df.plot, aes(x = plot.position, y = bs.log2FoldChange, color = sigDir, fill = sigDir, shape = transcriptRegion)) +
+                    geom_hline(yintercept = 0, color = "#4d4d4d") +
+                    geom_segment(aes(x=plot.position, xend=plot.position, y=0, yend=bs.log2FoldChange), size = 1, color = "#4d4d4d") +
+                    geom_point(size = 4, stroke = 1) +
+                    scale_shape_manual(values=c("INTRON" = 23, "CDS" = 22, "UTR3" = 25, "UTR5" = 24, "OTHER" = 21)) +
+                    scale_fill_manual(values = c("Not" = "#999999", "Up" = "#68b1a5", "Down" = "#874C62")) +
+                    scale_color_manual(values = c("Not" = "#4d4d4d", "Up" = "#2b544d", "Down" = "#623747")) +
+                    theme_minimal() +
+                    guides(color = guide_legend(override.aes = list(size = 4))) +
+                    theme(legend.key.size = unit(1, 'cm'), legend.position = "top") +
+                    ylim(-max(abs(df.plot$bs.log2FoldChange)), max(abs(df.plot$bs.log2FoldChange))) +
+                    xlim(0,plot.gene.n.tiles) +
+                    labs(
+                        title = paste0(plot.gene.name, " (", plot.geneID, ")"),
+                        x = "Relative position on the gene",
+                        y = "Fold-change (log2)",
+                        fill = "Regulation",
+                        color = "Regulation",
+                        shape = "Transcript Region",
+                        caption = paste0("Not all binding sites might be shown due to: transcript.regions.outlier.handle=", transcript.regions.outlier.handle)
+                    )
+                return(p)
+            }
+
+            if (transcript.regions.outlier.handle == "first") {
+                df.duplicated = mcols(plot.bs) %>% as.data.frame() %>% filter(grepl(",", transcriptRegion)) %>% mutate(duplicated = "yes") %>%
+                    mutate(transcriptRegion = sapply(strsplit(transcriptRegion,","), `[`, 1))
+                df.single = mcols(plot.bs) %>% as.data.frame() %>% filter(!grepl(",", transcriptRegion)) %>% mutate(duplicated = "no")
+                df.plot = rbind.data.frame(df.duplicated, df.single) %>%
+                    mutate(sig = (ifelse(bs.padj < alpha & abs(bs.log2FoldChange) > log2(lfc.cutoff), TRUE, FALSE))) %>%
+                    mutate(dir = factor(ifelse(bs.log2FoldChange > 0, "Up", "Down"), levels = c("Up", "Down"))) %>%
+                    mutate(sigDir = ifelse(sig == TRUE & dir == "Up", "Up", ifelse(sig == TRUE & dir == "Down", "Down", "Not"))) %>%
+                    mutate(sigDir = factor(sigDir, levels = c("Not", "Up", "Down"))) %>%
+                    mutate(transcriptRegion = stringr::str_trim(transcriptRegion, "left")) %>%
+                    mutate(transcriptRegion = stringr::str_trim(transcriptRegion, "right"))
+
+                p = ggplot(df.plot, aes(x = plot.position, y = bs.log2FoldChange, color = sigDir, fill = sigDir, shape = transcriptRegion)) +
+                    geom_hline(yintercept = 0, color = "#4d4d4d") +
+                    geom_segment(aes(x=plot.position, xend=plot.position, y=0, yend=bs.log2FoldChange), size = 1, color = "#4d4d4d") +
+                    geom_point(size = 4, stroke = 1) +
+                    scale_shape_manual(values=c("INTRON" = 23, "CDS" = 22, "UTR3" = 25, "UTR5" = 24, "OTHER" = 21)) +
+                    scale_fill_manual(values = c("Not" = "#999999", "Up" = "#68b1a5", "Down" = "#874C62")) +
+                    scale_color_manual(values = c("Not" = "#4d4d4d", "Up" = "#2b544d", "Down" = "#623747")) +
+                    theme_minimal() +
+                    guides(color = guide_legend(override.aes = list(size = 4))) +
+                    theme(legend.key.size = unit(1, 'cm'), legend.position = "top") +
+                    ylim(-max(abs(df.plot$bs.log2FoldChange)), max(abs(df.plot$bs.log2FoldChange))) +
+                    xlim(0,plot.gene.n.tiles) +
+                    labs(
+                        title = paste0(plot.gene.name, " (", plot.geneID, ")"),
+                        x = "Relative position on the gene",
+                        y = "Fold-change (log2)",
+                        fill = "Regulation",
+                        color = "Regulation",
+                        shape = "Transcript Region",
+                        caption = paste0("Not all binding sites might be shown due to: transcript.regions.outlier.handle=", transcript.regions.outlier.handle)
+                    )
+                return(p)
+            }
+
+            if (transcript.regions.outlier.handle == "second") {
+                df.duplicated = mcols(plot.bs) %>% as.data.frame() %>% filter(grepl(",", transcriptRegion)) %>% mutate(duplicated = "yes") %>%
+                    mutate(transcriptRegion = sapply(strsplit(transcriptRegion,","), `[`, 2))
+                df.single = mcols(plot.bs) %>% as.data.frame() %>% filter(!grepl(",", transcriptRegion)) %>% mutate(duplicated = "no")
+                df.plot = rbind.data.frame(df.duplicated, df.single) %>%
+                    mutate(sig = (ifelse(bs.padj < alpha & abs(bs.log2FoldChange) > log2(lfc.cutoff), TRUE, FALSE))) %>%
+                    mutate(dir = factor(ifelse(bs.log2FoldChange > 0, "Up", "Down"), levels = c("Up", "Down"))) %>%
+                    mutate(sigDir = ifelse(sig == TRUE & dir == "Up", "Up", ifelse(sig == TRUE & dir == "Down", "Down", "Not"))) %>%
+                    mutate(sigDir = factor(sigDir, levels = c("Not", "Up", "Down"))) %>%
+                    mutate(transcriptRegion = stringr::str_trim(transcriptRegion, "left")) %>%
+                    mutate(transcriptRegion = stringr::str_trim(transcriptRegion, "right"))
+
+                p = ggplot(df.plot, aes(x = plot.position, y = bs.log2FoldChange, color = sigDir, fill = sigDir, shape = transcriptRegion)) +
+                    geom_hline(yintercept = 0, color = "#4d4d4d") +
+                    geom_segment(aes(x=plot.position, xend=plot.position, y=0, yend=bs.log2FoldChange), size = 1, color = "#4d4d4d") +
+                    geom_point(size = 4, stroke = 1) +
+                    scale_shape_manual(values=c("INTRON" = 23, "CDS" = 22, "UTR3" = 25, "UTR5" = 24, "OTHER" = 21)) +
+                    scale_fill_manual(values = c("Not" = "#999999", "Up" = "#68b1a5", "Down" = "#874C62")) +
+                    scale_color_manual(values = c("Not" = "#4d4d4d", "Up" = "#2b544d", "Down" = "#623747")) +
+                    theme_minimal() +
+                    guides(color = guide_legend(override.aes = list(size = 4))) +
+                    theme(legend.key.size = unit(1, 'cm'), legend.position = "top") +
+                    ylim(-max(abs(df.plot$bs.log2FoldChange)), max(abs(df.plot$bs.log2FoldChange))) +
+                    xlim(0,plot.gene.n.tiles) +
+                    labs(
+                        title = paste0(plot.gene.name, " (", plot.geneID, ")"),
+                        x = "Relative position on the gene",
+                        y = "Fold-change (log2)",
+                        fill = "Regulation",
+                        color = "Regulation",
+                        shape = "Transcript Region",
+                        caption = paste0("Not all binding sites might be shown due to: transcript.regions.outlier.handle=", transcript.regions.outlier.handle)
+                    )
+                return(p)
+            }
+
+            if (transcript.regions.outlier.handle == "both") {
+                df.duplicated = mcols(plot.bs) %>% as.data.frame() %>% filter(grepl(",", transcriptRegion)) %>% mutate(duplicated = "yes") %>%
+                    separate_longer_delim(transcriptRegion, delim = ",")
+                df.single = mcols(plot.bs) %>% as.data.frame() %>% filter(!grepl(",", transcriptRegion)) %>% mutate(duplicated = "no")
+                df.plot = rbind.data.frame(df.duplicated, df.single) %>%
+                    mutate(sig = (ifelse(bs.padj < alpha & abs(bs.log2FoldChange) > log2(lfc.cutoff), TRUE, FALSE))) %>%
+                    mutate(dir = factor(ifelse(bs.log2FoldChange > 0, "Up", "Down"), levels = c("Up", "Down"))) %>%
+                    mutate(sigDir = ifelse(sig == TRUE & dir == "Up", "Up", ifelse(sig == TRUE & dir == "Down", "Down", "Not"))) %>%
+                    mutate(sigDir = factor(sigDir, levels = c("Not", "Up", "Down"))) %>%
+                    mutate(transcriptRegion = stringr::str_trim(transcriptRegion, "left")) %>%
+                    mutate(transcriptRegion = stringr::str_trim(transcriptRegion, "right"))
+
+                p = ggplot(df.plot, aes(x = plot.position, y = bs.log2FoldChange, color = sigDir, fill = sigDir, shape = transcriptRegion)) +
+                    geom_hline(yintercept = 0, color = "#4d4d4d") +
+                    geom_segment(aes(x=plot.position, xend=plot.position, y=0, yend=bs.log2FoldChange), size = 1, color = "#4d4d4d") +
+                    geom_point(size = 4, stroke = 1) +
+                    ggrepel::geom_label_repel(data = df.plot %>% filter(duplicated == "yes"), aes(label = transcriptRegion)) +
+                    scale_shape_manual(values=c("INTRON" = 23, "CDS" = 22, "UTR3" = 25, "UTR5" = 24, "OTHER" = 21)) +
+                    scale_fill_manual(values = c("Not" = "#999999", "Up" = "#68b1a5", "Down" = "#874C62")) +
+                    scale_color_manual(values = c("Not" = "#4d4d4d", "Up" = "#2b544d", "Down" = "#623747")) +
+                    theme_minimal() +
+                    guides(color = guide_legend(override.aes = list(size = 4))) +
+                    theme(legend.key.size = unit(1, 'cm'), legend.position = "top") +
+                    ylim(-max(abs(df.plot$bs.log2FoldChange)), max(abs(df.plot$bs.log2FoldChange))) +
+                    xlim(0,plot.gene.n.tiles) +
+                    labs(
+                        title = paste0(plot.gene.name, " (", plot.geneID, ")"),
+                        x = "Relative position on the gene",
+                        y = "Fold-change (log2)",
+                        fill = "Regulation",
+                        color = "Regulation",
+                        shape = "Transcript Region",
+                        size = "Duplicated Region",
+                        caption = paste0("Some binding sites might not be visible due to overplotting: transcript.regions.outlier.handle=", transcript.regions.outlier.handle)
+                    )
+                return(p)
+            }
+
+        }
+    }
 }
 
 
