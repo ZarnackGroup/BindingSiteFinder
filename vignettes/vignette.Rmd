@@ -889,9 +889,14 @@ plotBsMA(bds.diff, what = "bs")
 
 ### Display differential results on gene level
 
-To investigate differential binding results for a certain gene, the `geneRegulationPlot` can be used. The function displays the log2 fold-change of all binding sites from a given host gene. Binding sites must have been assigned to their host genes with `assignToGenes` prior to this plot. For maximum information also `assignToTranscriptRegions` should be executed as well^[Note: The present plot is made from a small example dataset due to size limitations, a plot made from real data will look more informative.].
+To investigate differential binding results for a certain gene, the `geneRegulationPlot` can be used. The function displays the regulation (log2 fold-changes) of your binding sites on a given gene relative to their position with in the gene and optional adds the transcript region to it as well. 
+
+The differential expression workflow must be followed to obtain log2 fold-changes (see section [Differential binding analysis](# Differential binding analysis)). Binding sites must also be assigned to their host genes with `assignToGenes` prior to this plot. 
+
+For maximum information also `assignToTranscriptRegions` should be executed as well^[Note: The present plot is made from a small example data set due to size limitations, a plot made from real data will look more informative.]. If transcript region assignments are missing, one can re-calculate them for the merged object even after the differential binding workflow. The function allows a quick and easy way to visualize regulatory patterns due to binding site positioning and transcript region location. 
 
 ```{r}
+bds.diff = assignToTranscriptRegions(bds.diff, anno.transcriptRegionList = regions)
 geneRegulationPlot(bds.diff, plot.geneID = "ENSG00000180957.18", anno.genes = gns)
 ```
 
