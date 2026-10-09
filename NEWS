@@ -1,3 +1,9 @@
+CHANGES IN VERSION 2.11.1
+-------------------------
+
+- Fixed a bug in assignToGenes that caused duplicated meta data columns
+- Updated documentation to roxygen 8 and re-documented 
+
 CHANGES IN VERSION 2.4.0
 -------------------------
 
