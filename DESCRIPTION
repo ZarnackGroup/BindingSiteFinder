@@ -1,7 +1,7 @@
 Package: BindingSiteFinder
 Type: Package
 Title: Binding site defintion based on iCLIP data
-Version: 2.5.4
+Version: 2.11.0
 Authors@R: c(
     person("Mirko", "Brüggemann",
         email="mirko.brueggemann@mail.de",
