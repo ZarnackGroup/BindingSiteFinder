@@ -701,8 +701,8 @@ targetGeneSpectrumPlot <- function(object,
     }
     # ----
     # Setup color pal
-    cols = RColorBrewer::brewer.pal(n = showNGroups+2, name = "Greys")
-    cols = cols[1:showNGroups+1]
+    # -> interpolate to support more groups than the palette has colors
+    cols = colorRampPalette(RColorBrewer::brewer.pal(9, "Greys")[2:9])(showNGroups)
 
     # Make Plot
     # --------------------------------------------------------------------------
