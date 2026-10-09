@@ -48,4 +48,31 @@ test_that("Test for assignToTranscriptRegions()", {
 
     # test quiet
     expect_silent(assignToTranscriptRegions(object = obj4_manual, anno.transcriptRegionList = regions, overlaps = "frequency", quiet = TRUE))
+
+    # test if meta data is preserved and transcriptRegion is not duplicated
+    # -> also when the function is applied twice
+    r = getRanges(obj4_manual)
+    r$test = "test"
+    obj5 = setRanges(obj4_manual, r)
+
+    for (ol in c("frequency", "hierarchy", "flag", "remove")) {
+        rule = if (ol == "hierarchy") c("utr3", "cds", "utr5", "intron") else NULL
+        x1 = assignToTranscriptRegions(object = obj5, anno.transcriptRegionList = regions,
+                                       overlaps = ol, overlaps.rule = rule, quiet = TRUE)
+        x2 = assignToTranscriptRegions(object = x1, anno.transcriptRegionList = regions,
+                                       overlaps = ol, overlaps.rule = rule, quiet = TRUE)
+        for (x in list(x1, x2)) {
+            cn = colnames(mcols(getRanges(x)))
+            expect_false(anyDuplicated(cn) > 0)
+            expect_equal(sum(cn == "transcriptRegion"), 1)
+            expect_true(all(getRanges(x)$test == "test"))
+        }
+    }
+
+    # flag keeps ambiguous binding sites with a tag, remove drops them
+    x = assignToTranscriptRegions(object = obj5, anno.transcriptRegionList = regions, overlaps = "flag", quiet = TRUE)
+    expect_true("Ambiguous" %in% getRanges(x)$transcriptRegion)
+    expect_equal(length(getRanges(x)), length(getRanges(obj5)))
+    x = assignToTranscriptRegions(object = obj5, anno.transcriptRegionList = regions, overlaps = "remove", quiet = TRUE)
+    expect_false("Ambiguous" %in% getRanges(x)$transcriptRegion)
 })
