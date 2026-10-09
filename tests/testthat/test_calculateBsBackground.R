@@ -50,4 +50,19 @@ test_that("calculateBsBackground works", {
     expect_identical(getRanges(c0)$geneID, getRanges(c2)$geneID)
 
     expect_warning(calculateBsBackground(bds, anno.genes = gns, quiet = TRUE, generate.geneID.bs = TRUE, overlaps = "remove"))
+
+    # test if meta data is preserved in the ranges and gene columns are not duplicated
+    # add meta data to the ranges
+    r = getRanges(bds)
+    r$test = "test"
+    bds = setRanges(bds, r)
+
+    for (ol in c("remove", "keep")) {
+        res = suppressWarnings(calculateBsBackground(bds, anno.genes = gns, quiet = TRUE,
+                                                     generate.geneID.bs = TRUE, overlaps = ol))
+        cn = colnames(mcols(getRanges(res)))
+        expect_false(anyDuplicated(cn) > 0)
+        expect_true(all(c("test", "geneID", "geneName", "geneType") %in% cn))
+        expect_true(all(getRanges(res)$test == "test"))
+    }
 })
