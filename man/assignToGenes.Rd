@@ -54,7 +54,7 @@ information about the genes have to be present. They can be set by the
 \code{match.geneID}, \code{match.geneName} and \code{match.geneType} arguments.
 
 In the case of overlapping gene annotation, a single binding site will be
-associated with multiple genes. The \code{\link{overlaps}} parameter allows
+associated with multiple genes. The \code{overlaps} parameter allows
 to decide in these cases. Option `frequency` will take the most frequently
 observed gene type, option `hierarchy` works in conjunction with a user defined
 rule (\code{overlaps.rule}). Options `remove` and `keep` will remove or

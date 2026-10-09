@@ -56,7 +56,7 @@ Since the assignment is based on the overlaps of annotated transcript ranges
 and binding sites, no matching meta data is needed.
 
 In the case of transcript regions overlaps are very frequent. To resolve these
-cases the \code{\link{overlaps}} argument can be used. Option `frequency`
+cases the \code{overlaps} argument can be used. Option `frequency`
 will take the most frequently observed transcript region, option `hierarchy`
 works in conjunction with a user defined rule (\code{overlaps.rule}).
 Options `flag` and `remove` will label binding sites with an ambiguous tag or
