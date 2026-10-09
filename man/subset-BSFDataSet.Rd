@@ -2,6 +2,7 @@
 % Please edit documentation in R/methods.R
 \name{subset-BSFDataSet}
 \alias{subset-BSFDataSet}
+\alias{[,BSFDataSet,ANY,ANY-method}
 \alias{[,BSFDataSet,ANY,ANY,ANY-method}
 \title{Subset a BSFDataSet object}
 \usage{

@@ -545,6 +545,7 @@ setMethod(
 #' bdsNew = bds[1:10]
 #'
 #' @name subset-BSFDataSet
+#' @aliases [,BSFDataSet,ANY,ANY-method
 NULL
 
 #' @rdname subset-BSFDataSet
