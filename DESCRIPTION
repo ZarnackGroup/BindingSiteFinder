@@ -31,7 +31,6 @@ Depends: GenomicRanges, R (>= 4.2)
 Suggests: testthat, BiocStyle, knitr, rmarkdown, GenomicAlignments, scales, Gviz,
     xlsx, GGally, patchwork, viridis, ggplotify, SummarizedExperiment, DESeq2,
     ggpointdensity, ggrastr, ashr, txdbmaker, ggrepel, stringr
-RoxygenNote: 7.3.2
 Collate: 
     'AllClasses.R'
     'AllGenerics.R'
@@ -52,3 +51,4 @@ Collate:
 biocViews: Sequencing, GeneExpression, GeneRegulation, FunctionalGenomics, 
     Coverage, DataImport
 BugReports: https://github.com/ZarnackGroup/BindingSiteFinder/issues
+Config/roxygen2/version: 8.1.1

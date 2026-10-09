@@ -80,42 +80,50 @@ import(lifecycle)
 import(methods)
 import(rtracklayer)
 import(tidyr)
-importFrom(GenomeInfoDb,keepSeqlevels)
-importFrom(GenomeInfoDb,seqlevels)
-importFrom(GenomicFeatures,cds)
-importFrom(GenomicFeatures,fiveUTRsByTranscript)
-importFrom(GenomicFeatures,genes)
-importFrom(GenomicFeatures,intronsByTranscript)
-importFrom(GenomicFeatures,threeUTRsByTranscript)
+importFrom(GenomeInfoDb,
+  keepSeqlevels,
+  seqlevels
+)
+importFrom(GenomicFeatures,
+  cds,
+  fiveUTRsByTranscript,
+  genes,
+  intronsByTranscript,
+  threeUTRsByTranscript
+)
 importFrom(GenomicRanges,findOverlaps)
 importFrom(IRanges,extractList)
-importFrom(S4Vectors,queryHits)
-importFrom(S4Vectors,subjectHits)
-importFrom(dplyr,arrange)
-importFrom(dplyr,bind_rows)
-importFrom(dplyr,count)
-importFrom(dplyr,desc)
-importFrom(dplyr,everything)
-importFrom(dplyr,filter)
-importFrom(dplyr,group_by)
-importFrom(dplyr,lead)
-importFrom(dplyr,left_join)
-importFrom(dplyr,mutate)
-importFrom(dplyr,mutate_all)
-importFrom(dplyr,n)
-importFrom(dplyr,pull)
-importFrom(dplyr,reframe)
-importFrom(dplyr,rename)
-importFrom(dplyr,rename_with)
-importFrom(dplyr,row_number)
-importFrom(dplyr,select)
-importFrom(dplyr,slice)
-importFrom(dplyr,slice_head)
-importFrom(dplyr,slice_tail)
-importFrom(dplyr,summarise)
-importFrom(dplyr,summarize)
-importFrom(dplyr,tally)
-importFrom(dplyr,ungroup)
+importFrom(S4Vectors,
+  queryHits,
+  subjectHits
+)
+importFrom(dplyr,
+  arrange,
+  bind_rows,
+  count,
+  desc,
+  everything,
+  filter,
+  group_by,
+  lead,
+  left_join,
+  mutate,
+  mutate_all,
+  n,
+  pull,
+  reframe,
+  rename,
+  rename_with,
+  row_number,
+  select,
+  slice,
+  slice_head,
+  slice_tail,
+  summarise,
+  summarize,
+  tally,
+  ungroup
+)
 importFrom(ggdist,stat_halfeye)
 importFrom(ggforce,geom_mark_rect)
 importFrom(grDevices,colorRampPalette)
@@ -124,14 +132,20 @@ importFrom(kableExtra,kable)
 importFrom(matrixStats,colSds)
 importFrom(plyr,rbind.fill)
 importFrom(rtracklayer,import)
-importFrom(stats,density)
-importFrom(stats,median)
-importFrom(stats,quantile)
-importFrom(stats,relevel)
-importFrom(stats,sd)
-importFrom(tibble,add_row)
-importFrom(tibble,rownames_to_column)
+importFrom(stats,
+  density,
+  median,
+  quantile,
+  relevel,
+  sd
+)
+importFrom(tibble,
+  add_row,
+  rownames_to_column
+)
 importFrom(tidyr,pivot_longer)
-importFrom(utils,head)
-importFrom(utils,tail)
-importFrom(utils,write.csv)
+importFrom(utils,
+  head,
+  tail,
+  write.csv
+)
