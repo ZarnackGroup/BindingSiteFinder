@@ -81,12 +81,12 @@ save(bds, file = "./bds.rda")
 # perpare gene annotaiton data
 ################################################################################
 # annoFile = "/Users/mirko/Projects/PackageDevelopment/BindingSiteDefinition/data/gencode.v37.annotation.gff3"
-anno <- makeTxDbFromGFF(file = annoFile)
+anno <- txdbmaker::makeTxDbFromGFF(file = annoFile)
 gns = genes(anno)
 
 # Make annotation database from gff3 file
 # annoFile = "/Users/mirko/Projects/PackageDevelopment/BindingSiteDefinition/data/gencode.v37.annotation.chr22.header.gff3"
-annoDb = makeTxDbFromGFF(file = annoFile, format = "gff3")
+annoDb = txdbmaker::makeTxDbFromGFF(file = annoFile, format = "gff3")
 annoInfo = import(annoFile, format = "gff3")
 # Get genes as GRanges
 gns = genes(annoDb)
