@@ -634,13 +634,13 @@ assignToGenes <- function(object,
         rngResolved = rngInitial[subjectHits(ols)]
         # manage meta columns
         if (!is.null(selectID)) {
-            mcols(rngResolved) = cbind(mcols(rngResolved), geneID = selectID[queryHits(ols)])
+            mcols(rngResolved)$geneID = selectID[queryHits(ols)]
         }
         if (!is.null(selectType)) {
-            mcols(rngResolved) = cbind(mcols(rngResolved), geneType = selectType[queryHits(ols)])
+            mcols(rngResolved)$geneType = selectType[queryHits(ols)]
         }
         if (!is.null(selectName)) {
-            mcols(rngResolved) = cbind(mcols(rngResolved), geneName = selectName[queryHits(ols)])
+            mcols(rngResolved)$geneName = selectName[queryHits(ols)]
         }
         # remove duplicates
         rngResolved = rngResolved[countOverlaps(rngResolved) == 1]
@@ -651,13 +651,13 @@ assignToGenes <- function(object,
         rngResolved = rngInitial[subjectHits(ols)]
         # manage meta columns
         if (!is.null(selectID)) {
-            mcols(rngResolved) = cbind(mcols(rngResolved), geneID = selectID[queryHits(ols)])
+            mcols(rngResolved)$geneID = selectID[queryHits(ols)]
         }
         if (!is.null(selectType)) {
-            mcols(rngResolved) = cbind(mcols(rngResolved), geneType = selectType[queryHits(ols)])
+            mcols(rngResolved)$geneType = selectType[queryHits(ols)]
         }
         if (!is.null(selectName)) {
-            mcols(rngResolved) = cbind(mcols(rngResolved), geneName = selectName[queryHits(ols)])
+            mcols(rngResolved)$geneName = selectName[queryHits(ols)]
         }
     }
 
