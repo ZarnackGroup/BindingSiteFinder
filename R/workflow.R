@@ -119,7 +119,7 @@ pureClipGlobalFilter <- function(object, # bindingSiteFinder
 #' The name of the column can be set with \code{scoreCol}.
 #'
 #' In the case of overlapping gene annotation, a single crosslink site will be
-#' attributed to multiple genes. The \code{\link{overlaps}} parameter allows
+#' attributed to multiple genes. The \code{overlaps} parameter allows
 #' to control these cases. Option `keepSingle` will only keep a single instance
 #' of the site; `removeAll` will remove both sites; `keepAll` will keep both
 #' sites.
@@ -347,7 +347,7 @@ pureClipGeneWiseFilter <- function(object, # bindingSiteFinder
 #' \code{match.geneID}, \code{match.geneName} and \code{match.geneType} arguments.
 #'
 #' In the case of overlapping gene annotation, a single binding site will be
-#' associated with multiple genes. The \code{\link{overlaps}} parameter allows
+#' associated with multiple genes. The \code{overlaps} parameter allows
 #' to decide in these cases. Option `frequency` will take the most frequently
 #' observed gene type, option `hierarchy` works in conjunction with a user defined
 #' rule (\code{overlaps.rule}). Options `remove` and `keep` will remove or
@@ -721,7 +721,7 @@ assignToGenes <- function(object,
 #' and binding sites, no matching meta data is needed.
 #'
 #' In the case of transcript regions overlaps are very frequent. To resolve these
-#' cases the \code{\link{overlaps}} argument can be used. Option `frequency`
+#' cases the \code{overlaps} argument can be used. Option `frequency`
 #' will take the most frequently observed transcript region, option `hierarchy`
 #' works in conjunction with a user defined rule (\code{overlaps.rule}).
 #' Options `flag` and `remove` will label binding sites with an ambiguous tag or
@@ -891,7 +891,7 @@ assignToTranscriptRegions <- function(object, # bindingSiteFinder
         countDfSorted[countDfSorted > 0] = 1
         col_names = colnames(countDfSorted)
         transcriptRegion = ifelse(rowSums(countDfSorted) == 1, col_names[max.col(countDfSorted, ties.method = "first")], "Ambiguous")
-        mcols(rng) = cbind.data.frame(mcols(rng), transcriptRegion = transcriptRegion)
+        mcols(rng)$transcriptRegion = transcriptRegion
     }
     # Cases where we have to resolve overlapping loci
     if (ambigousBs > 0) {
@@ -904,7 +904,7 @@ assignToTranscriptRegions <- function(object, # bindingSiteFinder
             countDfSorted = countDf[, overlaps.rule]
             countDfSorted[countDfSorted > 0] = 1
             transcriptRegion = names(countDfSorted)[max.col(countDfSorted, ties.method = "first")]
-            mcols(rng) = cbind.data.frame(mcols(rng), transcriptRegion = transcriptRegion)
+            mcols(rng)$transcriptRegion = transcriptRegion
         }
         if (overlaps == "frequency") {
             msg1 = paste0("Apply 'frequency' solution. \n ")
@@ -918,7 +918,7 @@ assignToTranscriptRegions <- function(object, # bindingSiteFinder
             # apply frequency solution
             countDfSorted = countDfSorted[, overlaps.rule]
             transcriptRegion = names(countDfSorted)[max.col(countDfSorted, ties.method = "first")]
-            mcols(rng) = cbind.data.frame(mcols(rng), transcriptRegion = transcriptRegion)
+            mcols(rng)$transcriptRegion = transcriptRegion
         }
         if (overlaps == "flag") {
             msg1 = paste0("Binding sites with multiple different overlapping transcript regions are being flaged with the tag 'Ambiguous'. \n")
@@ -928,9 +928,7 @@ assignToTranscriptRegions <- function(object, # bindingSiteFinder
             # flag multiple loci binding sites
             col_names = colnames(countDfSorted)
             transcriptRegion = ifelse(rowSums(countDfSorted) == 1, col_names[max.col(countDfSorted, ties.method = "first")], "Ambiguous")
-            mcols(rng) = cbind.data.frame(mcols(rng), transcriptRegion = transcriptRegion)
-            # remove mulitple loci binding sitges
-            mcols(rng) = cbind.data.frame(mcols(rng), transcriptRegion = transcriptRegion)
+            mcols(rng)$transcriptRegion = transcriptRegion
         }
         if (overlaps == "remove") {
             msg1 = paste0("Binding sites with multiple different overlapping transcript regions are being removed. This is not recommended! \n")
@@ -940,9 +938,8 @@ assignToTranscriptRegions <- function(object, # bindingSiteFinder
             # flag multiple loci binding sites
             col_names = colnames(countDfSorted)
             transcriptRegion = ifelse(rowSums(countDfSorted) == 1, col_names[max.col(countDfSorted, ties.method = "first")], "Ambiguous")
-            mcols(rng) = cbind.data.frame(mcols(rng), transcriptRegion = transcriptRegion)
+            mcols(rng)$transcriptRegion = transcriptRegion
             # remove mulitple loci binding sitges
-            mcols(rng) = cbind.data.frame(mcols(rng), transcriptRegion = transcriptRegion)
             rng = rng[rng$transcriptRegion != "Ambiguous"]
         }
     }
