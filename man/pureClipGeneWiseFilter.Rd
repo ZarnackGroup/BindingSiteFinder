@@ -57,7 +57,7 @@ have a meta-column that holds a numeric score value, which is used for filtering
 The name of the column can be set with \code{scoreCol}.
 
 In the case of overlapping gene annotation, a single crosslink site will be
-attributed to multiple genes. The \code{\link{overlaps}} parameter allows
+attributed to multiple genes. The \code{overlaps} parameter allows
 to control these cases. Option `keepSingle` will only keep a single instance
 of the site; `removeAll` will remove both sites; `keepAll` will keep both
 sites.
