@@ -1,3 +1,30 @@
+CHANGES IN VERSION 2.11.2
+-------------------------
+
+Bug fixes
+- Condition names containing '_' caused errors in filterBsBackground() and
+  reproducibilityFilter(). Conditions are now matched by sample id
+  instead of being parsed from sample names. 
+- reproducibilityFilter() applied wrong cutoff values due to rounding errors
+- Fixed duplicated transcriptRegion meta data column in
+  assignToTranscriptRegions()
+- Fixed missing colors in targetGeneSpectrumPlot() for more than 7 gene
+  types
+- Fixed typo in the title of duplicatedSitesPlot() (#20)
+
+Changes
+- Condition names are now validated when creating a BSFDataSet or calling
+  setMeta(). Allowed are letters, numbers and one type of separator ('-', '_'
+  or '.') that has to be the same for all conditions. Names with other
+  characters (e.g. spaces) or mixed separators now give an error
+- Replaced deprecated ggplot2 'size' with 'linewidth' for lines in all plots
+
+Documentation
+- Clarified in the vignette that overlaps = "flag" is only available in
+  assignToTranscriptRegions(), not in assignToGenes() 
+- Use txdbmaker::makeTxDbFromGFF() explicitly in the example data script 
+- Removed links to the non-existent help topic 'overlaps'
+
 CHANGES IN VERSION 2.11.1
 -------------------------
 
