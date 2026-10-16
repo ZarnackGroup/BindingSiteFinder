@@ -66,3 +66,42 @@ test_that("calculateBsBackground works", {
         expect_true(all(getRanges(res)$test == "test"))
     }
 })
+
+test_that("calculateBsBackground works with special characters in condition names", {
+    # load clip data
+    files <- system.file("extdata", package="BindingSiteFinder")
+    load(list.files(files, pattern = ".rda$", full.names = TRUE))
+    load(list.files(files, pattern = ".rds$", full.names = TRUE)[1])
+
+    # set new condition names in meta data and signal
+    setConditions = function(object, cond) {
+        m = getMeta(object)
+        m$condition = factor(rep(cond, each = 2), levels = cond)
+        s = getSignal(object)
+        names(s$signalPlus) = paste0(m$id, "_", m$condition)
+        names(s$signalMinus) = paste0(m$id, "_", m$condition)
+        object = setMeta(object, m)
+        object = setSignal(object, s)
+        return(object)
+    }
+    # get all counts as plain matrix without names
+    getCounts = function(object) {
+        df = as.data.frame(mcols(getRanges(object)))
+        unname(as.matrix(df[, startsWith(colnames(df), "counts.")]))
+    }
+
+    bds = makeBindingSites(bds, bsSize = 7, quiet = TRUE)
+    bds = assignToGenes(bds, anno.genes = gns, quiet = TRUE)
+    set.seed(1234)
+    myBlacklist = sample(getRanges(bds), size = 500) + 4
+
+    c0 = calculateBsBackground(setConditions(bds, c("WT", "KO")), anno.genes = gns,
+                               quiet = TRUE, blacklist = myBlacklist)
+
+    # condition names that contain the names of internal count types
+    for (cond in list(c("bs_KO", "gene_WT"), c("offset", "black"))) {
+        c1 = calculateBsBackground(setConditions(bds, cond), anno.genes = gns,
+                                   quiet = TRUE, blacklist = myBlacklist)
+        expect_identical(getCounts(c0), getCounts(c1))
+    }
+})

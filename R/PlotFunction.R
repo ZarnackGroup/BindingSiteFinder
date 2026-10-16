@@ -2036,6 +2036,7 @@ reproducibilityCutoffPlot <-
             qSel = .selectQuantilesSingleCondtion(
                 covDf = df,
                 userCond = cond,
+                userMeta = getMeta(object),
                 userNreps = 1,
                 userCutoff = cutoff
             )
@@ -2080,6 +2081,7 @@ reproducibilityCutoffPlot <-
             qSel = .selectQuantilesMultipleConditions(
                 covDf = df,
                 userCond = cond,
+                userMeta = getMeta(object),
                 userNreps = 1,
                 userCutoff = cutoff
             )

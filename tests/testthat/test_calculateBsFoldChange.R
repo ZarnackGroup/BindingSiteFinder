@@ -65,3 +65,39 @@ test_that("calculateBsFoldChange works", {
     expect_error(calculateBsFoldChange(bdsNA, replaceNegative = TRUE))
     expect_warning(calculateBsFoldChange(bdsNA, removeNA = TRUE))
 })
+
+test_that("calculateBsFoldChange works with special characters in condition names", {
+    # load clip data
+    files <- system.file("extdata", package="BindingSiteFinder")
+    load(list.files(files, pattern = ".rda$", full.names = TRUE))
+    load(list.files(files, pattern = ".rds$", full.names = TRUE)[1])
+
+    # set new condition names in meta data and signal
+    setConditions = function(object, cond) {
+        m = getMeta(object)
+        m$condition = factor(rep(cond, each = 2), levels = cond)
+        s = getSignal(object)
+        names(s$signalPlus) = paste0(m$id, "_", m$condition)
+        names(s$signalMinus) = paste0(m$id, "_", m$condition)
+        object = setMeta(object, m)
+        object = setSignal(object, s)
+        return(object)
+    }
+
+    bds = makeBindingSites(bds, bsSize = 7, quiet = TRUE)
+    bds = assignToGenes(bds, anno.genes = gns, quiet = TRUE)
+    bds = imputeBsDifferencesForTestdata(bds)
+
+    c0 = calculateBsBackground(bds, anno.genes = gns, use.offset = FALSE, quiet = TRUE)
+    r0 = getRanges(calculateBsFoldChange(c0, quiet = TRUE, veryQuiet = TRUE))
+
+    # hyphens, dots and leading numbers
+    # -> DESeq2 converts these to syntactically valid names internally
+    for (cond in list(c("WT-xx", "KO-7"), c("1.WT", "KO.15"))) {
+        c1 = calculateBsBackground(setConditions(bds, cond), anno.genes = gns,
+                                   use.offset = FALSE, quiet = TRUE)
+        r1 = getRanges(calculateBsFoldChange(c1, quiet = TRUE, veryQuiet = TRUE))
+        expect_identical(r0$bs.log2FoldChange, r1$bs.log2FoldChange)
+        expect_identical(r0$bg.log2FoldChange, r1$bg.log2FoldChange)
+    }
+})

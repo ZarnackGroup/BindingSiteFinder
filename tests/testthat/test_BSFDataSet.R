@@ -43,3 +43,33 @@ test_that("BSFDataSet() can be build correctly", {
 })
 
 
+
+test_that("condition names are checked for valid separators", {
+    # load data
+    files <- system.file("extdata", package="BindingSiteFinder")
+    load(list.files(files, pattern = ".rda$", full.names = TRUE))
+
+    setCond = function(cond) {
+        m = getMeta(bds)
+        m$condition = factor(rep(cond, each = 2), levels = cond)
+        return(m)
+    }
+
+    # allowed: letters, numbers and one type of separator in all names
+    for (cond in list(c("WT", "KO"), c("WT_1", "KO_15"), c("WT", "KO_15"),
+                      c("WT-xx", "KO-7"), c("1.WT", "KO.15"))) {
+        expect_no_error(setMeta(bds, setCond(cond)))
+    }
+
+    # two types of separators in one name
+    expect_error(setMeta(bds, setCond(c("WT_1-2", "KO"))), "one type of separator")
+    # different separators across names
+    expect_error(setMeta(bds, setCond(c("WT_1", "KO-7"))), "same separator")
+    # other characters
+    expect_error(setMeta(bds, setCond(c("WT 1", "KO"))), "only contain letters")
+    expect_error(setMeta(bds, setCond(c("WT/1", "KO"))), "only contain letters")
+
+    # same check when building the object
+    expect_error(BSFDataSet(ranges = getRanges(bds), meta = setCond(c("WT_1", "KO-7")),
+                            signal = getSignal(bds)), "same separator")
+})

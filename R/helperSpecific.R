@@ -1,6 +1,6 @@
 #' @importFrom stats quantile
 .selectQuantilesMultipleConditions <-
-    function(covDf, userCond, userNreps, userCutoff) {
+    function(covDf, userCond, userMeta, userNreps, userCutoff) {
         # bind locally used variables
         per <- applyTo <- NULL
 
@@ -19,8 +19,7 @@
         idx = match(qSel$cut, applyDf$userCutoff)
         qSel$applyTo = applyDf$levels.userCond.[idx]
         qSel = qSel %>% pivot_longer(-c(cut, per, applyTo))
-        qSel$sel = vapply(strsplit(qSel$name, "_"), `[`, 2,
-                          FUN.VALUE = character(1))
+        qSel$sel = .sampleToCondition(qSel$name, userMeta)
         if (length(unique(userCutoff)) > 1) {
             qSel = qSel[qSel$applyTo == qSel$sel, ]
         }
@@ -33,7 +32,7 @@
 
 #' @importFrom stats quantile
 .selectQuantilesSingleCondtion <-
-    function(covDf, userCond, userNreps, userCutoff) {
+    function(covDf, userCond, userMeta, userNreps, userCutoff) {
         # bind locally used variables
         per <- NULL
 
@@ -47,8 +46,7 @@
         # select that part of q that was chosen by user
         qSel = q[q$cut %in% userCutoff, ]
         qSel = qSel %>% pivot_longer(-c(cut, per))
-        qSel$sel = vapply(strsplit(qSel$name, "_"), `[`, 2,
-                          FUN.VALUE = character(1))
+        qSel$sel = .sampleToCondition(qSel$name, userMeta)
 
         # add n.reps support to df
         nRepsDf = data.frame(defaultNreps = userNreps, applyTo = levels(userCond))
@@ -462,3 +460,58 @@
     return(cov)
 }
 
+
+.sampleToCondition <- function(sample.names, meta) {
+    # takes sample names as build by the package ("<id>_<condition>"),
+    # optionally with a count prefix ("counts.bs." or "counts.bg.")
+    # and the meta data of the object
+    # returns the condition for each sample name
+    # -> samples are matched by their id and the condition is taken from the
+    # meta data and not parsed from the name, so that conditions can contain
+    # any character (e.g. "_") and can be renamed after counting
+    this.samples = sub("^counts\\.(bs|bg)\\.", "", sample.names)
+    this.ids = as.character(meta$id)
+    idx = vapply(this.samples, function(x) {
+        hit = which(startsWith(x, paste0(this.ids, "_")))
+        if (length(hit) == 0) return(NA_integer_)
+        # use the longest matching id (e.g. '1_a' over '1')
+        hit[which.max(nchar(this.ids[hit]))]
+    }, integer(1), USE.NAMES = FALSE)
+    if (anyNA(idx)) {
+        msg0 = paste0("Sample names do not match the pattern '<id>_<condition>' with an id from the meta data: ",
+                      paste(unique(sample.names[is.na(idx)]), collapse = ", "), "\n")
+        msg1 = paste0("Make sure that sample names are set as paste0(meta$id, '_', meta$condition). \n")
+        stop(c(msg0, msg1))
+    }
+    return(as.character(meta$condition)[idx])
+}
+
+.checkConditionNames <- function(condition) {
+    # takes the condition column of the meta data
+    # returns an error message if condition names are not valid or NULL
+    # -> allowed are letters, numbers and one of the separators '-', '_' or '.'
+    # -> the same separator has to be used in all condition names
+    this.cond = unique(as.character(condition))
+    msg = NULL
+
+    invalidChar = this.cond[!grepl("^[A-Za-z0-9._-]+$", this.cond)]
+    if (length(invalidChar) > 0) {
+        msg = c(msg, paste0("Condition names can only contain letters, numbers and one of the separators '-', '_' or '.'. Invalid names: ",
+                            paste(invalidChar, collapse = ", "), ". "))
+    }
+    seps = lapply(this.cond, function(x) {
+        intersect(c("-", "_", "."), strsplit(x, "")[[1]])
+    })
+    mixedSep = this.cond[lengths(seps) > 1]
+    if (length(mixedSep) > 0) {
+        msg = c(msg, paste0("Condition names can only contain one type of separator ('-', '_' or '.'). Invalid names: ",
+                            paste(mixedSep, collapse = ", "), ". "))
+    }
+    usedSep = unique(unlist(seps))
+    if (length(mixedSep) == 0 & length(usedSep) > 1) {
+        msg = c(msg, paste0("All condition names have to use the same separator. Found: ",
+                            paste0("'", usedSep, "'", collapse = ", "), " in ",
+                            paste(this.cond, collapse = ", "), ". "))
+    }
+    return(msg)
+}

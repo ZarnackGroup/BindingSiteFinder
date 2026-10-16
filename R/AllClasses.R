@@ -29,6 +29,9 @@ setValidity("BSFDataSet", function(object) {
     if (length(object@meta$id) != length(unique(object@meta$id))) {
         msg = c(msg, "IDs in meta data are not unique. ")
     }
+    if ("condition" %in% colnames(object@meta)) {
+        msg = c(msg, .checkConditionNames(object@meta$condition))
+    }
     # check signal
     if (!c("signalPlus") %in% names(object@signal) &
         !c("signalMinus") %in% names(object@signal)) {
@@ -83,7 +86,9 @@ setValidity("BSFDataSet", function(object) {
 #' The meta information is stored as \code{data.frame} with at least two
 #' required columns, 'id' and 'condition'. They are used to build the unique
 #' identifier for each replicate split by '_' (eg. id = 1 and condition = WT
-#' will result in 1_WT).
+#' will result in 1_WT). Condition names can only contain letters, numbers
+#' and one type of separator ('-', '_' or '.'), which has to be the same for
+#' all conditions (eg. 'WT_1' and 'KO_2', but not 'WT_1' and 'KO-2').
 #'
 #' The meta data needs to have the additional columns 'clPlus' and 'clMinus'
 #' to be present if \code{BSFDataSetFromBigWig} is called.

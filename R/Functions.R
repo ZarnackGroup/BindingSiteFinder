@@ -158,6 +158,7 @@ reproducibilityFilter <- function(object,
         qSel = .selectQuantilesSingleCondtion(
             covDf = df,
             userCond = cond,
+            userMeta = metaData,
             userNreps = defaultNreps,
             userCutoff = defaultCutoff
         )
@@ -172,7 +173,7 @@ reproducibilityFilter <- function(object,
         dfPlot = df %>%
             pivot_longer(everything()) %>%
             group_by(name, value) %>% dplyr::count() %>%
-            separate(name, into = c(NA, "condition"), sep = "_", remove = FALSE)
+            mutate(condition = .sampleToCondition(name, metaData))
         object@plotData$reproducibilityFilterPlot$data = dfPlot
         object@plotData$reproducibilityFilterPlot$cutoffs = qSel
 
@@ -202,6 +203,7 @@ reproducibilityFilter <- function(object,
         qSel = .selectQuantilesMultipleConditions(
             covDf = df,
             userCond = cond,
+            userMeta = metaData,
             userNreps = defaultNreps,
             userCutoff = defaultCutoff
         )
@@ -216,7 +218,7 @@ reproducibilityFilter <- function(object,
         dfPlot = df %>%
             pivot_longer(everything()) %>%
             group_by(name, value) %>% dplyr::count() %>%
-            separate(name, into = c(NA, "condition"), sep = "_", remove = FALSE)
+            mutate(condition = .sampleToCondition(name, metaData))
         object@plotData$reproducibilityFilterPlot$data = dfPlot
         object@plotData$reproducibilityFilterPlot$cutoffs = qSel
 
@@ -232,7 +234,7 @@ reproducibilityFilter <- function(object,
 
         # Filter binding sites ranges by replicate support
         sSplit = vapply(levels(cond), function(x) {
-            s %>% dplyr::select(contains(x)) %>% rowSums()
+            s[, .sampleToCondition(colnames(s), metaData) == x, drop = FALSE] %>% rowSums()
         }, FUN.VALUE = numeric(nrow(s))) %>% as.data.frame()
         idx = match(colnames(sSplit), qSel$sel)
         support = apply(sSplit, 1, function(x) {

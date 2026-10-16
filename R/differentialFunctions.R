@@ -335,7 +335,7 @@ calculateBsBackground <- function(object,
 
     # group counts by gene
     cov.bs.merge = as.data.frame(mcols(cov.bs)) %>%
-        select(geneID, contains("counts")) %>%
+        select(geneID, starts_with("counts.")) %>%
         group_by(geneID) %>%
         dplyr::summarise_all(sum)
     # match binding site counts per gene
@@ -383,7 +383,7 @@ calculateBsBackground <- function(object,
 
         # group counts by gene
         cov.offset.gene = as.data.frame(mcols(cov.offset)) %>%
-            select(all_of(match.geneID.bs), contains("counts")) %>%
+            select(all_of(match.geneID.bs), starts_with("counts.")) %>%
             dplyr::group_by_if(., is.character) %>%
             dplyr::summarise_all(sum)
 
@@ -413,7 +413,7 @@ calculateBsBackground <- function(object,
         #     dplyr::summarise_all(sum)
 
         cov.blacklist = as.data.frame(mcols(cov.blacklist)) %>%
-            select(all_of(match.geneID.blacklist), contains("counts")) %>%
+            select(all_of(match.geneID.blacklist), starts_with("counts.")) %>%
             dplyr::group_by_if(., is.character) %>%
             dplyr::summarise_all(sum)
 
@@ -437,26 +437,28 @@ calculateBsBackground <- function(object,
         if (isTRUE(use.offset) & !is.null(blacklist)) {
             # offset and blacklist are used
             # -> subtract both with bs from gene counts
-            sel.countsToRemove = countMatr %>% select(contains(c("offset", "black")))
+            sel.countsToRemove = countMatr %>% select(starts_with(c("counts.offset.", "counts.black.")))
 
             # combine counts to remove
             sample.ids = paste0(this.meta$id, "_", this.meta$condition)
             sel.countsToRemove = as.matrix(sel.countsToRemove)
             countsToRemove = lapply(sample.ids, function(x) {
-                rowSums(sel.countsToRemove[, grepl(x, colnames(sel.countsToRemove))])
+                # exact matching (grepl would match sample '1_WT' also in '11_WT')
+                this.cols = paste0(c("counts.offset.", "counts.black."), x)
+                rowSums(sel.countsToRemove[, colnames(sel.countsToRemove) %in% this.cols, drop = FALSE])
             })
             countsToRemove = do.call(cbind, countsToRemove)
         }
         if (isTRUE(use.offset) & is.null(blacklist)) {
             # offset is used and blacklist is not used
             # -> subtract offset with bs from gene counts
-            sel.countsToRemove = countMatr %>% select(contains(c("offset")))
+            sel.countsToRemove = countMatr %>% select(starts_with("counts.offset."))
             countsToRemove = sel.countsToRemove
         }
         if (!isTRUE(use.offset) & !is.null(blacklist)) {
             # offset is not used and blacklist is used
             # -> subtract blacklist with bs from gene counts
-            sel.countsToRemove = countMatr %>% select(contains(c("black")))
+            sel.countsToRemove = countMatr %>% select(starts_with("counts.black."))
             countsToRemove = sel.countsToRemove
         }
     } else {
@@ -464,14 +466,14 @@ calculateBsBackground <- function(object,
         if (!isTRUE(use.offset) & is.null(blacklist)) {
             # none of the options are used (no blacklist, not offset)
             # -> only subtract bs count from genes
-            sel.countsToRemove = countMatr %>% select(contains(c("bs")))
+            sel.countsToRemove = countMatr %>% select(starts_with("counts.bs."))
         }
         countsToRemove = sel.countsToRemove
     }
 
     # make background counts
     sample.ids = paste0(this.meta$id, "_", this.meta$condition)
-    countsBg = countMatr %>% select(contains("gene"))
+    countsBg = countMatr %>% select(starts_with("counts.gene."))
     countsBg = countsBg - countsToRemove
     colnames(countsBg) = paste0("counts.bg.",sample.ids)
 
@@ -665,16 +667,16 @@ filterBsBackground <- function(object,
         stop(msg0,msg1)
     }
     # check if ranges have at least two samples per condition in counts
-    this.counts = as.data.frame(mcols(this.ranges)) %>% select(contains("counts"))
+    this.counts = as.data.frame(mcols(this.ranges)) %>% select(starts_with("counts."))
     # check binding sites
-    this.counts.bs = this.counts %>% select(contains("bs"))
+    this.counts.bs = this.counts %>% select(starts_with("counts.bs."))
     if (length(this.counts.bs) == 0) {
         msg0 = paste0("No counts for binding sites present. \n")
         msg1 = paste0("Make sure to run 'calculateBsBackground()' first. \n")
         stop(c(msg0, msg1))
     }
     # check background
-    this.counts.bg = this.counts %>% select(contains("bg"))
+    this.counts.bg = this.counts %>% select(starts_with("counts.bg."))
     if (length(this.counts.bg) == 0) {
         msg0 = paste0("No counts for background present. \n")
         msg1 = paste0("Make sure to run 'calculateBsBackground()' first. \n")
@@ -693,10 +695,10 @@ filterBsBackground <- function(object,
         # the gene-wise count filter should be used
         # -> group counts by gene and sample and filter
         all.counts = as.data.frame(mcols(this.ranges)) %>%
-            select(all_of(match.geneID), contains("counts")) %>%
+            select(all_of(match.geneID), starts_with("counts.")) %>%
             dplyr::group_by_at(match.geneID) %>%
             summarise(dplyr::across(everything(), sum)) %>%
-            mutate(s = select(., contains("counts")) %>% rowSums(.)) %>%
+            mutate(s = select(., starts_with("counts.")) %>% rowSums(.)) %>%
             select(all_of(match.geneID), s)
         idx = which(all.counts < minCounts.cutoff, arr.ind = TRUE)
 
@@ -808,7 +810,7 @@ filterBsBackground <- function(object,
             select(all_of(match.geneID), starts_with("counts")) %>%
             pivot_longer(-all_of(match.geneID)) %>%
             mutate(type = sub(".*\\.(.*?)\\..*", "\\1", name)) %>%
-            mutate(condition = sub(".*_", "", name)) %>%
+            mutate(condition = .sampleToCondition(name, this.meta)) %>%
             filter(type == "bg") %>%
             select(-c(name, type)) %>%
             dplyr::group_by_if(., is.character) %>%
@@ -1075,15 +1077,15 @@ calculateBsFoldChange <- function(object,
     }
 
     # check if ranges have at least two samples per condition in counts
-    this.counts = as.data.frame(mcols(this.ranges)) %>% select(contains("counts"))
+    this.counts = as.data.frame(mcols(this.ranges)) %>% select(starts_with("counts."))
     # check binding sites
-    this.counts.bs = this.counts %>% select(contains("bs"))
+    this.counts.bs = this.counts %>% select(starts_with("counts.bs."))
     if (length(this.counts.bs) == 0) {
         msg0 = paste0("No counts for binding sites present. \n")
         msg1 = paste0("Make sure to run 'calculateBsBackground()' first. \n")
         stop(c(msg0,msg1))
     }
-    this.counts.bs.samples = as.data.frame(table(sub(".*_", "", colnames(this.counts.bs))))
+    this.counts.bs.samples = as.data.frame(table(.sampleToCondition(colnames(this.counts.bs), this.meta)))
     if (!all(this.counts.bs.samples[,2] > 1)) {
         # found less than two replicates per condition for bs
         msg0 = paste0("Less than two replicates are present for each condition. \n")
@@ -1092,13 +1094,13 @@ calculateBsFoldChange <- function(object,
         stop(c(msg0, msg1))
     }
     # check background
-    this.counts.bg = this.counts %>% select(contains("bg"))
+    this.counts.bg = this.counts %>% select(starts_with("counts.bg."))
     if (length(this.counts.bg) == 0) {
         msg0 = paste0("No counts for background present. \n")
         msg1 = paste0("Make sure to run 'calculateBsBackground()' first. \n")
         stop(c(msg0,msg1))
     }
-    this.counts.bg.samples = as.data.frame(table(sub(".*_", "", colnames(this.counts.bg))))
+    this.counts.bg.samples = as.data.frame(table(.sampleToCondition(colnames(this.counts.bg), this.meta)))
     if (!all(this.counts.bg.samples[,2] > 1)) {
         # found less than two replicates per condition for bs
         msg0 = paste0("Less than two replicates are present for each condition. \n")
@@ -1199,7 +1201,7 @@ calculateBsFoldChange <- function(object,
 
     # make counts matrix and pass on to deseq
     # ---------------------------------------
-    count.matr = this.counts %>% select(contains(c("bs", "bg"))) %>% as.matrix()
+    count.matr = this.counts %>% select(starts_with(c("counts.bs.", "counts.bg."))) %>% as.matrix()
     se = SummarizedExperiment::SummarizedExperiment(assays = list(counts = count.matr),
                                                     rowRanges = granges(this.ranges),
                                                     colData = coldata)
@@ -1226,7 +1228,8 @@ calculateBsFoldChange <- function(object,
     # pulling deseq2 results
     # ----------------------
     comp.level = levels(this.meta$condition)[2] # KO
-    this.contrast = paste0("condition", comp.level, ".typebs")
+    # -> DESeq2 converts factor levels to syntactically valid names (e.g. "KO-7" -> "KO.7")
+    this.contrast = make.names(paste0("condition", comp.level, ".typebs"))
 
     if (!this.contrast %in% DESeq2::resultsNames(dds)) {
         msg0 = paste0("Contrast named: ", this.contrast, "not found in available names: ", paste(DESeq2::resultsNames(dds), collapse = ", "), ".\n")
@@ -1306,7 +1309,7 @@ calculateBsFoldChange <- function(object,
 
     # pulling deseq2 results
     # ----------------------
-    this.contrast.bg = paste0("condition_", comp.level, "_vs_", reference.level)
+    this.contrast.bg = make.names(paste0("condition_", comp.level, "_vs_", reference.level))
 
     if (!is.null(filterFun)) {
         res.bg = DESeq2::results(dds.bg, name = this.contrast.bg,
