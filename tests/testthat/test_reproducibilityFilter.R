@@ -56,3 +56,38 @@ test_that("Reproducibility filter works with special characters in condition nam
     expect_no_error(suppressWarnings(reproducibilityFilterPlot(r1)))
     expect_no_error(suppressWarnings(reproducibilityCutoffPlot(b1, cutoff = myCutoff)))
 })
+
+test_that("Reproducibility filter applies the correct cutoff to each condition", {
+    # load data
+    files <- system.file("extdata", package="BindingSiteFinder")
+    load(list.files(files, pattern = ".rda$", full.names = TRUE))
+
+    # one condition per sample
+    m = getMeta(bds)
+    m$condition = factor(c("A", "B", "C", "D"), levels = c("A", "B", "C", "D"))
+    s = getSignal(bds)
+    names(s$signalPlus) = paste0(m$id, "_", m$condition)
+    names(s$signalMinus) = paste0(m$id, "_", m$condition)
+    b = setSignal(setMeta(bds, m), s)
+    cov = as.data.frame(mcols(coverageOverRanges(b, returnOptions = "merge_positions_keep_replicates", quiet = TRUE)))
+
+    # unordered and duplicated cutoffs
+    for (myCutoff in list(c(0.2, 0.3, 0.1, 0.05), c(0.05, 0.1, 0.05, 0.1))) {
+        r = expect_no_error(reproducibilityFilter(b, cutoff = myCutoff, nReps = c(1, 1, 1, 1), quiet = TRUE))
+        qSel = r@plotData$reproducibilityFilterPlot$cutoffs
+        # one cutoff per sample, matching the cutoff of its condition
+        expect_identical(qSel$name, colnames(cov))
+        expect_identical(qSel$cut, myCutoff)
+        expected = vapply(seq_along(cov), function(i) {
+            max(unname(quantile(cov[[i]], probs = myCutoff[i])), 1)
+        }, numeric(1))
+        expect_equal(qSel$value, expected)
+    }
+
+    # cutoffs that are not exactly on a 1% grid (floating point)
+    n = vapply(c(0.3, 0.35, 0.4), function(x) {
+        length(getRanges(reproducibilityFilter(bds, cutoff = x, nReps = 2, quiet = TRUE)))
+    }, numeric(1))
+    expect_true(all(n > 0))
+    expect_true(n[1] >= n[2] & n[2] >= n[3])
+})

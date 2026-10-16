@@ -166,7 +166,8 @@ reproducibilityFilter <- function(object,
         qSel$value = ifelse(qSel$value < minCrosslinks,
                             minCrosslinks,
                             qSel$value)
-        matchIdx = match(qSel$name, colnames(df))
+        # -> position of the cutoff row in qSel for each sample (column) in df
+        matchIdx = match(colnames(df), qSel$name)
 
         # ---
         # Store data for diagnostic plot in list
@@ -211,7 +212,8 @@ reproducibilityFilter <- function(object,
         qSel$value = ifelse(qSel$value < minCrosslinks,
                             minCrosslinks,
                             qSel$value)
-        matchIdx = match(qSel$name, colnames(df))
+        # -> position of the cutoff row in qSel for each sample (column) in df
+        matchIdx = match(colnames(df), qSel$name)
 
         # ---
         # Store data for diagnostic plot in list

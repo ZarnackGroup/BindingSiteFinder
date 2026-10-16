@@ -1,58 +1,48 @@
 #' @importFrom stats quantile
 .selectQuantilesMultipleConditions <-
     function(covDf, userCond, userMeta, userNreps, userCutoff) {
-        # bind locally used variables
-        per <- applyTo <- NULL
+        # returns one row per sample (in the column order of covDf) with the
+        # crosslink threshold computed from the cutoff of its condition
+        # -> cutoffs and nReps are matched to conditions by position, so that
+        # conditions can share the same cutoff
+        # -> quantiles are computed directly for the user cutoff (no grid), so
+        # that any cutoff can be used (eg. 0.35)
+        this.cond = .sampleToCondition(colnames(covDf), userMeta)
+        idx = match(this.cond, levels(userCond))
+        this.cut = userCutoff[idx]
+        this.q = lapply(seq_along(covDf), function(i) {
+            quantile(covDf[[i]], probs = this.cut[i])
+        })
 
-        # construct general cutoff matrix in 1% steps
-        q = as.data.frame(apply(covDf, 2, function(x) {
-            quantile(x, probs = seq(0, 1, by = 0.01))
-        }))
-        q$cut = seq(0, 1, by = 0.01)
-        q$per = rownames(q)
-
-        # select that part of q that was chosen by user
-        qSel = q[q$cut %in% userCutoff, ]
-        applyDf = data.frame(levels(userCond), userCutoff)
-        # applyDf = data.frame(levels(userCond), userCutoff, userCond)
-
-        idx = match(qSel$cut, applyDf$userCutoff)
-        qSel$applyTo = applyDf$levels.userCond.[idx]
-        qSel = qSel %>% pivot_longer(-c(cut, per, applyTo))
-        qSel$sel = .sampleToCondition(qSel$name, userMeta)
-        if (length(unique(userCutoff)) > 1) {
-            qSel = qSel[qSel$applyTo == qSel$sel, ]
-        }
-        # add n.reps support to df
-        nRepsDf = data.frame(defaultNreps = userNreps, applyTo = levels(userCond))
-        idx = match(qSel$sel, nRepsDf$applyTo)
-        qSel$defaultNreps = nRepsDf$defaultNreps[idx]
+        qSel = data.frame(cut = this.cut,
+                          per = vapply(this.q, names, character(1)),
+                          applyTo = this.cond,
+                          name = colnames(covDf),
+                          value = unname(unlist(this.q)),
+                          sel = this.cond,
+                          defaultNreps = userNreps[idx])
         return(qSel)
     }
 
 #' @importFrom stats quantile
 .selectQuantilesSingleCondtion <-
     function(covDf, userCond, userMeta, userNreps, userCutoff) {
-        # bind locally used variables
-        per <- NULL
+        # returns one row per sample (in the column order of covDf) with the
+        # crosslink threshold computed from the single cutoff
+        # -> quantiles are computed directly for the user cutoff (no grid), so
+        # that any cutoff can be used (eg. 0.35)
+        this.cond = .sampleToCondition(colnames(covDf), userMeta)
+        idx = match(this.cond, levels(userCond))
+        this.q = lapply(seq_along(covDf), function(i) {
+            quantile(covDf[[i]], probs = userCutoff)
+        })
 
-        # construct general cutoff matrix in 1% steps
-        q = as.data.frame(apply(covDf, 2, function(x) {
-            quantile(x, probs = seq(0, 1, by = 0.01))
-        }))
-        q$cut = seq(0, 1, by = 0.01)
-        q$per = rownames(q)
-
-        # select that part of q that was chosen by user
-        qSel = q[q$cut %in% userCutoff, ]
-        qSel = qSel %>% pivot_longer(-c(cut, per))
-        qSel$sel = .sampleToCondition(qSel$name, userMeta)
-
-        # add n.reps support to df
-        nRepsDf = data.frame(defaultNreps = userNreps, applyTo = levels(userCond))
-        idx = match(qSel$sel, nRepsDf$applyTo)
-        qSel$defaultNreps = nRepsDf$defaultNreps[idx]
-        qSel$value = round(qSel$value, digits = 0)
+        qSel = data.frame(cut = userCutoff,
+                          per = vapply(this.q, names, character(1)),
+                          name = colnames(covDf),
+                          value = round(unname(unlist(this.q)), digits = 0),
+                          sel = this.cond,
+                          defaultNreps = userNreps[idx])
         return(qSel)
     }
 
