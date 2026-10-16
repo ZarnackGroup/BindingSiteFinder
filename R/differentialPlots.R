@@ -702,7 +702,7 @@ geneRegulationPlot <- function(object,
 
         p = ggplot(df.plot, aes(x = plot.position, y = bs.log2FoldChange, color = sigDir, fill = sigDir)) +
             geom_hline(yintercept = 0, color = "#4d4d4d") +
-            geom_segment(aes(x=plot.position, xend=plot.position, y=0, yend=bs.log2FoldChange), size = 1, color = "#4d4d4d") +
+            geom_segment(aes(x=plot.position, xend=plot.position, y=0, yend=bs.log2FoldChange), linewidth = 1, color = "#4d4d4d") +
             geom_point(size = 4, stroke = 1, shape = 21) +
             scale_fill_manual(values = c("Not" = "#999999", "Up" = "#68b1a5", "Down" = "#874C62")) +
             scale_color_manual(values = c("Not" = "#4d4d4d", "Up" = "#2b544d", "Down" = "#623747")) +
@@ -738,7 +738,7 @@ geneRegulationPlot <- function(object,
 
             p = ggplot(df.plot, aes(x = plot.position, y = bs.log2FoldChange, color = sigDir, fill = sigDir, shape = transcriptRegion)) +
                 geom_hline(yintercept = 0, color = "#4d4d4d") +
-                geom_segment(aes(x=plot.position, xend=plot.position, y=0, yend=bs.log2FoldChange), size = 1, color = "#4d4d4d") +
+                geom_segment(aes(x=plot.position, xend=plot.position, y=0, yend=bs.log2FoldChange), linewidth = 1, color = "#4d4d4d") +
                 geom_point(size = 4, stroke = 1) +
                 scale_shape_manual(values=c("INTRON" = 23, "CDS" = 22, "UTR3" = 25, "UTR5" = 24, "OTHER" = 21)) +
                 scale_fill_manual(values = c("Not" = "#999999", "Up" = "#68b1a5", "Down" = "#874C62")) +
@@ -779,7 +779,7 @@ geneRegulationPlot <- function(object,
 
                 p = ggplot(df.plot, aes(x = plot.position, y = bs.log2FoldChange, color = sigDir, fill = sigDir, shape = transcriptRegion)) +
                     geom_hline(yintercept = 0, color = "#4d4d4d") +
-                    geom_segment(aes(x=plot.position, xend=plot.position, y=0, yend=bs.log2FoldChange), size = 1, color = "#4d4d4d") +
+                    geom_segment(aes(x=plot.position, xend=plot.position, y=0, yend=bs.log2FoldChange), linewidth = 1, color = "#4d4d4d") +
                     geom_point(size = 4, stroke = 1) +
                     scale_shape_manual(values=c("INTRON" = 23, "CDS" = 22, "UTR3" = 25, "UTR5" = 24, "OTHER" = 21)) +
                     scale_fill_manual(values = c("Not" = "#999999", "Up" = "#68b1a5", "Down" = "#874C62")) +
@@ -815,7 +815,7 @@ geneRegulationPlot <- function(object,
 
                 p = ggplot(df.plot, aes(x = plot.position, y = bs.log2FoldChange, color = sigDir, fill = sigDir, shape = transcriptRegion)) +
                     geom_hline(yintercept = 0, color = "#4d4d4d") +
-                    geom_segment(aes(x=plot.position, xend=plot.position, y=0, yend=bs.log2FoldChange), size = 1, color = "#4d4d4d") +
+                    geom_segment(aes(x=plot.position, xend=plot.position, y=0, yend=bs.log2FoldChange), linewidth = 1, color = "#4d4d4d") +
                     geom_point(size = 4, stroke = 1) +
                     scale_shape_manual(values=c("INTRON" = 23, "CDS" = 22, "UTR3" = 25, "UTR5" = 24, "OTHER" = 21)) +
                     scale_fill_manual(values = c("Not" = "#999999", "Up" = "#68b1a5", "Down" = "#874C62")) +
@@ -851,7 +851,7 @@ geneRegulationPlot <- function(object,
 
                 p = ggplot(df.plot, aes(x = plot.position, y = bs.log2FoldChange, color = sigDir, fill = sigDir, shape = transcriptRegion)) +
                     geom_hline(yintercept = 0, color = "#4d4d4d") +
-                    geom_segment(aes(x=plot.position, xend=plot.position, y=0, yend=bs.log2FoldChange), size = 1, color = "#4d4d4d") +
+                    geom_segment(aes(x=plot.position, xend=plot.position, y=0, yend=bs.log2FoldChange), linewidth = 1, color = "#4d4d4d") +
                     geom_point(size = 4, stroke = 1) +
                     scale_shape_manual(values=c("INTRON" = 23, "CDS" = 22, "UTR3" = 25, "UTR5" = 24, "OTHER" = 21)) +
                     scale_fill_manual(values = c("Not" = "#999999", "Up" = "#68b1a5", "Down" = "#874C62")) +
@@ -887,7 +887,7 @@ geneRegulationPlot <- function(object,
 
                 p = ggplot(df.plot, aes(x = plot.position, y = bs.log2FoldChange, color = sigDir, fill = sigDir, shape = transcriptRegion)) +
                     geom_hline(yintercept = 0, color = "#4d4d4d") +
-                    geom_segment(aes(x=plot.position, xend=plot.position, y=0, yend=bs.log2FoldChange), size = 1, color = "#4d4d4d") +
+                    geom_segment(aes(x=plot.position, xend=plot.position, y=0, yend=bs.log2FoldChange), linewidth = 1, color = "#4d4d4d") +
                     geom_point(size = 4, stroke = 1) +
                     ggrepel::geom_label_repel(data = df.plot %>% filter(duplicated == "yes"), aes(label = transcriptRegion)) +
                     scale_shape_manual(values=c("INTRON" = 23, "CDS" = 22, "UTR3" = 25, "UTR5" = 24, "OTHER" = 21)) +

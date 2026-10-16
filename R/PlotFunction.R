@@ -71,7 +71,7 @@ pureClipGlobalFilterPlot <- function(object) {
         scale_fill_manual(values = colScaleFun(length(probs)+1)) +
         theme_bw() +
         theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size = 6), legend.position = "none") +
-        geom_vline(xintercept = cutpoint, linetype = "dashed", size = 1, color = "#b35900") +
+        geom_vline(xintercept = cutpoint, linetype = "dashed", linewidth = 1, color = "#b35900") +
         labs(
             title = "pureClipGlobalFilterPlot()",
             subtitle = optstrNice,
@@ -144,7 +144,7 @@ duplicatedSitesPlot <- function(object) {
         theme_bw() +
         theme(legend.position = "none") +
         labs(
-            title = "dupliatedSitesPlot()",
+            title = "duplicatedSitesPlot()",
             subtitle = optstrNice,
             x = "#N overlaps",
             y = "#N (log10)"
@@ -234,7 +234,7 @@ mergeCrosslinkDiagnosticsPlot <- function(object) {
 
     p = ggplot(dfPlot, aes(x = w, y = s, color = iteration, group = iteration)) +
         geom_point(size = 3) +
-        geom_line(size = 1) +
+        geom_line(linewidth = 1) +
         scale_color_manual(values = cols) +
         theme_bw() +
         labs(
@@ -395,7 +395,7 @@ reproducibilityFilterPlot <- function(object, plotRange = 20) {
             y = "Number of sites",
             fill = "Condition"
         ) +
-        geom_vline(data = dfPlotCutoffs, aes(xintercept = value, group = name), color = "#b35900", size = 1, linetype = "dashed") +
+        geom_vline(data = dfPlotCutoffs, aes(xintercept = value, group = name), color = "#b35900", linewidth = 1, linetype = "dashed") +
         geom_label(data = dfPlotCutoffs, aes(x = value, y = max(dfPlot$n), label = value), alpha = 0.5)
         # geom_label(data = dfPlotCutoffs, aes(x = value, y = 1, label = value), nudge_y = 2)
 
@@ -1256,7 +1256,7 @@ estimateBsWidthPlot <- function(object) {
             x = "Binding site width",
             color = "Gene-wise filter"
         ) +
-        geom_vline(xintercept = dfMean$bsSize[dfMean$bsSize == est.bsSize], color = "#b35900", linetype = "dashed", size = 1) +
+        geom_vline(xintercept = dfMean$bsSize[dfMean$bsSize == est.bsSize], color = "#b35900", linetype = "dashed", linewidth = 1) +
         geom_label(data = dfMean[dfMean$bsSize == est.bsSize,], aes(x = Inf, y = Inf),
                    label = paste0("Size=", est.bsSize, "/ filter=", est.GeneFilter), vjust = 1, size = 3, hjust = 1, alpha = 0.3)
     return(p)
@@ -1678,7 +1678,7 @@ rangeCoveragePlot <- function(object,
                      ymin = -Inf, ymax = Inf, alpha = 0.3, color = "grey") +
             geom_ribbon(data = df, aes(x = position, ymin = mean - sd, ymax = mean + sd),
                         fill = "#8cb3d9") +
-            geom_line(data = df, aes(x = position, y = mean), size = 1, color = "#2d5986") +
+            geom_line(data = df, aes(x = position, y = mean), linewidth = 1, color = "#2d5986") +
             theme_classic() +
             labs(
                 title = "rangeCoveragePlot()",
@@ -1784,7 +1784,7 @@ rangeCoveragePlot <- function(object,
                       alpha = 0.2, color = "grey") +
             geom_ribbon(data = dfPlot, aes(x = position, ymin = mean - sd, ymax = mean + sd),
                         fill = "#8cb3d9") +
-            geom_line(data = dfPlot, aes(x = position, y = mean), size = 1, color = "#2d5986") +
+            geom_line(data = dfPlot, aes(x = position, y = mean), linewidth = 1, color = "#2d5986") +
             theme_classic() +
             labs(
                 title = "rangeCoveragePlot()",
